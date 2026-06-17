@@ -229,11 +229,21 @@ Todos reutilizan Application Services.
 
 ## Convenciones
 
--   PHPStan m�ximo nivel
+-   PHPStan máximo nivel
 -   Laravel Pint
 -   DTOs inmutables
 -   Value Objects
 -   Strict types
+-   **UUIDs en todas las entidades** (nunca auto-incremental IDs)
+
+## Identificadores
+
+-   Todas las tablas usan `CHAR(36)` para primary keys (UUID v4)
+-   Laravel: `$table->uuid('id')->primary()`
+-   Modelos: `use HasUuids;` o generación manual con `Str::uuid()`
+-   Foreign keys: `$table->uuid('user_id')->constrained('users')`
+-   Los UUIDs se generan en la capa de dominio, no en la base de datos
+-   Excepción: tablas pivot pueden usar composite key o UUID según necesidad
 
 ## Regla de oro
 
