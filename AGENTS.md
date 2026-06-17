@@ -235,6 +235,8 @@ Todos reutilizan Application Services.
 -   Value Objects
 -   Strict types
 -   **UUIDs en todas las entidades** (nunca auto-incremental IDs)
+-   **Testing con Pest** (backend) y **Vitest** (frontend)
+-   CI/CD con GitHub Actions en cada PR
 
 ## Identificadores
 
