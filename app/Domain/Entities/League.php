@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use Illuminate\Support\Str;
+
 readonly class League
 {
     public function __construct(
@@ -13,8 +15,7 @@ readonly class League
         public string $scoringSystemId,
         public string $ownerId,
         public string $inviteCode,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $name,
@@ -23,12 +24,12 @@ readonly class League
         string $ownerId,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             name: $name,
             editionId: $editionId,
             scoringSystemId: $scoringSystemId,
             ownerId: $ownerId,
-            inviteCode: \Illuminate\Support\Str::random(8),
+            inviteCode: Str::random(8),
         );
     }
 
@@ -40,7 +41,7 @@ readonly class League
             editionId: $this->editionId,
             scoringSystemId: $this->scoringSystemId,
             ownerId: $this->ownerId,
-            inviteCode: \Illuminate\Support\Str::random(8),
+            inviteCode: Str::random(8),
         );
     }
 }

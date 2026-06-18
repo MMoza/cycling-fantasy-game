@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Entities;
 
 use App\Domain\ValueObjects\CompetitionType;
+use Illuminate\Support\Str;
 
 readonly class Competition
 {
@@ -14,8 +15,7 @@ readonly class Competition
         public CompetitionType $type,
         public string $country,
         public bool $active,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $name,
@@ -23,7 +23,7 @@ readonly class Competition
         string $country,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             name: $name,
             type: $type,
             country: $country,

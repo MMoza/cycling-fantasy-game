@@ -10,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->repository = new EloquentEditionRepository();
+    $this->repository = new EloquentEditionRepository;
     $this->competition = CompetitionModel::factory()->create();
 });
 

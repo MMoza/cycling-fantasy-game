@@ -8,20 +8,20 @@ use App\Domain\ValueObjects\ScoringRuleContext;
 use App\Domain\ValueObjects\ScoringRuleType;
 use App\Domain\ValueObjects\ScoringSystemType;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 readonly class ScoringSystem
 {
     /**
-     * @param Collection<ScoringRule> $rules
+     * @param  Collection<ScoringRule>  $rules
      */
     public function __construct(
         public string $id,
         public string $name,
         public ScoringSystemType $type,
         public string $description,
-        public Collection $rules = new Collection(),
-    ) {
-    }
+        public Collection $rules = new Collection,
+    ) {}
 
     public static function create(
         string $name,
@@ -29,7 +29,7 @@ readonly class ScoringSystem
         string $description,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             name: $name,
             type: $type,
             description: $description,

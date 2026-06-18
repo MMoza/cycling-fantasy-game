@@ -6,6 +6,7 @@ namespace App\Domain\Entities;
 
 use App\Domain\ValueObjects\ScoringRuleContext;
 use App\Domain\ValueObjects\ScoringRuleType;
+use Illuminate\Support\Str;
 
 readonly class ScoringRule
 {
@@ -15,8 +16,7 @@ readonly class ScoringRule
         public ScoringRuleType $type,
         public ScoringRuleContext $context,
         public int $points,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $scoringSystemId,
@@ -24,7 +24,7 @@ readonly class ScoringRule
         int $points,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             scoringSystemId: $scoringSystemId,
             type: $type,
             context: $type->context(),

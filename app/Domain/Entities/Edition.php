@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Entities;
 
 use App\Domain\ValueObjects\EditionStatus;
+use Illuminate\Support\Str;
 
 readonly class Edition
 {
@@ -15,8 +16,7 @@ readonly class Edition
         public string $startDate,
         public string $endDate,
         public EditionStatus $status,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $competitionId,
@@ -25,7 +25,7 @@ readonly class Edition
         string $endDate,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             competitionId: $competitionId,
             year: $year,
             startDate: $startDate,
