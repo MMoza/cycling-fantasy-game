@@ -34,7 +34,7 @@ class User extends Authenticatable
 
     public function leagues(): BelongsToMany
     {
-        return $this->belongsToMany(LeagueModel::class, 'league_user')
+        return $this->belongsToMany(LeagueModel::class, 'league_user', 'user_id', 'league_id')
             ->withPivot('role')
             ->withTimestamps();
     }

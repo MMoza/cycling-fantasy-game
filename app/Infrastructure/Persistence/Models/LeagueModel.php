@@ -33,7 +33,7 @@ class LeagueModel extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'league_user')
+        return $this->belongsToMany(User::class, 'league_user', 'league_id', 'user_id')
             ->withPivot('role')
             ->withTimestamps();
     }
