@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'last_visited_league_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -36,5 +37,10 @@ class User extends Authenticatable
         return $this->belongsToMany(LeagueModel::class, 'league_user')
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    public function lastVisitedLeague(): BelongsTo
+    {
+        return $this->belongsTo(LeagueModel::class, 'last_visited_league_id');
     }
 }
