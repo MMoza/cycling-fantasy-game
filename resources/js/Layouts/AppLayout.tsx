@@ -1,16 +1,13 @@
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { Menu, X, LogOut, LayoutDashboard, Users, Trophy } from 'lucide-react';
-import { useState } from 'react';
+import { LogOut, LayoutDashboard, Users } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { auth } = usePage().props as any;
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const navItems = [
         { href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
         { href: route('leagues.index'), label: 'Ligas', icon: Users },
-        { href: '#', label: 'Clasificación', icon: Trophy },
     ];
 
     return (
@@ -19,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <header className="sticky top-0 z-50 hidden border-b bg-background/95 backdrop-blur md:block">
                 <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-6">
-                        <Link href="/" className="flex items-center gap-2">
+                        <Link href={route('dashboard')} className="flex items-center gap-2">
                             <ApplicationLogo className="h-6 w-6" />
                             <span className="font-semibold">PseudoFantasy</span>
                         </Link>
@@ -53,7 +50,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             {/* Mobile header */}
             <header className="sticky top-0 z-50 flex items-center justify-between border-b bg-background/95 backdrop-blur px-4 py-3 md:hidden">
-                <Link href="/" className="flex items-center gap-2">
+                <Link href={route('dashboard')} className="flex items-center gap-2">
                     <ApplicationLogo className="h-5 w-5" />
                     <span className="font-semibold text-sm">PseudoFantasy</span>
                 </Link>

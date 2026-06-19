@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Users, Trophy, Copy, Search, Plus } from 'lucide-react';
+import { Users, Trophy, Copy, Search, Plus, Eye } from 'lucide-react';
 import { useState } from 'react';
 
 interface League {
@@ -24,12 +24,11 @@ interface League {
     invite_code: string;
 }
 
-interface DashboardProps {
+interface IndexProps {
     leagues: League[];
-    auth: { user: { id: string; name: string } };
 }
 
-export default function Index({ leagues }: DashboardProps) {
+export default function Index({ leagues }: IndexProps) {
     const [joinCode, setJoinCode] = useState('');
     const [joinDialogOpen, setJoinDialogOpen] = useState(false);
 
@@ -99,12 +98,24 @@ export default function Index({ leagues }: DashboardProps) {
 
                 {leagues.length === 0 ? (
                     <Card>
-                        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                             <Users className="h-12 w-12 text-muted-foreground" />
-                            <h3 className="mt-4 font-medium">No hay ligas aún</h3>
-                            <p className="mt-1 text-sm text-muted-foreground">
+                            <h3 className="mt-4 text-lg font-medium">No hay ligas aún</h3>
+                            <p className="mt-2 text-sm text-muted-foreground">
                                 Crea una liga o únete a una existente para empezar a competir
                             </p>
+                            <div className="mt-6 flex gap-3">
+                                <Button asChild>
+                                    <Link href={route('leagues.create')}>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Crear liga
+                                    </Link>
+                                </Button>
+                                <Button variant="outline" onClick={() => setJoinDialogOpen(true)}>
+                                    <Search className="mr-2 h-4 w-4" />
+                                    Unirse con código
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 ) : (
@@ -128,7 +139,7 @@ export default function Index({ leagues }: DashboardProps) {
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Trophy className="h-4 w-4" />
-                                            Tour 2026
+                                            {league.edition.name}
                                         </div>
                                     </div>
                                 </CardContent>
@@ -143,6 +154,7 @@ export default function Index({ leagues }: DashboardProps) {
                                     </Button>
                                     <Button size="sm" asChild>
                                         <Link href={route('leagues.show', league.id)}>
+                                            <Eye className="mr-1 h-3 w-3" />
                                             Ver liga
                                         </Link>
                                     </Button>
