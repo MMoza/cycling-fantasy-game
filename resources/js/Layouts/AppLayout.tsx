@@ -26,8 +26,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-6">
                         <Link href={route('dashboard')} className="flex items-center gap-2">
-                            <ApplicationLogo className="h-6 w-6" />
-                            <span className="font-semibold">PseudoFantasy</span>
+                            <ApplicationLogo className="h-7 w-7" />
+                            <div className="flex flex-col">
+                                <span className="text-sm font-semibold leading-tight">Pedales</span>
+                                <span className="text-[10px] leading-tight text-muted-foreground">FANTASY CYCLING</span>
+                            </div>
                         </Link>
                         <nav className="flex items-center gap-4">
                             {navItems.map((item) => (
@@ -60,8 +63,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Mobile header */}
             <header className="sticky top-0 z-50 flex items-center justify-between border-b bg-background/95 backdrop-blur px-4 py-3 md:hidden">
                 <Link href={route('dashboard')} className="flex items-center gap-2">
-                    <ApplicationLogo className="h-5 w-5" />
-                    <span className="font-semibold text-sm">PseudoFantasy</span>
+                    <ApplicationLogo className="h-6 w-6" />
+                    <div className="flex flex-col">
+                        <span className="text-sm font-semibold leading-tight">Pedales</span>
+                        <span className="text-[9px] leading-tight text-muted-foreground">FANTASY CYCLING</span>
+                    </div>
                 </Link>
                 <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">

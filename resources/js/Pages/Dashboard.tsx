@@ -13,7 +13,7 @@ export default function Dashboard() {
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
                     <p className="text-sm text-muted-foreground">
-                        Bienvenido a PseudoFantasy Cycling
+                        Bienvenido a Pedales Fantasy Cycling
                     </p>
                 </div>
 
