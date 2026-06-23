@@ -87,10 +87,11 @@ export default function PreRace({ league_id, league_name, competition, is_locked
                 )}
 
                 <Card>
+                    <div className="h-1 rounded-t-xl bg-gradient-to-r from-brand-600 to-accent-500" />
                     <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-2">
-                                <Target className="h-5 w-5" />
+                                <Target className="h-5 w-5 text-brand-600" />
                                 Tus pronósticos
                             </CardTitle>
                             {is_locked && (

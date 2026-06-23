@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronLeft, ChevronRight, Lock, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Save, Mountain, MapPin, ArrowRight, Gauge } from 'lucide-react';
 
 interface Stage {
     id: string;
@@ -15,6 +15,8 @@ interface Stage {
     date: string;
     type: string;
     distance: string | null;
+    elevation_gain: number | null;
+    profile_image: string | null;
     origin: string;
     destination: string;
     status: string;
@@ -96,7 +98,6 @@ export default function Show({ league_id, stage, is_locked, predictions, navigat
             <Head title={`Etapa ${stage.number} — ${stage.name}`} />
 
             <div className="space-y-6">
-                {/* Navigation header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         {navigation.prev ? (
@@ -130,35 +131,58 @@ export default function Show({ league_id, stage, is_locked, predictions, navigat
                     </div>
                 </div>
 
+                {/* Profile image */}
+                {stage.profile_image && (
+                    <div className="overflow-hidden rounded-xl border">
+                        <img
+                            src={stage.profile_image}
+                            alt={`Perfil de la etapa ${stage.number}`}
+                            className="w-full object-cover"
+                            style={{ maxHeight: '200px' }}
+                        />
+                    </div>
+                )}
+
                 {/* Stage details */}
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <Card>
+                        <div className="h-1 rounded-t-xl bg-brand-600" />
                         <CardContent className="flex flex-col items-center justify-center p-4">
                             <span className="text-xs text-muted-foreground">Tipo</span>
-                            <span className="font-medium">{stage.type}</span>
+                            <span className="mt-1 font-medium">{stage.type}</span>
                         </CardContent>
                     </Card>
                     <Card>
+                        <div className="h-1 rounded-t-xl bg-accent-500" />
                         <CardContent className="flex flex-col items-center justify-center p-4">
                             <span className="text-xs text-muted-foreground">Distancia</span>
-                            <span className="font-medium">{stage.distance ?? '-'}</span>
+                            <span className="mt-1 font-medium">{stage.distance ?? '-'}</span>
                         </CardContent>
                     </Card>
                     <Card>
+                        <div className="h-1 rounded-t-xl bg-blue-500" />
                         <CardContent className="flex flex-col items-center justify-center p-4">
                             <span className="text-xs text-muted-foreground">Fecha</span>
-                            <span className="font-medium">{stage.date}</span>
+                            <span className="mt-1 font-medium">{stage.date}</span>
                         </CardContent>
                     </Card>
-                    <Card>
+                    {stage.elevation_gain && (
+                        <Card>
+                            <div className="h-1 rounded-t-xl bg-green-600" />
+                            <CardContent className="flex flex-col items-center justify-center p-4">
+                                <span className="text-xs text-muted-foreground">Desnivel</span>
+                                <span className="mt-1 font-medium">{stage.elevation_gain.toLocaleString()} m</span>
+                            </CardContent>
+                        </Card>
+                    )}
+                    <Card className={stage.elevation_gain ? '' : 'lg:col-span-2'}>
                         <CardContent className="flex flex-col items-center justify-center p-4">
                             <span className="text-xs text-muted-foreground">Recorrido</span>
-                            <span className="text-center font-medium">{stage.origin} → {stage.destination}</span>
+                            <span className="mt-1 text-center font-medium">{stage.origin} → {stage.destination}</span>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Predictions form */}
                 <Card>
                     <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">

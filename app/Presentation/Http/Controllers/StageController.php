@@ -86,6 +86,8 @@ class StageController extends Controller
                 'date' => $stageModel->date->format('d M'),
                 'type' => $stageModel->type->label(),
                 'distance' => $stageModel->distance ? "{$stageModel->distance} km" : null,
+                'elevation_gain' => $stageModel->elevation_gain,
+                'profile_image' => $stageModel->profile_image,
                 'origin' => $stageModel->origin,
                 'destination' => $stageModel->destination,
                 'status' => $stageModel->status->value,

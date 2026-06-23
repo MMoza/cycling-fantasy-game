@@ -40,4 +40,29 @@ Route::middleware('auth')->group(function () {
     Route::get('/leagues/{league}/classification', [ClassificationController::class, 'index'])->name('classification.index');
 });
 
+Route::middleware(['auth', 'verified', 'super-admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', [\App\Presentation\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/competitions', [\App\Presentation\Http\Controllers\Admin\CompetitionController::class, 'index'])->name('competitions.index');
+    Route::get('/competitions/create', [\App\Presentation\Http\Controllers\Admin\CompetitionController::class, 'create'])->name('competitions.create');
+    Route::post('/competitions', [\App\Presentation\Http\Controllers\Admin\CompetitionController::class, 'store'])->name('competitions.store');
+    Route::get('/competitions/{id}/edit', [\App\Presentation\Http\Controllers\Admin\CompetitionController::class, 'edit'])->name('competitions.edit');
+    Route::patch('/competitions/{id}', [\App\Presentation\Http\Controllers\Admin\CompetitionController::class, 'update'])->name('competitions.update');
+
+    Route::get('/competitions/{competitionId}/editions', [\App\Presentation\Http\Controllers\Admin\EditionController::class, 'index'])->name('competitions.editions.index');
+    Route::get('/competitions/{competitionId}/editions/create', [\App\Presentation\Http\Controllers\Admin\EditionController::class, 'create'])->name('competitions.editions.create');
+    Route::post('/competitions/{competitionId}/editions', [\App\Presentation\Http\Controllers\Admin\EditionController::class, 'store'])->name('competitions.editions.store');
+    Route::get('/competitions/{competitionId}/editions/{id}/edit', [\App\Presentation\Http\Controllers\Admin\EditionController::class, 'edit'])->name('competitions.editions.edit');
+    Route::patch('/competitions/{competitionId}/editions/{id}', [\App\Presentation\Http\Controllers\Admin\EditionController::class, 'update'])->name('competitions.editions.update');
+
+    Route::get('/editions/{editionId}/stages', [\App\Presentation\Http\Controllers\Admin\StageController::class, 'index'])->name('editions.stages.index');
+    Route::get('/editions/{editionId}/stages/create', [\App\Presentation\Http\Controllers\Admin\StageController::class, 'create'])->name('editions.stages.create');
+    Route::post('/editions/{editionId}/stages', [\App\Presentation\Http\Controllers\Admin\StageController::class, 'store'])->name('editions.stages.store');
+    Route::get('/editions/{editionId}/stages/{id}/edit', [\App\Presentation\Http\Controllers\Admin\StageController::class, 'edit'])->name('editions.stages.edit');
+    Route::patch('/editions/{editionId}/stages/{id}', [\App\Presentation\Http\Controllers\Admin\StageController::class, 'update'])->name('editions.stages.update');
+
+    Route::get('/users', [\App\Presentation\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+    Route::post('/users/{id}/toggle-admin', [\App\Presentation\Http\Controllers\Admin\UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
+});
+
 require __DIR__.'/auth.php';

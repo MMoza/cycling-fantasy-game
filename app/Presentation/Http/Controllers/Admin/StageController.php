@@ -1,0 +1,167 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Presentation\Http\Controllers\Admin;
+
+use App\Domain\ValueObjects\StageType;
+use App\Infrastructure\Persistence\Models\EditionModel;
+use App\Infrastructure\Persistence\Models\StageModel;
+use App\Presentation\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class StageController extends Controller
+{
+    public function index(string $editionId): Response
+    {
+        $edition = EditionModel::with('competition')->findOrFail($editionId);
+
+        $stages = StageModel::where('edition_id', $editionId)
+            ->orderBy('number')
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'number' => $s->number,
+                'name' => $s->name,
+                'date' => $s->date->format('Y-m-d'),
+                'type' => $s->type->label(),
+                'distance' => $s->distance,
+                'elevation_gain' => $s->elevation_gain,
+                'origin' => $s->origin,
+                'destination' => $s->destination,
+                'status' => $s->status->label(),
+            ]);
+
+        return Inertia::render('Admin/Stages/Index', [
+            'edition' => [
+                'id' => $edition->id,
+                'year' => $edition->year,
+                'competition' => $edition->competition->name,
+            ],
+            'stages' => $stages,
+        ]);
+    }
+
+    public function create(string $editionId): Response
+    {
+        $edition = EditionModel::with('competition')->findOrFail($editionId);
+
+        return Inertia::render('Admin/Stages/Form', [
+            'edition' => [
+                'id' => $edition->id,
+                'year' => $edition->year,
+                'competition' => $edition->competition->name,
+            ],
+            'stage' => null,
+            'stageTypes' => collect(StageType::cases())->map(fn ($t) => [
+                'value' => $t->value,
+                'label' => $t->label(),
+            ]),
+        ]);
+    }
+
+    public function store(Request $request, string $editionId): RedirectResponse
+    {
+        $edition = EditionModel::findOrFail($editionId);
+
+        $validated = $request->validate([
+            'number' => 'required|integer|min:1',
+            'name' => 'required|string|max:255',
+            'date' => 'required|date',
+            'type' => 'required|string',
+            'distance' => 'nullable|numeric|min:0',
+            'elevation_gain' => 'nullable|integer|min:0',
+            'origin' => 'required|string|max:255',
+            'destination' => 'required|string|max:255',
+            'profile_image' => 'nullable|image|max:2048',
+        ]);
+
+        $profileImage = null;
+
+        if ($request->hasFile('profile_image')) {
+            $path = $request->file('profile_image')->store('stages/profiles', 'public');
+            $profileImage = Storage::url($path);
+        }
+
+        StageModel::create([
+            'id' => Str::uuid()->toString(),
+            'edition_id' => $edition->id,
+            'number' => $validated['number'],
+            'name' => $validated['name'],
+            'date' => $validated['date'],
+            'type' => $validated['type'],
+            'distance' => $validated['distance'],
+            'elevation_gain' => $validated['elevation_gain'],
+            'origin' => $validated['origin'],
+            'destination' => $validated['destination'],
+            'profile_image' => $profileImage,
+            'status' => 'upcoming',
+        ]);
+
+        return redirect()->route('admin.editions.stages.index', $edition->id);
+    }
+
+    public function edit(string $editionId, string $id): Response
+    {
+        $edition = EditionModel::with('competition')->findOrFail($editionId);
+        $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
+
+        return Inertia::render('Admin/Stages/Form', [
+            'edition' => [
+                'id' => $edition->id,
+                'year' => $edition->year,
+                'competition' => $edition->competition->name,
+            ],
+            'stage' => [
+                'id' => $stage->id,
+                'number' => $stage->number,
+                'name' => $stage->name,
+                'date' => $stage->date->format('Y-m-d'),
+                'type' => $stage->type->value,
+                'distance' => $stage->distance,
+                'elevation_gain' => $stage->elevation_gain,
+                'origin' => $stage->origin,
+                'destination' => $stage->destination,
+                'profile_image' => $stage->profile_image,
+                'status' => $stage->status->value,
+            ],
+            'stageTypes' => collect(StageType::cases())->map(fn ($t) => [
+                'value' => $t->value,
+                'label' => $t->label(),
+            ]),
+        ]);
+    }
+
+    public function update(Request $request, string $editionId, string $id): RedirectResponse
+    {
+        $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
+
+        $validated = $request->validate([
+            'number' => 'required|integer|min:1',
+            'name' => 'required|string|max:255',
+            'date' => 'required|date',
+            'type' => 'required|string',
+            'distance' => 'nullable|numeric|min:0',
+            'elevation_gain' => 'nullable|integer|min:0',
+            'origin' => 'required|string|max:255',
+            'destination' => 'required|string|max:255',
+            'profile_image' => 'nullable|image|max:2048',
+        ]);
+
+        $data = $validated;
+
+        if ($request->hasFile('profile_image')) {
+            $path = $request->file('profile_image')->store('stages/profiles', 'public');
+            $data['profile_image'] = Storage::url($path);
+        }
+
+        $stage->update($data);
+
+        return redirect()->route('admin.editions.stages.index', $editionId);
+    }
+}

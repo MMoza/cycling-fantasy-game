@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Trophy, Calendar, Route, ChevronRight, Users, Target } from 'lucide-react';
+import { Trophy, Calendar, Route, ChevronRight, Users, Target, Mountain } from 'lucide-react';
 
 interface League {
     id: string;
@@ -65,7 +65,6 @@ export default function Show({ league, next_stage, user_position, stages, leader
             <Head title={league.name} />
 
             <div className="space-y-6">
-                {/* Header */}
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">{league.name}</h1>
                     <p className="text-sm text-muted-foreground">
@@ -73,11 +72,11 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </p>
                 </div>
 
-                {/* 3 Stats Cards */}
                 <div className="grid gap-4 md:grid-cols-3">
                     <Card>
+                        <div className="h-1 rounded-t-xl bg-brand-600" />
                         <CardContent className="flex flex-col items-center justify-center p-6">
-                            <Route className="mb-2 h-5 w-5 text-muted-foreground" />
+                            <Route className="mb-2 h-5 w-5 text-brand-600" />
                             <div className="text-2xl font-bold">
                                 {league.progress.current_stage}/{league.progress.total_stages}
                             </div>
@@ -88,8 +87,9 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </Card>
 
                     <Card>
+                        <div className="h-1 rounded-t-xl bg-accent-500" />
                         <CardContent className="flex flex-col items-center justify-center p-6">
-                            <Calendar className="mb-2 h-5 w-5 text-muted-foreground" />
+                            <Calendar className="mb-2 h-5 w-5 text-accent-500" />
                             {next_stage ? (
                                 <>
                                     <div className="text-lg font-bold">
@@ -114,8 +114,9 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </Card>
 
                     <Card>
+                        <div className="h-1 rounded-t-xl bg-green-600" />
                         <CardContent className="flex flex-col items-center justify-center p-6">
-                            <Trophy className="mb-2 h-5 w-5 text-muted-foreground" />
+                            <Trophy className="mb-2 h-5 w-5 text-green-600" />
                             <div className="text-2xl font-bold">
                                 {user_position.rank}º
                             </div>
@@ -126,12 +127,11 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </Card>
                 </div>
 
-                {/* Pre-race predictions */}
                 <Card>
                     <CardContent className="flex items-center justify-between p-4">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                                <Target className="h-5 w-5 text-muted-foreground" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/20">
+                                <Target className="h-5 w-5 text-accent-500" />
                             </div>
                             <div>
                                 <p className="font-medium">Pronósticos pre-carrera</p>
@@ -148,50 +148,42 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </CardContent>
                 </Card>
 
-                {/* Upcoming Stages */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle>Próximas etapas</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {stages.length === 0 ? (
-                            <p className="py-8 text-center text-sm text-muted-foreground">
-                                No hay etapas programadas
-                            </p>
-                        ) : (
-                            <div className="space-y-3">
-                                {stages.map((stage) => (
-                                    <Link
-                                        key={stage.id}
-                                        href={route('stages.show', [league.id, stage.id])}
-                                        className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                {next_stage && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2">
+                                <Mountain className="h-4 w-4 text-brand-600" />
+                                Próxima etapa
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Link
+                                href={route('stages.show', [league.id, stages.find(s => s.number === next_stage.number)?.id ?? ''])}
+                                className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <Badge
+                                        variant="outline"
+                                        className="flex h-8 w-8 items-center justify-center rounded-full p-0"
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <Badge
-                                                variant={stage.status === 'finished' ? 'default' : 'secondary'}
-                                                className="flex h-8 w-8 items-center justify-center rounded-full p-0"
-                                            >
-                                                {stage.number}
-                                            </Badge>
-                                            <div>
-                                                <p className="font-medium">{stage.name}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {stage.type} · {stage.distance}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-sm text-muted-foreground">{stage.date}</span>
-                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                                        {next_stage.number}
+                                    </Badge>
+                                    <div>
+                                        <p className="font-medium">{next_stage.name}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {next_stage.type} · {next_stage.distance}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm text-muted-foreground">{next_stage.date}</span>
+                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                )}
 
-                {/* Leaderboard */}
                 <Card>
                     <CardHeader className="pb-3">
                         <CardTitle>Clasificación</CardTitle>
@@ -211,7 +203,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                         key={entry.rank}
                                         className={`flex items-center justify-between rounded-lg p-3 ${
                                             entry.is_current_user
-                                                ? 'bg-accent'
+                                                ? 'bg-accent-100/50 dark:bg-accent-900/10 border border-accent-200 dark:border-accent-800'
                                                 : 'hover:bg-muted/50'
                                         }`}
                                     >

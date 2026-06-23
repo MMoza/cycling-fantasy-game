@@ -2,7 +2,7 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, Search } from 'lucide-react';
+import { Plus, Search, Bike } from 'lucide-react';
 
 export default function Dashboard() {
     return (
@@ -17,10 +17,13 @@ export default function Dashboard() {
                     </p>
                 </div>
 
-                <Card>
+                <Card className="overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-brand-600 to-accent-500" />
                     <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                        <Users className="h-16 w-16 text-muted-foreground" />
-                        <h3 className="mt-6 text-xl font-medium">No tienes ligas aún</h3>
+                        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/20">
+                            <Bike className="h-8 w-8 text-accent-500" />
+                        </div>
+                        <h3 className="text-xl font-medium">No tienes ligas aún</h3>
                         <p className="mt-2 text-sm text-muted-foreground">
                             Crea una liga o únete a una existente para empezar a competir
                         </p>

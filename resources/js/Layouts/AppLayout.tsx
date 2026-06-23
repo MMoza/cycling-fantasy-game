@@ -1,6 +1,6 @@
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { LogOut, LayoutDashboard, Users, Route, Trophy } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, Route, Trophy, Shield } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { auth, currentLeague } = usePage().props as any;
@@ -14,6 +14,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               ]
             : []),
         { href: route('leagues.index'), label: 'Ligas', icon: Users },
+        ...(auth.user?.is_admin
+            ? [{ href: '/admin', label: 'Admin', icon: Shield }]
+            : []),
     ];
 
     return (

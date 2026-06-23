@@ -29,6 +29,8 @@ class StageModel extends Model
         'origin',
         'destination',
         'status',
+        'elevation_gain',
+        'profile_image',
     ];
 
     protected $casts = [
@@ -36,6 +38,7 @@ class StageModel extends Model
         'date' => 'date',
         'scheduled_start' => 'datetime',
         'distance' => 'float',
+        'elevation_gain' => 'integer',
         'type' => StageType::class,
         'status' => StageStatus::class,
     ];

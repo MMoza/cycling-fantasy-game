@@ -20,6 +20,8 @@ readonly class Stage
         public string $origin,
         public string $destination,
         public StageStatus $status,
+        public ?int $elevationGain = null,
+        public ?string $profileImage = null,
     ) {
     }
 
@@ -32,6 +34,8 @@ readonly class Stage
         ?float $distance,
         string $origin,
         string $destination,
+        ?int $elevationGain = null,
+        ?string $profileImage = null,
     ): self {
         return new self(
             id: \Illuminate\Support\Str::uuid()->toString(),
@@ -43,6 +47,8 @@ readonly class Stage
             distance: $distance,
             origin: $origin,
             destination: $destination,
+            elevationGain: $elevationGain,
+            profileImage: $profileImage,
             status: StageStatus::Upcoming,
         );
     }
@@ -59,6 +65,8 @@ readonly class Stage
             distance: $this->distance,
             origin: $this->origin,
             destination: $this->destination,
+            elevationGain: $this->elevationGain,
+            profileImage: $this->profileImage,
             status: StageStatus::Ongoing,
         );
     }
@@ -75,6 +83,8 @@ readonly class Stage
             distance: $this->distance,
             origin: $this->origin,
             destination: $this->destination,
+            elevationGain: $this->elevationGain,
+            profileImage: $this->profileImage,
             status: StageStatus::Finished,
         );
     }
