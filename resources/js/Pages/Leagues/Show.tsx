@@ -1,5 +1,5 @@
 import AppLayout from '@/Layouts/AppLayout';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Calendar, Route, ChevronRight, Users } from 'lucide-react';
@@ -22,6 +22,7 @@ interface League {
 }
 
 interface Stage {
+    id: string;
     number: number;
     name: string;
     date: string;
@@ -137,9 +138,10 @@ export default function Show({ league, next_stage, user_position, stages, leader
                         ) : (
                             <div className="space-y-3">
                                 {stages.map((stage) => (
-                                    <div
-                                        key={stage.number}
-                                        className="flex items-center justify-between rounded-lg border p-4"
+                                    <Link
+                                        key={stage.id}
+                                        href={route('stages.show', [league.id, stage.id])}
+                                        className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
                                     >
                                         <div className="flex items-center gap-4">
                                             <Badge
@@ -159,7 +161,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                             <span className="text-sm text-muted-foreground">{stage.date}</span>
                                             <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                         </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         )}

@@ -116,6 +116,7 @@ class LeagueController extends Controller
                 ->limit(5)
                 ->get()
                 ->map(fn ($s) => [
+                    'id' => $s->id,
                     'number' => $s->number,
                     'name' => "{$s->origin} → {$s->destination}",
                     'date' => $s->date->format('d M'),

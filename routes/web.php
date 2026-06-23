@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Presentation\Http\Controllers\ClassificationController;
 use App\Presentation\Http\Controllers\DashboardController;
 use App\Presentation\Http\Controllers\LeagueController;
+use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
+use App\Presentation\Http\Controllers\StageController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -26,6 +29,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/leagues', [LeagueController::class, 'store'])->name('leagues.store');
     Route::get('/leagues/{league}', [LeagueController::class, 'show'])->name('leagues.show');
     Route::post('/leagues/join', [LeagueController::class, 'join'])->name('leagues.join');
+
+    Route::get('/leagues/{league}/stage', [StageController::class, 'index'])->name('stages.index');
+    Route::get('/leagues/{league}/stage/{stage}', [StageController::class, 'show'])->name('stages.show');
+    Route::post('/leagues/{league}/stage/{stage}/predict', [PredictionController::class, 'store'])->name('predictions.store');
+    Route::get('/leagues/{league}/classification', [ClassificationController::class, 'index'])->name('classification.index');
 });
 
 require __DIR__.'/auth.php';

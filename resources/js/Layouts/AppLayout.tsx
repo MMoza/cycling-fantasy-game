@@ -1,12 +1,18 @@
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { LogOut, LayoutDashboard, Users } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, Route, Trophy } from 'lucide-react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-    const { auth } = usePage().props as any;
+    const { auth, currentLeague } = usePage().props as any;
 
     const navItems = [
         { href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
+        ...(currentLeague
+            ? [
+                  { href: route('stages.index', currentLeague.id), label: 'Etapa', icon: Route },
+                  { href: route('classification.index', currentLeague.id), label: 'Clasificación', icon: Trophy },
+              ]
+            : []),
         { href: route('leagues.index'), label: 'Ligas', icon: Users },
     ];
 

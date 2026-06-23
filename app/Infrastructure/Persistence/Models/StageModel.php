@@ -23,6 +23,7 @@ class StageModel extends Model
         'number',
         'name',
         'date',
+        'scheduled_start',
         'type',
         'distance',
         'origin',
@@ -33,6 +34,7 @@ class StageModel extends Model
     protected $casts = [
         'number' => 'integer',
         'date' => 'date',
+        'scheduled_start' => 'datetime',
         'distance' => 'float',
         'type' => StageType::class,
         'status' => StageStatus::class,
