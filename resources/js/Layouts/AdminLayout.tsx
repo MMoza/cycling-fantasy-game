@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Trophy, Users, Bike, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Trophy, Users, Bike, ArrowLeft, Shield } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { url } = usePage();
@@ -7,7 +7,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const navItems = [
         { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/admin/competitions', label: 'Competiciones', icon: Trophy },
-        { href: '/admin/users', label: 'Usuarios', icon: Users },
+        { href: '/admin/teams', label: 'Equipos', icon: Users },
+        { href: '/admin/riders', label: 'Corredores', icon: Bike },
+        { href: '/admin/users', label: 'Usuarios', icon: Shield },
     ];
 
     const isActive = (href: string) => {

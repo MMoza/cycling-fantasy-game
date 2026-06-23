@@ -7,11 +7,14 @@ namespace App\Presentation\Http\Controllers\Admin;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
+use App\Domain\ValueObjects\StageStatus;
+use App\Infrastructure\Persistence\Models\CompetitionParticipantModel;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -41,6 +44,7 @@ class StageController extends Controller
             'edition' => [
                 'id' => $edition->id,
                 'year' => $edition->year,
+                'competition_id' => $edition->competition->id,
                 'competition' => $edition->competition->name,
             ],
             'stages' => $stages,
@@ -163,5 +167,102 @@ class StageController extends Controller
         $stage->update($data);
 
         return redirect()->route('admin.editions.stages.index', $editionId);
+    }
+
+    public function show(string $editionId, string $id): Response
+    {
+        $edition = EditionModel::with('competition')->findOrFail($editionId);
+        $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
+
+        $participantRiders = DB::table('competition_participants')
+            ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
+            ->where('competition_participants.competition_id', $edition->competition_id)
+            ->where('competition_participants.edition_id', $editionId)
+            ->where('competition_participants.team_id', '!=', '') // all
+            ->select('riders.id', 'riders.name', 'riders.nationality')
+            ->distinct()
+            ->orderBy('riders.name')
+            ->get();
+
+        $results = DB::table('stage_results')
+            ->where('stage_id', $stage->id)
+            ->orderBy('position')
+            ->get();
+
+        return Inertia::render('Admin/Stages/Show', [
+            'edition' => [
+                'id' => $edition->id,
+                'year' => $edition->year,
+                'competition' => $edition->competition->name,
+            ],
+            'stage' => [
+                'id' => $stage->id,
+                'number' => $stage->number,
+                'name' => $stage->name,
+                'status' => $stage->status->value,
+                'status_label' => $stage->status->label(),
+            ],
+            'availableRiders' => $participantRiders,
+            'results' => $results->map(fn ($r) => [
+                'id' => $r->id,
+                'rider_id' => $r->rider_id,
+                'position' => $r->position,
+                'time' => $r->time,
+                'gap' => $r->gap,
+            ]),
+        ]);
+    }
+
+    public function markFinished(string $editionId, string $id): RedirectResponse
+    {
+        $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
+
+        if ($stage->status === StageStatus::Finished) {
+            return redirect()->back();
+        }
+
+        $stage->update(['status' => StageStatus::Finished->value]);
+
+        return redirect()->route('admin.editions.stages.show', [$editionId, $id]);
+    }
+
+    public function storeResult(Request $request, string $editionId, string $id): RedirectResponse
+    {
+        $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
+
+        $validated = $request->validate([
+            'results' => 'required|array|min:1',
+            'results.*.rider_id' => 'required|string',
+            'results.*.position' => 'required|integer|min:1',
+            'results.*.time' => 'nullable|string|max:50',
+            'results.*.gap' => 'nullable|string|max:50',
+        ]);
+
+        DB::table('stage_results')->where('stage_id', $stage->id)->delete();
+
+        foreach ($validated['results'] as $result) {
+            DB::table('stage_results')->insert([
+                'id' => Str::uuid()->toString(),
+                'stage_id' => $stage->id,
+                'rider_id' => $result['rider_id'],
+                'position' => $result['position'],
+                'time' => $result['time'] ?? null,
+                'gap' => $result['gap'] ?? null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $stage->update(['status' => StageStatus::Finished->value]);
+
+        return redirect()->route('admin.editions.stages.show', [$editionId, $id]);
+    }
+
+    public function markUpcoming(string $editionId, string $id): RedirectResponse
+    {
+        $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
+        $stage->update(['status' => StageStatus::Upcoming->value]);
+
+        return redirect()->route('admin.editions.stages.show', [$editionId, $id]);
     }
 }

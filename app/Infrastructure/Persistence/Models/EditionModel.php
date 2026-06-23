@@ -47,4 +47,9 @@ class EditionModel extends Model
     {
         return $this->hasMany(StageModel::class, 'edition_id', 'id');
     }
+
+    public function participants(): HasMany
+    {
+        return $this->hasMany(CompetitionParticipantModel::class, 'edition_id', 'id');
+    }
 }

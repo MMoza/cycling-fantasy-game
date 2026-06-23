@@ -11,15 +11,18 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'Desarrollo',
-            'email' => 'dev@cyclingfantasy.com',
-            'password' => bcrypt('password'),
-        ]);
-
         $this->call([
+            AdminUserSeeder::class,
             CompetitionSeeder::class,
             ScoringSystemSeeder::class,
         ]);
+
+        if (! User::where('email', 'dev@cyclingfantasy.com')->exists()) {
+            User::factory()->create([
+                'name' => 'Desarrollo',
+                'email' => 'dev@cyclingfantasy.com',
+                'password' => bcrypt('password'),
+            ]);
+        }
     }
 }
