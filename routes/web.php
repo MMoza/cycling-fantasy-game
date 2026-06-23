@@ -33,6 +33,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/leagues/{league}/stage', [StageController::class, 'index'])->name('stages.index');
     Route::get('/leagues/{league}/stage/{stage}', [StageController::class, 'show'])->name('stages.show');
     Route::post('/leagues/{league}/stage/{stage}/predict', [PredictionController::class, 'store'])->name('predictions.store');
+
+    Route::get('/leagues/{league}/predictions/pre-race', [PredictionController::class, 'preRace'])->name('predictions.pre-race');
+    Route::post('/leagues/{league}/predictions/pre-race', [PredictionController::class, 'storePreRace'])->name('predictions.pre-race.store');
+
     Route::get('/leagues/{league}/classification', [ClassificationController::class, 'index'])->name('classification.index');
 });
 

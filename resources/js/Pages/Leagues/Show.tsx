@@ -2,7 +2,8 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Calendar, Route, ChevronRight, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Trophy, Calendar, Route, ChevronRight, Users, Target } from 'lucide-react';
 
 interface League {
     id: string;
@@ -124,6 +125,28 @@ export default function Show({ league, next_stage, user_position, stages, leader
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Pre-race predictions */}
+                <Card>
+                    <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                                <Target className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <div>
+                                <p className="font-medium">Pronósticos pre-carrera</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Top 5 GC, maillots y supercombativo
+                                </p>
+                            </div>
+                        </div>
+                        <Button size="sm" asChild>
+                            <Link href={route('predictions.pre-race', league.id)}>
+                                Ir
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
 
                 {/* Upcoming Stages */}
                 <Card>
