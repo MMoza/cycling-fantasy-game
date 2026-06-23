@@ -9,6 +9,7 @@ use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class LeagueController extends Controller
@@ -31,6 +32,8 @@ class LeagueController extends Controller
                 'member_count' => $league->users()->count(),
                 'owner_id' => $league->owner_id,
                 'invite_code' => $league->invite_code,
+                'max_players' => $league->max_players,
+                'is_public' => $league->is_public,
             ]),
         ]);
     }
@@ -41,7 +44,7 @@ class LeagueController extends Controller
         $scoringSystems = ScoringSystemModel::all();
 
         return Inertia::render('Leagues/Create', [
-            'editions' => $editions->map(fn ($e) => [
+            'editions' => $editions->filter->competition->values()->map(fn ($e) => [
                 'id' => $e->id,
                 'name' => $e->competition->name,
                 'year' => $e->year,
@@ -130,18 +133,25 @@ class LeagueController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'edition_id' => ['required', 'uuid', 'exists:editions,id'],
             'scoring_system_id' => ['required', 'uuid', 'exists:scoring_systems,id'],
+            'max_players' => ['required', 'integer', 'min:2', 'max:200'],
+            'is_public' => ['required', 'boolean'],
         ]);
 
         $league = LeagueModel::create([
-            'id' => \Illuminate\Support\Str::uuid(),
+            'id' => Str::uuid()->toString(),
             'name' => $validated['name'],
             'edition_id' => $validated['edition_id'],
             'scoring_system_id' => $validated['scoring_system_id'],
             'owner_id' => Auth::id(),
-            'invite_code' => \Illuminate\Support\Str::random(8),
+            'invite_code' => Str::random(8),
+            'max_players' => $validated['max_players'],
+            'is_public' => $validated['is_public'],
         ]);
 
-        $league->users()->attach(Auth::id(), ['role' => 'owner']);
+        $league->users()->attach(Auth::id(), [
+            'id' => Str::uuid()->toString(),
+            'role' => 'owner',
+        ]);
 
         return redirect()->route('leagues.show', $league->id);
     }
@@ -158,7 +168,10 @@ class LeagueController extends Controller
             return redirect()->route('leagues.show', $league->id);
         }
 
-        $league->users()->attach($request->user()->id, ['role' => 'member']);
+        $league->users()->attach($request->user()->id, [
+            'id' => Str::uuid()->toString(),
+            'role' => 'member',
+        ]);
 
         return redirect()->route('leagues.show', $league->id);
     }

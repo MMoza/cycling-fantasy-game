@@ -12,6 +12,10 @@ class ScoringSystemModel extends Model
 {
     protected $table = 'scoring_systems';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'id',
         'name',
@@ -25,6 +29,6 @@ class ScoringSystemModel extends Model
 
     public function rules(): HasMany
     {
-        return $this->hasMany(ScoringRuleModel::class);
+        return $this->hasMany(ScoringRuleModel::class, 'scoring_system_id', 'id');
     }
 }

@@ -12,6 +12,10 @@ class CompetitionModel extends Model
 {
     protected $table = 'competitions';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'id',
         'name',
@@ -27,6 +31,6 @@ class CompetitionModel extends Model
 
     public function editions(): HasMany
     {
-        return $this->hasMany(EditionModel::class);
+        return $this->hasMany(EditionModel::class, 'competition_id', 'id');
     }
 }

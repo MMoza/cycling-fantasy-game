@@ -13,6 +13,10 @@ class StageModel extends Model
 {
     protected $table = 'stages';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'id',
         'edition_id',
@@ -36,6 +40,6 @@ class StageModel extends Model
 
     public function edition(): BelongsTo
     {
-        return $this->belongsTo(EditionModel::class);
+        return $this->belongsTo(EditionModel::class, 'edition_id', 'id');
     }
 }

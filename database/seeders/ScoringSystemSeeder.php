@@ -110,21 +110,31 @@ class ScoringSystemSeeder extends Seeder
 
     private function persistSystem(ScoringSystem $system): void
     {
-        ScoringSystemModel::create([
-            'id' => $system->id,
-            'name' => $system->name,
-            'type' => $system->type,
-            'description' => $system->description,
+        $systemModel = ScoringSystemModel::firstOrNew([
+            'type' => $system->type->value,
         ]);
 
+        if (! $systemModel->exists) {
+            $systemModel->id = $system->id;
+        }
+
+        $systemModel->name = $system->name;
+        $systemModel->description = $system->description;
+        $systemModel->save();
+
         foreach ($system->rules as $rule) {
-            ScoringRuleModel::create([
-                'id' => $rule->id,
-                'scoring_system_id' => $rule->scoringSystemId,
-                'type' => $rule->type,
-                'context' => $rule->context,
-                'points' => $rule->points,
+            $ruleModel = ScoringRuleModel::firstOrNew([
+                'scoring_system_id' => $systemModel->id,
+                'type' => $rule->type->value,
             ]);
+
+            if (! $ruleModel->exists) {
+                $ruleModel->id = $rule->id;
+            }
+
+            $ruleModel->context = $rule->context;
+            $ruleModel->points = $rule->points;
+            $ruleModel->save();
         }
     }
 }

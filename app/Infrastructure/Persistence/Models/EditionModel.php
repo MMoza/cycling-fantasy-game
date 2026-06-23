@@ -13,6 +13,10 @@ class EditionModel extends Model
 {
     protected $table = 'editions';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'id',
         'competition_id',
@@ -31,16 +35,16 @@ class EditionModel extends Model
 
     public function competition(): BelongsTo
     {
-        return $this->belongsTo(CompetitionModel::class);
+        return $this->belongsTo(CompetitionModel::class, 'competition_id', 'id');
     }
 
     public function leagues(): HasMany
     {
-        return $this->hasMany(LeagueModel::class);
+        return $this->hasMany(LeagueModel::class, 'edition_id', 'id');
     }
 
     public function stages(): HasMany
     {
-        return $this->hasMany(StageModel::class);
+        return $this->hasMany(StageModel::class, 'edition_id', 'id');
     }
 }

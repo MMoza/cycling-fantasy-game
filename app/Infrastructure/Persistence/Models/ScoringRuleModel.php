@@ -13,6 +13,10 @@ class ScoringRuleModel extends Model
 {
     protected $table = 'scoring_rules';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'id',
         'scoring_system_id',
@@ -29,6 +33,6 @@ class ScoringRuleModel extends Model
 
     public function scoringSystem(): BelongsTo
     {
-        return $this->belongsTo(ScoringSystemModel::class);
+        return $this->belongsTo(ScoringSystemModel::class, 'scoring_system_id', 'id');
     }
 }

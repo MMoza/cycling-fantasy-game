@@ -11,6 +11,10 @@ class StageResultModel extends Model
 {
     protected $table = 'stage_results';
 
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'id',
         'stage_id',
@@ -26,6 +30,6 @@ class StageResultModel extends Model
 
     public function stage(): BelongsTo
     {
-        return $this->belongsTo(StageModel::class);
+        return $this->belongsTo(StageModel::class, 'stage_id', 'id');
     }
 }
