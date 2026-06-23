@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use Illuminate\Support\Str;
+
 readonly class StageResult
 {
     public function __construct(
@@ -24,12 +26,24 @@ readonly class StageResult
         ?string $gap = null,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             stageId: $stageId,
             riderId: $riderId,
             position: $position,
             time: $time,
             gap: $gap,
+        );
+    }
+
+    public static function fromRow(\stdClass $row): self
+    {
+        return new self(
+            id: $row->id,
+            stageId: $row->stage_id,
+            riderId: $row->rider_id,
+            position: (int) $row->position,
+            time: $row->time ?? null,
+            gap: $row->gap ?? null,
         );
     }
 

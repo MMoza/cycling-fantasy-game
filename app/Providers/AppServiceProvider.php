@@ -10,6 +10,7 @@ use App\Presentation\Console\ImportResultsCommand;
 use App\Presentation\Console\ImportStagesCommand;
 use App\Presentation\Console\LockPredictionsCommand;
 use App\Presentation\Console\RebuildScoresCommand;
+use App\Presentation\Console\ScorePreRaceCommand;
 use App\Presentation\Console\ScoreStageCommand;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -30,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
             ImportResultsCommand::class,
             ScoreStageCommand::class,
             RebuildScoresCommand::class,
+            ScorePreRaceCommand::class,
             LockPredictionsCommand::class,
         ]);
     }

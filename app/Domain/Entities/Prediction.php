@@ -6,6 +6,8 @@ namespace App\Domain\Entities;
 
 use App\Domain\ValueObjects\PredictionCategory;
 use App\Domain\ValueObjects\PredictionType;
+use App\Infrastructure\Persistence\Models\PredictionModel as EloquentPrediction;
+use Illuminate\Support\Str;
 
 readonly class Prediction
 {
@@ -30,7 +32,7 @@ readonly class Prediction
         ?string $stageId = null,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             userId: $userId,
             leagueId: $leagueId,
             type: $type,
@@ -38,6 +40,20 @@ readonly class Prediction
             stageId: $stageId,
             predictionValue: $predictionValue,
             lockedAt: null,
+        );
+    }
+
+    public static function fromModel(EloquentPrediction $model): self
+    {
+        return new self(
+            id: $model->id,
+            userId: $model->user_id,
+            leagueId: $model->league_id,
+            type: $model->type,
+            category: $model->category,
+            stageId: $model->stage_id,
+            predictionValue: $model->prediction_value ?? [],
+            lockedAt: $model->locked_at?->toIso8601String(),
         );
     }
 
