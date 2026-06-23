@@ -27,9 +27,8 @@ class ClassificationController extends Controller
             ->selectRaw('user_id, SUM(points) as total_points')
             ->groupBy('user_id')
             ->with('user')
-            ->get()
-            ->sortByDesc('total_points')
-            ->values();
+            ->orderBy('total_points', 'desc')
+            ->get();
 
         $leaderboard = $scores->map(fn ($score, $index) => [
             'rank' => $index + 1,
@@ -39,7 +38,7 @@ class ClassificationController extends Controller
             'is_current_user' => $score->user_id === $user->id,
         ]);
 
-        $topPoints = $leaderboard->first()?->points ?? 0;
+        $topPoints = $leaderboard->first()['points'] ?? 0;
 
         $leaderboard = $leaderboard->map(fn ($entry) => [
             ...$entry,
