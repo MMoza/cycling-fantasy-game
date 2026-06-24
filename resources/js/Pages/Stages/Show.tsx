@@ -34,7 +34,7 @@ interface Navigation {
 
 interface Prediction {
     category: string;
-    value: string | string[];
+    value: string | string[] | Record<string, string>;
     locked_at: string | null;
 }
 
@@ -234,6 +234,25 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
 
     const categories = PREDICTION_CATEGORIES.filter((c) => c.key !== 'stage_combativo' || !isTimeTrial);
 
+    const riderMap = useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const r of availableRiders) {
+            map[r.value] = r.label;
+        }
+        return map;
+    }, [availableRiders]);
+
+    const resolvePredictionValue = (value: string | string[] | Record<string, string>): string => {
+        if (Array.isArray(value)) {
+            return value.map((id) => riderMap[id] ?? id).join(', ');
+        }
+        if (typeof value === 'object' && value !== null) {
+            const id = value.rider_id ?? Object.values(value)[0];
+            return riderMap[id] ?? id;
+        }
+        return riderMap[value] ?? value;
+    };
+
     const DUPLICABLE_KEYS = ['stage_leader', 'stage_combativo'];
 
     const getOptions = (key: string) => {
@@ -246,7 +265,7 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
         const snapshot: Record<string, string> = {};
         categories.forEach(({ key }) => {
             const existing = predictions[key];
-            snapshot[key] = existing ? (Array.isArray(existing.value) ? existing.value.join(', ') : String(existing.value)) : '';
+            snapshot[key] = existing ? String(resolvePredictionValue(existing.value)) : '';
         });
         return snapshot;
     };
@@ -483,9 +502,7 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
                                             <Label className="text-muted-foreground">{label}</Label>
                                             <p className="rounded-lg border bg-muted px-3 py-2 text-sm">
                                                 {prediction ? (
-                                                    Array.isArray(prediction.value)
-                                                        ? prediction.value.join(', ')
-                                                        : prediction.value
+                                                    resolvePredictionValue(prediction.value)
                                                 ) : (
                                                     <span className="italic text-muted-foreground">Sin pronóstico</span>
                                                 )}

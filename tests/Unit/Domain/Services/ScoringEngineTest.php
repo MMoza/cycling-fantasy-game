@@ -15,7 +15,7 @@ use App\Domain\ValueObjects\ScoringSystemType;
 
 test('calculates correct stage winner prediction', function () {
     $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
-    $rule = ScoringRule::create($system->id, ScoringRuleType::StageWinner, 50);
+    $rule = ScoringRule::create($system->id, ScoringRuleType::StageWinner, 50, difficulty: 1);
     $system = $system->addRule($rule);
 
     $engine = new ScoringEngine($system);
@@ -31,7 +31,7 @@ test('calculates correct stage winner prediction', function () {
 
     $result = StageResult::create('stage-uuid', 'rider-1', 1, '4:30:00');
 
-    $event = $engine->calculateStageScore($prediction, $result);
+    $event = $engine->calculateStageScore($prediction, $result, stageDifficulty: 1);
 
     expect($event->points)->toBe(50);
     expect($event->isPositive())->toBeTrue();
@@ -40,7 +40,7 @@ test('calculates correct stage winner prediction', function () {
 
 test('calculates incorrect stage winner prediction', function () {
     $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
-    $rule = ScoringRule::create($system->id, ScoringRuleType::StageWinner, 50);
+    $rule = ScoringRule::create($system->id, ScoringRuleType::StageWinner, 50, difficulty: 1);
     $system = $system->addRule($rule);
 
     $engine = new ScoringEngine($system);
@@ -56,7 +56,7 @@ test('calculates incorrect stage winner prediction', function () {
 
     $result = StageResult::create('stage-uuid', 'rider-2', 1, '4:30:00');
 
-    $event = $engine->calculateStageScore($prediction, $result);
+    $event = $engine->calculateStageScore($prediction, $result, stageDifficulty: 1);
 
     expect($event->points)->toBe(0);
     expect($event->isZero())->toBeTrue();
@@ -78,10 +78,15 @@ test('calculates total score from events', function () {
     expect($total)->toBe(100);
 });
 
-test('calculates gc top 5 prediction', function () {
+test('calculates gc top 5 exact match', function () {
     $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
-    $rule = ScoringRule::create($system->id, ScoringRuleType::GcTop5, 100);
-    $system = $system->addRule($rule);
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 100, position: 1))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 75, position: 2))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 50, position: 3))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 30, position: 4))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 20, position: 5))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5Partial, 15));
 
     $engine = new ScoringEngine($system);
 
@@ -99,16 +104,31 @@ test('calculates gc top 5 prediction', function () {
         ],
     );
 
-    $event = $engine->calculateGcScore($prediction, 'rider-1', 1);
+    $events = $engine->calculateGcTop5Score($prediction, [
+        1 => 'rider-1',
+        2 => 'rider-2',
+        3 => 'rider-3',
+        4 => 'rider-4',
+        5 => 'rider-5',
+    ]);
 
-    expect($event->points)->toBe(100);
-    expect($event->description)->toContain('Acierto');
+    expect($events)->toHaveCount(5);
+    expect($events[0]->points)->toBe(100);
+    expect($events[1]->points)->toBe(75);
+    expect($events[2]->points)->toBe(50);
+    expect($events[3]->points)->toBe(30);
+    expect($events[4]->points)->toBe(20);
 });
 
-test('calculates incorrect gc top 5 prediction', function () {
+test('calculates gc top 5 partial match', function () {
     $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
-    $rule = ScoringRule::create($system->id, ScoringRuleType::GcTop5, 100);
-    $system = $system->addRule($rule);
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 100, position: 1))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 75, position: 2))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 50, position: 3))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 30, position: 4))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5, 20, position: 5))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::GcTop5Partial, 15));
 
     $engine = new ScoringEngine($system);
 
@@ -118,16 +138,46 @@ test('calculates incorrect gc top 5 prediction', function () {
         type: PredictionType::PreRace,
         category: PredictionCategory::GcTop5,
         predictionValue: [
-            '1' => 'rider-1',
-            '2' => 'rider-2',
-            '3' => 'rider-3',
-            '4' => 'rider-4',
-            '5' => 'rider-5',
+            '1' => 'rider-a',
+            '2' => 'rider-b',
+            '3' => 'rider-c',
+            '4' => 'rider-d',
+            '5' => 'rider-e',
         ],
     );
 
-    $event = $engine->calculateGcScore($prediction, 'rider-99', 1);
+    $events = $engine->calculateGcTop5Score($prediction, [
+        1 => 'rider-1',
+        2 => 'rider-2',
+        3 => 'rider-a',
+        4 => 'rider-4',
+        5 => 'rider-e',
+    ]);
 
-    expect($event->points)->toBe(0);
-    expect($event->description)->toContain('Fallo');
+    expect($events)->toHaveCount(2);
+    expect($events[0]->points)->toBe(15);
+    expect($events[0]->description)->toContain('parcial');
+    expect($events[1]->points)->toBe(20);
+    expect($events[1]->description)->toContain('exacto');
+});
+
+test('calculates simple prediction score', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $rule = ScoringRule::create($system->id, ScoringRuleType::SuperCombativo, 30);
+    $system = $system->addRule($rule);
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreRace,
+        category: PredictionCategory::SuperCombativo,
+        predictionValue: ['rider_id' => 'rider-1'],
+    );
+
+    $event = $engine->calculateSimpleScore($prediction, 'rider-1', ScoringRuleType::SuperCombativo);
+
+    expect($event->points)->toBe(30);
+    expect($event->isPositive())->toBeTrue();
 });

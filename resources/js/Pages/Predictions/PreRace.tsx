@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ const PRE_RACE_CATEGORIES = [
 
 interface Prediction {
     category: string;
-    value: string | string[];
+    value: string | string[] | Record<string, string>;
     locked_at: string | null;
 }
 
@@ -32,10 +32,30 @@ interface PreRaceProps {
     };
     is_locked: boolean;
     predictions: Record<string, Prediction>;
+    availableRiders: { value: string; label: string }[];
 }
 
-export default function PreRace({ league_id, league_name, competition, is_locked, predictions }: PreRaceProps) {
+export default function PreRace({ league_id, league_name, competition, is_locked, predictions, availableRiders }: PreRaceProps) {
     const { errors } = usePage().props as any;
+
+    const riderMap = useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const r of availableRiders) {
+            map[r.value] = r.label;
+        }
+        return map;
+    }, [availableRiders]);
+
+    const resolvePredictionValue = (value: string | string[] | Record<string, string>): string => {
+        if (Array.isArray(value)) {
+            return value.map((id) => riderMap[id] ?? id).join(', ');
+        }
+        if (typeof value === 'object' && value !== null) {
+            const id = value.rider_id ?? Object.values(value)[0];
+            return riderMap[id] ?? id;
+        }
+        return riderMap[value] ?? value;
+    };
 
     const [formData, setFormData] = useState<Record<string, string>>(() => {
         const initial: Record<string, string> = {};
@@ -123,9 +143,7 @@ export default function PreRace({ league_id, league_name, competition, is_locked
                                             <Label className="text-muted-foreground">{label}</Label>
                                             <p className="rounded-lg border bg-muted px-3 py-2 text-sm">
                                                 {prediction ? (
-                                                    Array.isArray(prediction.value)
-                                                        ? prediction.value.join(', ')
-                                                        : prediction.value
+                                                    resolvePredictionValue(prediction.value)
                                                 ) : (
                                                     <span className="italic text-muted-foreground">Sin pronóstico</span>
                                                 )}

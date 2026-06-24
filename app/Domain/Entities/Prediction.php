@@ -44,6 +44,12 @@ readonly class Prediction
 
     public static function fromModel(EloquentPrediction $model): self
     {
+        $value = $model->prediction_value;
+
+        if (is_string($value)) {
+            $value = ['rider_id' => $value];
+        }
+
         return new self(
             id: $model->id,
             userId: $model->user_id,
@@ -51,7 +57,7 @@ readonly class Prediction
             type: $model->type,
             category: $model->category,
             stageId: $model->stage_id,
-            predictionValue: $model->prediction_value ?? [],
+            predictionValue: $value ?? [],
             lockedAt: $model->locked_at?->toIso8601String(),
         );
     }

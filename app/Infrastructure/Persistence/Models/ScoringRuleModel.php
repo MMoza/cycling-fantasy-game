@@ -23,12 +23,16 @@ class ScoringRuleModel extends Model
         'type',
         'context',
         'points',
+        'difficulty',
+        'position',
     ];
 
     protected $casts = [
         'type' => ScoringRuleType::class,
         'context' => ScoringRuleContext::class,
         'points' => 'integer',
+        'difficulty' => 'integer',
+        'position' => 'integer',
     ];
 
     public function scoringSystem(): BelongsTo

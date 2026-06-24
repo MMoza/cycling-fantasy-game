@@ -67,6 +67,11 @@ export default function Index({ competition, editions }: { competition: { id: st
                                                     Etapas
                                                 </Link>
                                             </Button>
+                                            <Button variant="outline" size="sm" asChild>
+                                                <Link href={route('admin.editions.final-classifications', edition.id)}>
+                                                    Clasifs.
+                                                </Link>
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}

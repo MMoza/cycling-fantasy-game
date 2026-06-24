@@ -6,6 +6,7 @@ namespace App\Domain\Services;
 
 use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoreEvent;
+use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
 use App\Domain\Entities\StageResult;
 use App\Domain\ValueObjects\PredictionCategory;
@@ -21,19 +22,35 @@ class ScoringEngine
     public function calculateStageScore(
         Prediction $prediction,
         StageResult $actualResult,
+        int $stageDifficulty,
         ?string $stageId = null,
     ): ScoreEvent {
         $ruleType = $this->getRuleTypeFromCategory($prediction->category);
-        $points = $this->scoringSystem->getPointsForRule($ruleType);
-        $isCorrect = $this->isPredictionCorrect($prediction, $actualResult);
+        $predictedRider = $this->getPredictedRiderId($prediction);
 
-        $finalPoints = $isCorrect ? $points : 0;
-        $description = $this->buildDescription($prediction->category, $actualResult, $isCorrect);
+        $isCorrect = match ($prediction->category) {
+            PredictionCategory::StageWinner => $actualResult->position === 1 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StageSecond => $actualResult->position === 2 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StageThird => $actualResult->position === 3 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StageLeader => $predictedRider === $actualResult->riderId && $actualResult->isGcLeader,
+            PredictionCategory::StageCombativo => $predictedRider === $actualResult->riderId && $actualResult->isCombativo,
+            default => $predictedRider === $actualResult->riderId,
+        };
+
+        $rule = $this->findRule($ruleType, $stageDifficulty);
+        $finalPoints = $isCorrect && $rule ? $rule->points : 0;
+
+        $description = sprintf(
+            '%s: %s (%s)',
+            $isCorrect ? 'Acierto' : 'Fallo',
+            $prediction->category->label(),
+            $actualResult->isWinner() ? 'Ganador' : "Posición {$actualResult->position}",
+        );
 
         return ScoreEvent::create(
             userId: $prediction->userId,
             leagueId: $prediction->leagueId,
-            scoringRuleId: $this->getRuleId($ruleType),
+            scoringRuleId: $rule?->id ?? '',
             points: $finalPoints,
             description: $description,
             context: "stage_{$actualResult->position}",
@@ -41,31 +58,124 @@ class ScoringEngine
         );
     }
 
-    public function calculateGcScore(
+    public function calculateGcTop5Score(
+        Prediction $prediction,
+        array $actualTop5,
+    ): array {
+        $events = [];
+
+        foreach ($actualTop5 as $position => $actualRiderId) {
+            $predictedRiderId = $this->getPredictedRiderAtPosition($prediction, $position);
+            $isExact = $predictedRiderId === $actualRiderId;
+
+            $ruleType = $isExact ? ScoringRuleType::GcTop5 : ScoringRuleType::GcTop5Partial;
+            $rule = $this->findRule($ruleType, position: $isExact ? $position : null);
+
+            if (! $rule) {
+                continue;
+            }
+
+            $isCorrect = $isExact || $this->isRiderInTop5($predictedRiderId, $actualTop5);
+
+            if (! $isCorrect) {
+                continue;
+            }
+
+            $events[] = ScoreEvent::create(
+                userId: $prediction->userId,
+                leagueId: $prediction->leagueId,
+                scoringRuleId: $rule->id,
+                points: $rule->points,
+                description: sprintf(
+                    '%s: Top 5 General (Posición %d)',
+                    $isExact ? 'Acierto exacto' : 'Acierto parcial',
+                    $position,
+                ),
+                context: "gc_top_5_pos_{$position}",
+            );
+        }
+
+        return $events;
+    }
+
+    public function calculateJerseyScore(
+        Prediction $prediction,
+        array $actualPodium,
+        ScoringRuleType $exactType,
+        ScoringRuleType $partialType,
+    ): array {
+        $events = [];
+
+        foreach ($actualPodium as $position => $actualRiderId) {
+            $predictedRiderId = $this->getPredictedRiderAtPosition($prediction, $position);
+            $isExact = $predictedRiderId === $actualRiderId;
+
+            $ruleType = $isExact ? $exactType : $partialType;
+            $rule = $this->findRule($ruleType, position: $isExact ? $position : null);
+
+            if (! $rule) {
+                continue;
+            }
+
+            $isCorrect = $isExact || $this->isRiderInArray($predictedRiderId, $actualPodium);
+
+            if (! $isCorrect) {
+                continue;
+            }
+
+            $events[] = ScoreEvent::create(
+                userId: $prediction->userId,
+                leagueId: $prediction->leagueId,
+                scoringRuleId: $rule->id,
+                points: $rule->points,
+                description: sprintf(
+                    '%s: %s (Posición %d)',
+                    $isExact ? 'Acierto exacto' : 'Acierto parcial',
+                    $prediction->category->label(),
+                    $position,
+                ),
+                context: "{$prediction->category->value}_pos_{$position}",
+            );
+        }
+
+        return $events;
+    }
+
+    public function calculateSimpleScore(
         Prediction $prediction,
         string $actualRiderId,
-        int $actualPosition,
+        ScoringRuleType $ruleType,
     ): ScoreEvent {
-        $ruleType = $this->getRuleTypeFromCategory($prediction->category);
-        $points = $this->scoringSystem->getPointsForRule($ruleType);
-        $isCorrect = $prediction->predictionValue[$actualPosition] === $actualRiderId;
-
-        $finalPoints = $isCorrect ? $points : 0;
-        $description = $this->buildGcDescription($prediction->category, $actualPosition, $isCorrect);
+        $predictedRiderId = $this->getPredictedRiderId($prediction);
+        $isCorrect = $predictedRiderId === $actualRiderId;
+        $rule = $this->findRule($ruleType);
 
         return ScoreEvent::create(
             userId: $prediction->userId,
             leagueId: $prediction->leagueId,
-            scoringRuleId: $this->getRuleId($ruleType),
-            points: $finalPoints,
-            description: $description,
-            context: 'gc_final',
+            scoringRuleId: $rule?->id ?? '',
+            points: $isCorrect && $rule ? $rule->points : 0,
+            description: sprintf(
+                '%s: %s',
+                $isCorrect ? 'Acierto' : 'Fallo',
+                $prediction->category->label(),
+            ),
+            context: $prediction->category->value,
         );
     }
 
     public function calculateTotalScore(Collection $scoreEvents): int
     {
         return $scoreEvents->sum(fn (ScoreEvent $event) => $event->points);
+    }
+
+    private function findRule(ScoringRuleType $type, ?int $difficulty = null, ?int $position = null): ?ScoringRule
+    {
+        return $this->scoringSystem->rules->first(
+            fn (ScoringRule $rule) => $rule->type === $type
+                && ($difficulty === null || $rule->difficulty === $difficulty || $rule->difficulty === null)
+                && ($position === null || $rule->position === $position)
+        );
     }
 
     private function getRuleTypeFromCategory(PredictionCategory $category): ScoringRuleType
@@ -85,44 +195,37 @@ class ScoringEngine
         };
     }
 
-    private function isPredictionCorrect(Prediction $prediction, StageResult $actualResult): bool
+    private function getPredictedRiderId(Prediction $prediction): ?string
     {
-        $predictedRider = $prediction->predictionValue['rider_id'] ?? null;
-
-        return match ($prediction->category) {
-            PredictionCategory::StageWinner => $actualResult->position === 1 && $predictedRider === $actualResult->riderId,
-            PredictionCategory::StageSecond => $actualResult->position === 2 && $predictedRider === $actualResult->riderId,
-            PredictionCategory::StageThird => $actualResult->position === 3 && $predictedRider === $actualResult->riderId,
-            default => $predictedRider === $actualResult->riderId,
-        };
+        return $prediction->predictionValue['rider_id'] ?? null;
     }
 
-    private function buildDescription(
-        PredictionCategory $category,
-        StageResult $result,
-        bool $isCorrect,
-    ): string {
-        $label = $category->label();
-        $status = $isCorrect ? 'Acierto' : 'Fallo';
-
-        return "{$status}: {$label} (Posición: {$result->position})";
-    }
-
-    private function buildGcDescription(
-        PredictionCategory $category,
-        int $position,
-        bool $isCorrect,
-    ): string {
-        $label = $category->label();
-        $status = $isCorrect ? 'Acierto' : 'Fallo';
-
-        return "{$status}: {$label} (Posición: {$position})";
-    }
-
-    private function getRuleId(ScoringRuleType $type): string
+    private function getPredictedRiderAtPosition(Prediction $prediction, int $position): ?string
     {
-        $rule = $this->scoringSystem->rules->first(fn ($rule) => $rule->type === $type);
+        $riders = $prediction->predictionValue;
 
-        return $rule?->id ?? '';
+        if (is_array($riders) && isset($riders[$position])) {
+            return $riders[$position];
+        }
+
+        return null;
+    }
+
+    private function isRiderInTop5(?string $riderId, array $actualTop5): bool
+    {
+        if (! $riderId) {
+            return false;
+        }
+
+        return in_array($riderId, $actualTop5, true);
+    }
+
+    private function isRiderInArray(?string $riderId, array $riders): bool
+    {
+        if (! $riderId) {
+            return false;
+        }
+
+        return in_array($riderId, $riders, true);
     }
 }

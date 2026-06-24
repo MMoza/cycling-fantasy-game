@@ -35,7 +35,9 @@ class ScoreStageCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info("Scoring predictions for: {$stage->name}");
+        $stageDifficulty = $stage->difficulty ?? 1;
+
+        $this->info("Scoring predictions for: {$stage->name} (difficulty: {$stageDifficulty})");
 
         $resultsData = DB::table('stage_results')
             ->where('stage_id', $stageId)
@@ -107,7 +109,7 @@ class ScoreStageCommand extends Command
                 $prediction = Prediction::fromModel($predictionModel);
 
                 foreach ($stageResults as $stageResult) {
-                    $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageId);
+                    $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageDifficulty, $stageId);
 
                     if ($scoreEvent->points > 0) {
                         $this->persistScoreEvent($scoreEvent);
@@ -136,6 +138,8 @@ class ScoreStageCommand extends Command
                     scoringSystemId: $system->id,
                     type: $rule->type,
                     points: $rule->points,
+                    difficulty: $rule->difficulty,
+                    position: $rule->position,
                 )
             );
         }

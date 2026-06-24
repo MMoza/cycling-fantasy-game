@@ -151,7 +151,7 @@ test('user can update existing predictions', function () {
         'stage_id' => $this->stage->id,
         'user_id' => $this->user->id,
         'category' => 'stage_winner',
-        'prediction_value' => '"New Rider"',
+        'prediction_value' => '{"rider_id":"New Rider"}',
     ]);
 
     expect(PredictionModel::where('league_id', $this->league->id)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Presentation\Http\Controllers\Admin\CompetitionController;
 use App\Presentation\Http\Controllers\Admin\CompetitionSetupController;
 use App\Presentation\Http\Controllers\Admin\EditionController;
+use App\Presentation\Http\Controllers\Admin\FinalClassificationController;
 use App\Presentation\Http\Controllers\Admin\RiderController;
 use App\Presentation\Http\Controllers\Admin\TeamController;
 use App\Presentation\Http\Controllers\Admin\UserController;
@@ -61,6 +62,10 @@ Route::middleware(['auth', 'verified', 'super-admin'])->prefix('admin')->name('a
     Route::post('/competitions/{competitionId}/editions', [EditionController::class, 'store'])->name('competitions.editions.store');
     Route::get('/competitions/{competitionId}/editions/{id}/edit', [EditionController::class, 'edit'])->name('competitions.editions.edit');
     Route::patch('/competitions/{competitionId}/editions/{id}', [EditionController::class, 'update'])->name('competitions.editions.update');
+
+    // Final classifications
+    Route::get('/editions/{editionId}/final-classifications', [FinalClassificationController::class, 'edit'])->name('editions.final-classifications');
+    Route::post('/editions/{editionId}/final-classifications', [FinalClassificationController::class, 'update'])->name('editions.final-classifications.update');
 
     // Competition Setup (participants)
     Route::get('/competitions/{competitionId}/editions/{editionId}/setup', [CompetitionSetupController::class, 'show'])->name('competitions.setup');

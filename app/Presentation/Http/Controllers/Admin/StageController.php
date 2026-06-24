@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers\Admin;
 
+use App\Domain\Entities\Prediction;
+use App\Domain\Entities\ScoringRule;
+use App\Domain\Entities\ScoringSystem;
+use App\Domain\Entities\StageResult as StageResultEntity;
+use App\Domain\Services\ScoringEngine;
 use App\Domain\ValueObjects\CompetitionType;
+use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\EditionModel;
+use App\Infrastructure\Persistence\Models\PredictionModel;
+use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -263,6 +271,10 @@ class StageController extends Controller
     {
         $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
 
+        if ($stage->status === StageStatus::Finished) {
+            return redirect()->back()->withErrors(['stage' => 'La etapa ya está finalizada']);
+        }
+
         $validated = $request->validate([
             'results' => 'required|array|min:1',
             'results.*.rider_id' => 'required|string',
@@ -273,9 +285,36 @@ class StageController extends Controller
             'results.*.is_combativo' => 'nullable|boolean',
         ]);
 
+        $results = $validated['results'];
+        $isRoadStage = $stage->type !== StageType::TimeTrial && $stage->type !== StageType::TeamTimeTrial && $stage->type !== StageType::Rest;
+        $difficulty = $stage->difficulty ?? 1;
+
+        $hasGcLeader = collect($results)->contains(fn ($r) => ($r['is_gc_leader'] ?? false) === true);
+        $hasCombativo = collect($results)->contains(fn ($r) => ($r['is_combativo'] ?? false) === true);
+        $hasEnoughPodium = collect($results)->count() >= 1;
+        $hasFullPodium = collect($results)->count() >= 3;
+
+        $errors = [];
+
+        if (! $hasGcLeader) {
+            $errors[] = 'Debe marcar un corredor como líder de GC';
+        }
+
+        if ($isRoadStage && ! $hasCombativo) {
+            $errors[] = 'Debe marcar un corredor como combativo del día';
+        }
+
+        if ($difficulty >= 3 && ! $hasFullPodium) {
+            $errors[] = 'Las etapas de 3 estrellas requieren al menos 3 posiciones (podio completo)';
+        }
+
+        if (! empty($errors)) {
+            return redirect()->back()->withErrors(['results' => implode('. ', $errors)]);
+        }
+
         DB::table('stage_results')->where('stage_id', $stage->id)->delete();
 
-        foreach ($validated['results'] as $result) {
+        foreach ($results as $result) {
             DB::table('stage_results')->insert([
                 'id' => Str::uuid()->toString(),
                 'stage_id' => $stage->id,
@@ -292,7 +331,87 @@ class StageController extends Controller
 
         $stage->update(['status' => StageStatus::Finished->value]);
 
+        $this->scoreStage($stage);
+
         return redirect()->route('admin.editions.stages.show', [$editionId, $id]);
+    }
+
+    private function scoreStage(StageModel $stage): void
+    {
+        $stageDifficulty = $stage->difficulty ?? 1;
+
+        $resultsData = DB::table('stage_results')
+            ->where('stage_id', $stage->id)
+            ->orderBy('position')
+            ->get();
+
+        $stageResults = $resultsData->map(fn ($row) => StageResultEntity::fromRow($row));
+
+        $leagues = DB::table('leagues')
+            ->where('edition_id', $stage->edition_id)
+            ->get();
+
+        foreach ($leagues as $league) {
+            $scoringSystemModel = ScoringSystemModel::with('rules')->find($league->scoring_system_id);
+
+            if (! $scoringSystemModel) {
+                continue;
+            }
+
+            $system = $this->buildScoringSystem($scoringSystemModel);
+            $engine = new ScoringEngine($system);
+
+            $predictions = PredictionModel::where('league_id', $league->id)
+                ->where('stage_id', $stage->id)
+                ->where('type', PredictionType::PreStage)
+                ->get();
+
+            foreach ($predictions as $predictionModel) {
+                $prediction = Prediction::fromModel($predictionModel);
+
+                foreach ($stageResults as $stageResult) {
+                    $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageDifficulty, $stage->id);
+
+                    if ($scoreEvent->points > 0) {
+                        DB::table('score_events')->insert([
+                            'id' => $scoreEvent->id,
+                            'user_id' => $scoreEvent->userId,
+                            'league_id' => $scoreEvent->leagueId,
+                            'scoring_rule_id' => $scoreEvent->scoringRuleId,
+                            'points' => $scoreEvent->points,
+                            'description' => $scoreEvent->description,
+                            'context' => $scoreEvent->context,
+                            'stage_id' => $scoreEvent->stageId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    private function buildScoringSystem(ScoringSystemModel $model): ScoringSystem
+    {
+        $system = ScoringSystem::create(
+            name: $model->name,
+            type: $model->type,
+            description: $model->description,
+        );
+
+        foreach ($model->rules as $rule) {
+            $system = $system->addRule(
+                ScoringRule::create(
+                    scoringSystemId: $system->id,
+                    type: $rule->type,
+                    points: $rule->points,
+                    difficulty: $rule->difficulty,
+                    position: $rule->position,
+                )
+            );
+        }
+
+        return $system;
     }
 
     public function markUpcoming(string $editionId, string $id): RedirectResponse

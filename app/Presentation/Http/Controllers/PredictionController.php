@@ -66,7 +66,7 @@ class PredictionController extends Controller
                 ],
                 [
                     'id' => Str::uuid()->toString(),
-                    'prediction_value' => $prediction['value'],
+                    'prediction_value' => ['rider_id' => $prediction['value']],
                 ]
             );
         }
@@ -137,6 +137,14 @@ class PredictionController extends Controller
         ]);
 
         foreach ($validated['predictions'] as $prediction) {
+            $value = $prediction['value'];
+
+            if ($prediction['category'] === 'gc_top_5' && is_string($value)) {
+                $value = array_map('trim', explode(',', $value));
+            } elseif (is_string($value)) {
+                $value = ['rider_id' => $value];
+            }
+
             PredictionModel::updateOrCreate(
                 [
                     'user_id' => $user->id,
@@ -147,7 +155,7 @@ class PredictionController extends Controller
                 ],
                 [
                     'id' => Str::uuid()->toString(),
-                    'prediction_value' => $prediction['value'],
+                    'prediction_value' => $value,
                 ]
             );
         }

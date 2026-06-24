@@ -4,137 +4,92 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Domain\Entities\ScoringRule;
-use App\Domain\Entities\ScoringSystem;
 use App\Domain\ValueObjects\ScoringRuleType;
 use App\Domain\ValueObjects\ScoringSystemType;
-use App\Infrastructure\Persistence\Models\ScoringRuleModel;
-use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ScoringSystemSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->createStandard();
-        $this->createAggressive();
-        $this->createConservative();
-    }
-
-    private function createStandard(): void
-    {
-        $system = ScoringSystem::create(
-            name: 'Estándar',
-            type: ScoringSystemType::Standard,
-            description: 'Puntuación equilibrada',
-        );
-
-        $rules = [
-            [ScoringRuleType::StageWinner, 50],
-            [ScoringRuleType::StageSecond, 30],
-            [ScoringRuleType::StageThird, 20],
-            [ScoringRuleType::StageLeader, 10],
-            [ScoringRuleType::StageCombativo, 15],
-            [ScoringRuleType::GcTop5, 100],
-            [ScoringRuleType::PointsWinner, 80],
-            [ScoringRuleType::MountainsWinner, 80],
-            [ScoringRuleType::YouthWinner, 80],
-            [ScoringRuleType::TeamsWinner, 60],
-            [ScoringRuleType::SuperCombativo, 50],
-        ];
-
-        foreach ($rules as [$type, $points]) {
-            $system = $system->addRule(ScoringRule::create($system->id, $type, $points));
+        if (DB::table('scoring_systems')->where('type', ScoringSystemType::Standard->value)->exists()) {
+            return;
         }
 
-        $this->persistSystem($system);
-    }
+        $systemId = Str::uuid()->toString();
 
-    private function createAggressive(): void
-    {
-        $system = ScoringSystem::create(
-            name: 'Agresivo',
-            type: ScoringSystemType::Aggressive,
-            description: 'Premia más al ganador, menos al resto',
-        );
-
-        $rules = [
-            [ScoringRuleType::StageWinner, 100],
-            [ScoringRuleType::StageSecond, 40],
-            [ScoringRuleType::StageThird, 20],
-            [ScoringRuleType::StageLeader, 15],
-            [ScoringRuleType::StageCombativo, 10],
-            [ScoringRuleType::GcTop5, 200],
-            [ScoringRuleType::PointsWinner, 100],
-            [ScoringRuleType::MountainsWinner, 100],
-            [ScoringRuleType::YouthWinner, 100],
-            [ScoringRuleType::TeamsWinner, 80],
-            [ScoringRuleType::SuperCombativo, 60],
-        ];
-
-        foreach ($rules as [$type, $points]) {
-            $system = $system->addRule(ScoringRule::create($system->id, $type, $points));
-        }
-
-        $this->persistSystem($system);
-    }
-
-    private function createConservative(): void
-    {
-        $system = ScoringSystem::create(
-            name: 'Conservador',
-            type: ScoringSystemType::Conservative,
-            description: 'Puntuación más repartida',
-        );
-
-        $rules = [
-            [ScoringRuleType::StageWinner, 30],
-            [ScoringRuleType::StageSecond, 25],
-            [ScoringRuleType::StageThird, 20],
-            [ScoringRuleType::StageLeader, 15],
-            [ScoringRuleType::StageCombativo, 15],
-            [ScoringRuleType::GcTop5, 80],
-            [ScoringRuleType::PointsWinner, 70],
-            [ScoringRuleType::MountainsWinner, 70],
-            [ScoringRuleType::YouthWinner, 70],
-            [ScoringRuleType::TeamsWinner, 60],
-            [ScoringRuleType::SuperCombativo, 50],
-        ];
-
-        foreach ($rules as [$type, $points]) {
-            $system = $system->addRule(ScoringRule::create($system->id, $type, $points));
-        }
-
-        $this->persistSystem($system);
-    }
-
-    private function persistSystem(ScoringSystem $system): void
-    {
-        $systemModel = ScoringSystemModel::firstOrNew([
-            'type' => $system->type->value,
+        DB::table('scoring_systems')->insert([
+            'id' => $systemId,
+            'name' => 'Estándar Tour',
+            'type' => ScoringSystemType::Standard->value,
+            'description' => 'Sistema de puntuación estándar para Grandes Vueltas. Puntuación por estrellas en etapas, clasificaciones finales y maillots.',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
-        if (! $systemModel->exists) {
-            $systemModel->id = $system->id;
-        }
+        $rules = [
+            // Stage scoring by difficulty
+            // 1-star stages
+            ['type' => ScoringRuleType::StageWinner, 'points' => 10, 'difficulty' => 1, 'position' => null],
+            ['type' => ScoringRuleType::StageCombativo, 'points' => 2, 'difficulty' => 1, 'position' => null],
+            // 2-star stages
+            ['type' => ScoringRuleType::StageWinner, 'points' => 20, 'difficulty' => 2, 'position' => null],
+            ['type' => ScoringRuleType::StageCombativo, 'points' => 4, 'difficulty' => 2, 'position' => null],
+            // 3-star stages
+            ['type' => ScoringRuleType::StageWinner, 'points' => 30, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageCombativo, 'points' => 6, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageSecond, 'points' => 15, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageThird, 'points' => 10, 'difficulty' => 3, 'position' => null],
+            // Stage leader (same for all difficulties)
+            ['type' => ScoringRuleType::StageLeader, 'points' => 5, 'difficulty' => null, 'position' => null],
 
-        $systemModel->name = $system->name;
-        $systemModel->description = $system->description;
-        $systemModel->save();
+            // Pre-race: GC Top 5
+            ['type' => ScoringRuleType::GcTop5, 'points' => 100, 'difficulty' => null, 'position' => 1],
+            ['type' => ScoringRuleType::GcTop5, 'points' => 75, 'difficulty' => null, 'position' => 2],
+            ['type' => ScoringRuleType::GcTop5, 'points' => 50, 'difficulty' => null, 'position' => 3],
+            ['type' => ScoringRuleType::GcTop5, 'points' => 30, 'difficulty' => null, 'position' => 4],
+            ['type' => ScoringRuleType::GcTop5, 'points' => 20, 'difficulty' => null, 'position' => 5],
+            ['type' => ScoringRuleType::GcTop5Partial, 'points' => 15, 'difficulty' => null, 'position' => null],
 
-        foreach ($system->rules as $rule) {
-            $ruleModel = ScoringRuleModel::firstOrNew([
-                'scoring_system_id' => $systemModel->id,
-                'type' => $rule->type->value,
+            // Pre-race: Points (Green) classification
+            ['type' => ScoringRuleType::PointsWinner, 'points' => 40, 'difficulty' => null, 'position' => 1],
+            ['type' => ScoringRuleType::PointsWinner, 'points' => 25, 'difficulty' => null, 'position' => 2],
+            ['type' => ScoringRuleType::PointsWinner, 'points' => 15, 'difficulty' => null, 'position' => 3],
+            ['type' => ScoringRuleType::PointsWinnerPartial, 'points' => 10, 'difficulty' => null, 'position' => null],
+
+            // Pre-race: Mountains (Polka dot) classification
+            ['type' => ScoringRuleType::MountainsWinner, 'points' => 40, 'difficulty' => null, 'position' => 1],
+            ['type' => ScoringRuleType::MountainsWinner, 'points' => 25, 'difficulty' => null, 'position' => 2],
+            ['type' => ScoringRuleType::MountainsWinner, 'points' => 15, 'difficulty' => null, 'position' => 3],
+            ['type' => ScoringRuleType::MountainsWinnerPartial, 'points' => 10, 'difficulty' => null, 'position' => null],
+
+            // Pre-race: Youth (White) classification
+            ['type' => ScoringRuleType::YouthWinner, 'points' => 40, 'difficulty' => null, 'position' => 1],
+            ['type' => ScoringRuleType::YouthWinner, 'points' => 25, 'difficulty' => null, 'position' => 2],
+            ['type' => ScoringRuleType::YouthWinner, 'points' => 15, 'difficulty' => null, 'position' => 3],
+            ['type' => ScoringRuleType::YouthWinnerPartial, 'points' => 10, 'difficulty' => null, 'position' => null],
+
+            // Pre-race: Teams and Super Combativo
+            ['type' => ScoringRuleType::TeamsWinner, 'points' => 30, 'difficulty' => null, 'position' => null],
+            ['type' => ScoringRuleType::SuperCombativo, 'points' => 30, 'difficulty' => null, 'position' => null],
+        ];
+
+        $now = now();
+
+        foreach ($rules as $rule) {
+            DB::table('scoring_rules')->insert([
+                'id' => Str::uuid()->toString(),
+                'scoring_system_id' => $systemId,
+                'type' => $rule['type']->value,
+                'context' => $rule['type']->context()->value,
+                'points' => $rule['points'],
+                'difficulty' => $rule['difficulty'],
+                'position' => $rule['position'],
+                'created_at' => $now,
+                'updated_at' => $now,
             ]);
-
-            if (! $ruleModel->exists) {
-                $ruleModel->id = $rule->id;
-            }
-
-            $ruleModel->context = $rule->context;
-            $ruleModel->points = $rule->points;
-            $ruleModel->save();
         }
     }
 }
