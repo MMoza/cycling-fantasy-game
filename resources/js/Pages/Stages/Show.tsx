@@ -253,6 +253,12 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
         return riderMap[value] ?? value;
     };
 
+    const extractPredictionId = (value: string | string[] | Record<string, string>): string => {
+        if (Array.isArray(value)) return value.join(', ');
+        if (typeof value === 'object' && value !== null) return value.rider_id ?? String(Object.values(value)[0] ?? '');
+        return value;
+    };
+
     const DUPLICABLE_KEYS = ['stage_leader', 'stage_combativo'];
 
     const getOptions = (key: string) => {
@@ -265,7 +271,7 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
         const snapshot: Record<string, string> = {};
         categories.forEach(({ key }) => {
             const existing = predictions[key];
-            snapshot[key] = existing ? String(resolvePredictionValue(existing.value)) : '';
+            snapshot[key] = existing ? extractPredictionId(existing.value) : '';
         });
         return snapshot;
     };

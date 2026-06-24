@@ -95,7 +95,8 @@ class StageController extends Controller
                 'locked_at' => $p->locked_at?->toIso8601String(),
             ]);
 
-        $isLocked = $stageModel->scheduled_start && now()->greaterThanOrEqualTo($stageModel->scheduled_start);
+        $isLocked = $stageModel->status === StageStatus::Ongoing
+            || ($stageModel->scheduled_start && now()->greaterThanOrEqualTo($stageModel->scheduled_start));
 
         $prevStage = StageModel::where('edition_id', $leagueModel->edition_id)
             ->where('number', '<', $stageModel->number)

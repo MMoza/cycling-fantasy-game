@@ -1,0 +1,21 @@
+@keyframes uci-rainbow-border {
+    0% { border-color: #00a3e0; }
+    20% { border-color: #ed1c24; }
+    40% { border-color: #000000; }
+    60% { border-color: #fecd05; }
+    80% { border-color: #009a44; }
+    100% { border-color: #00a3e0; }
+}
+
+@keyframes uci-rainbow-shadow {
+    0% { box-shadow: 0 0 0 2px #00a3e0; }
+    20% { box-shadow: 0 0 0 2px #ed1c24; }
+    40% { box-shadow: 0 0 0 2px #000000; }
+    60% { box-shadow: 0 0 0 2px #fecd05; }
+    80% { box-shadow: 0 0 0 2px #009a44; }
+    100% { box-shadow: 0 0 0 2px #00a3e0; }
+}
+
+.uci-rainbow-border {
+    animation: uci-rainbow-border 3s linear infinite, uci-rainbow-shadow 3s linear infinite;
+}
