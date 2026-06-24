@@ -22,6 +22,7 @@ class ScoringEngine
     public function calculateStageScore(
         Prediction $prediction,
         StageResult $actualResult,
+        ?string $stageId = null,
     ): ScoreEvent {
         $ruleType = $this->getRuleTypeFromCategory($prediction->category);
         $points = $this->scoringSystem->getPointsForRule($ruleType);
@@ -37,6 +38,7 @@ class ScoringEngine
             points: $finalPoints,
             description: $description,
             context: "stage_{$actualResult->position}",
+            stageId: $stageId,
         );
     }
 

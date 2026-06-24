@@ -20,7 +20,7 @@ test('authenticated user can access league creation page', function () {
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
         'type' => CompetitionType::GrandTour,
-        'country' => 'Francia',
+        'country_id' => createCountry(),
         'active' => true,
     ]);
 
@@ -57,7 +57,7 @@ test('authenticated user can create a league', function () {
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
         'type' => CompetitionType::GrandTour,
-        'country' => 'Francia',
+        'country_id' => createCountry(),
         'active' => true,
     ]);
 

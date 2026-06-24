@@ -5,21 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SearchableSelect from '@/components/ui/searchable-select';
 import { ArrowLeft } from 'lucide-react';
 
 interface Competition {
     id: string;
     name: string;
     type: string;
-    country: string;
+    country_id: string | null;
     active: boolean;
 }
 
-export default function Form({ competition }: { competition: Competition | null }) {
+interface CountryOption {
+    value: string;
+    label: string;
+}
+
+export default function Form({ competition, countries }: { competition: Competition | null; countries: CountryOption[] }) {
     const { data, setData, post, patch, processing, errors } = useForm({
         name: competition?.name ?? '',
         type: competition?.type ?? 'grand_tour',
-        country: competition?.country ?? '',
+        country_id: competition?.country_id ?? '',
         active: competition?.active ?? true,
     });
 
@@ -74,9 +80,13 @@ export default function Form({ competition }: { competition: Competition | null 
                                 {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="country">País</Label>
-                                <Input id="country" value={data.country} onChange={(e) => setData('country', e.target.value)} />
-                                {errors.country && <p className="text-sm text-destructive">{errors.country}</p>}
+                                <Label htmlFor="country_id">País</Label>
+                                <SearchableSelect
+                                    options={countries}
+                                    value={data.country_id}
+                                    onChange={(v) => setData('country_id', v)}
+                                />
+                                {errors.country_id && <p className="text-sm text-destructive">{errors.country_id}</p>}
                             </div>
                         </CardContent>
                         <div className="flex justify-end gap-2 border-t p-4">

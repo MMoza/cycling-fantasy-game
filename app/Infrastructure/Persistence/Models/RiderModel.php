@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -18,9 +20,11 @@ class RiderModel extends Model
 
     protected $fillable = [
         'id',
-        'name',
-        'nationality',
+        'first_name',
+        'last_name',
+        'country_id',
         'birth_date',
+        'profile_image',
     ];
 
     protected $casts = [
@@ -36,6 +40,21 @@ class RiderModel extends Model
                 $rider->id = Str::uuid()->toString();
             }
         });
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim("{$this->last_name} {$this->first_name}");
+    }
+
+    public function getAgeAttribute(): ?int
+    {
+        return (int) $this->birth_date?->diffInYears(CarbonImmutable::today());
+    }
+
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(CountryModel::class, 'country_id', 'id');
     }
 
     public function rosters(): HasMany

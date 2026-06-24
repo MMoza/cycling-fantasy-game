@@ -22,7 +22,7 @@ beforeEach(function () {
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
         'type' => CompetitionType::GrandTour,
-        'country' => 'Francia',
+        'country_id' => createCountry(),
         'active' => true,
     ]);
 

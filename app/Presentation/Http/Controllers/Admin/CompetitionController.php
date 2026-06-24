@@ -5,38 +5,49 @@ declare(strict_types=1);
 namespace App\Presentation\Http\Controllers\Admin;
 
 use App\Infrastructure\Persistence\Models\CompetitionModel;
+use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Str;
 
 class CompetitionController extends Controller
 {
     public function index(): Response
     {
-        $competitions = CompetitionModel::withCount('editions')
+        $competitions = CompetitionModel::with('country')
+            ->withCount('editions')
             ->orderBy('name')
             ->get()
             ->map(fn ($c) => [
                 'id' => $c->id,
                 'name' => $c->name,
                 'type' => $c->type->label(),
-                'country' => $c->country,
+                'country_id' => $c->country_id,
                 'active' => $c->active,
                 'editions_count' => $c->editions_count,
             ]);
 
+        $countries = CountryModel::orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
+
         return Inertia::render('Admin/Competitions/Index', [
             'competitions' => $competitions,
+            'countries' => $countries,
         ]);
     }
 
     public function create(): Response
     {
+        $countries = CountryModel::orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
+
         return Inertia::render('Admin/Competitions/Form', [
             'competition' => null,
+            'countries' => $countries,
         ]);
     }
 
@@ -45,16 +56,10 @@ class CompetitionController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|in:grand_tour,one_week,classic',
-            'country' => 'required|string|max:255',
+            'country_id' => 'required|string|size:2|exists:countries,id',
         ]);
 
-        CompetitionModel::create([
-            'id' => Str::uuid()->toString(),
-            'name' => $validated['name'],
-            'type' => $validated['type'],
-            'country' => $validated['country'],
-            'active' => true,
-        ]);
+        CompetitionModel::create($validated);
 
         return redirect()->route('admin.competitions.index');
     }
@@ -63,14 +68,19 @@ class CompetitionController extends Controller
     {
         $competition = CompetitionModel::findOrFail($id);
 
+        $countries = CountryModel::orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
+
         return Inertia::render('Admin/Competitions/Form', [
             'competition' => [
                 'id' => $competition->id,
                 'name' => $competition->name,
                 'type' => $competition->type->value,
-                'country' => $competition->country,
+                'country_id' => $competition->country_id,
                 'active' => $competition->active,
             ],
+            'countries' => $countries,
         ]);
     }
 
@@ -81,7 +91,7 @@ class CompetitionController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|in:grand_tour,one_week,classic',
-            'country' => 'required|string|max:255',
+            'country_id' => 'required|string|size:2|exists:countries,id',
             'active' => 'boolean',
         ]);
 

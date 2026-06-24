@@ -25,7 +25,7 @@ beforeEach(function () {
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
         'type' => CompetitionType::GrandTour,
-        'country' => 'Francia',
+        'country_id' => createCountry(),
         'active' => true,
     ]);
 
@@ -101,26 +101,44 @@ test('user not in league cannot access stage page', function () {
     $response->assertNotFound();
 });
 
-test('stage index redirects to first non-finished stage', function () {
+test('stage index renders all stages', function () {
     $response = $this->actingAs($this->user)->get(route('stages.index', $this->league->id));
 
-    $response->assertRedirect(route('stages.show', [$this->league->id, $this->stage2->id]));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Stages/Index')
+        ->where('league_id', $this->league->id)
+        ->has('stages', 2)
+        ->where('stages.0.id', $this->stage1->id)
+        ->where('stages.0.status', 'finished')
+        ->where('stages.1.id', $this->stage2->id)
+        ->where('stages.1.status', 'upcoming')
+        ->has('predictionsPerStage')
+        ->has('pointsPerStage')
+    );
 });
 
-test('stage index redirects to first stage when all finished', function () {
-    StageModel::where('id', $this->stage2->id)->update(['status' => StageStatus::Finished]);
-
-    $response = $this->actingAs($this->user)->get(route('stages.index', $this->league->id));
-
-    $response->assertRedirect(route('stages.show', [$this->league->id, $this->stage1->id]));
-});
-
-test('stage index redirects to league show when no stages', function () {
+test('stage index renders empty when no stages', function () {
     StageModel::truncate();
 
     $response = $this->actingAs($this->user)->get(route('stages.index', $this->league->id));
 
-    $response->assertRedirect(route('leagues.show', $this->league->id));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Stages/Index')
+        ->where('stages', [])
+    );
+});
+
+test('stage index shows points for finished stages', function () {
+    $response = $this->actingAs($this->user)->get(route('stages.index', $this->league->id));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Stages/Index')
+        ->where('stages.0.id', $this->stage1->id)
+        ->where('stages.1.id', $this->stage2->id)
+    );
 });
 
 test('stage show renders component with stage data', function () {

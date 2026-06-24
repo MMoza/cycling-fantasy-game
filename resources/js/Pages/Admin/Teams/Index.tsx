@@ -3,16 +3,25 @@ import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Eye, Edit, Bike } from 'lucide-react';
+import { FlagIcon } from '@/components/ui/flag-icon';
 
 interface Team {
     id: string;
     name: string;
-    country: string | null;
+    abbreviation: string | null;
+    country_id: string | null;
     logo_url: string | null;
     riders_count: number;
 }
 
-export default function Index({ teams }: { teams: Team[] }) {
+interface CountryOption {
+    value: string;
+    label: string;
+}
+
+export default function Index({ teams, countries }: { teams: Team[]; countries: CountryOption[] }) {
+    const countryLabel = (id: string | null) => countries.find((c) => c.value === id)?.label ?? id ?? '—';
+
     return (
         <AdminLayout>
             <Head title="Equipos" />
@@ -52,8 +61,11 @@ export default function Index({ teams }: { teams: Team[] }) {
                                             )}
                                             <div>
                                                 <p className="font-medium">{team.name}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {team.country ?? '—'} · {team.riders_count} corredores
+                                                <p className="flex items-center g-4 text-sm text-muted-foreground">
+                                                    {team.abbreviation && <span className="font-mono font-medium text-foreground/70">{team.abbreviation}</span>}
+                                                    {team.abbreviation ? ' · ' : ''}
+                                                    {team.country_id && <FlagIcon code={team.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}
+                                                    {countryLabel(team.country_id)} · {team.riders_count} corredores
                                                 </p>
                                             </div>
                                         </div>

@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Plus, Trash2, Bike } from 'lucide-react';
+import { FlagIcon } from '@/components/ui/flag-icon';
 
 interface Rider {
     id: string;
-    name: string;
-    nationality: string | null;
+    full_name: string;
+    country_id: string | null;
 }
 
 interface RosterYear {
@@ -22,14 +23,22 @@ interface RosterYear {
 
 interface AllRider {
     id: string;
-    name: string;
+    full_name: string;
 }
 
-export default function Show({ team, rosters, allRiders }: { team: { id: string; name: string; country: string | null }; rosters: RosterYear[]; allRiders: AllRider[] }) {
+interface CountryOption {
+    value: string;
+    label: string;
+}
+
+export default function Show({ team, rosters, allRiders, countries }: { team: { id: string; name: string; abbreviation: string | null; country_id: string | null }; rosters: RosterYear[]; allRiders: AllRider[]; countries: CountryOption[] }) {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
     const [selectedRider, setSelectedRider] = useState('');
 
+    const countryLabel = (id: string | null) => countries.find((c) => c.value === id)?.label ?? id ?? '—';
     const currentRoster = rosters.find((r) => r.year.toString() === selectedYear);
+    const rosteredIds = new Set(currentRoster?.riders.map((r) => r.id) ?? []);
+    const availableRiders = allRiders.filter((r) => !rosteredIds.has(r.id));
 
     const addRider = () => {
         if (selectedRider && selectedYear) {
@@ -56,8 +65,14 @@ export default function Show({ team, rosters, allRiders }: { team: { id: string;
                         </Link>
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-semibold tracking-tight">{team.name}</h1>
-                        <p className="text-sm text-muted-foreground">{team.country ?? '—'}</p>
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                            {team.name}
+                            {team.abbreviation && <span className="ml-2 font-mono text-lg font-normal text-muted-foreground">{team.abbreviation}</span>}
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            {team.country_id && <FlagIcon code={team.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}
+                            {countryLabel(team.country_id)}
+                        </p>
                     </div>
                 </div>
 
@@ -75,19 +90,25 @@ export default function Show({ team, rosters, allRiders }: { team: { id: string;
                                     min={2020}
                                     max={2100}
                                     value={selectedYear}
-                                    onChange={(e) => setSelectedYear(e.target.value)}
+                                    onChange={(e) => { setSelectedYear(e.target.value); setSelectedRider(''); }}
                                 />
                             </div>
                             <div className="flex-1 space-y-2">
                                 <Label htmlFor="rider">Corredor</Label>
                                 <Select value={selectedRider} onValueChange={(v) => v && setSelectedRider(v)}>
                                     <SelectTrigger><SelectValue placeholder="Seleccionar...">
-                                        {(value: string) => allRiders.find(r => r.id === value)?.name ?? value}
+                                        {(value: string) => availableRiders.find(r => r.id === value)?.full_name ?? value}
                                     </SelectValue></SelectTrigger>
                                     <SelectContent>
-                                        {allRiders.map((r) => (
-                                            <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                                        ))}
+                                        {availableRiders.length === 0 ? (
+                                            <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                                                Todos los corredores están en la plantilla
+                                            </div>
+                                        ) : (
+                                            availableRiders.map((r) => (
+                                                <SelectItem key={r.id} value={r.id}>{r.full_name}</SelectItem>
+                                            ))
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -117,9 +138,9 @@ export default function Show({ team, rosters, allRiders }: { team: { id: string;
                                 {currentRoster.riders.map((rider) => (
                                     <div key={rider.id} className="flex items-center justify-between px-4 py-3">
                                         <div>
-                                            <p className="text-sm font-medium">{rider.name}</p>
-                                            {rider.nationality && (
-                                                <p className="text-xs text-muted-foreground">{rider.nationality}</p>
+                                            <p className="text-sm font-medium">{rider.full_name}</p>
+                                            {rider.country_id && (
+                                                <p className="text-xs text-muted-foreground"><FlagIcon code={rider.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />{countryLabel(rider.country_id)}</p>
                                             )}
                                         </div>
                                         <Button variant="ghost" size="sm" onClick={() => removeRider(rider.id)}>

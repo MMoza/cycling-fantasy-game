@@ -19,9 +19,15 @@ class TeamModel extends Model
     protected $fillable = [
         'id',
         'name',
-        'country',
+        'abbreviation',
+        'country_id',
         'logo_url',
     ];
+
+    public function country(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(CountryModel::class, 'country_id', 'id');
+    }
 
     protected static function boot(): void
     {

@@ -4,19 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SearchableSelect from '@/components/ui/searchable-select';
 import { ArrowLeft } from 'lucide-react';
 
 interface Team {
     id: string;
     name: string;
-    country: string | null;
+    abbreviation: string | null;
+    country_id: string | null;
     logo_url: string | null;
 }
 
-export default function Form({ team }: { team: Team | null }) {
+interface CountryOption {
+    value: string;
+    label: string;
+}
+
+export default function Form({ team, countries }: { team: Team | null; countries: CountryOption[] }) {
     const { data, setData, post, patch, processing, errors } = useForm({
         name: team?.name ?? '',
-        country: team?.country ?? '',
+        abbreviation: team?.abbreviation ?? '',
+        country_id: team?.country_id ?? '',
         logo_url: team?.logo_url ?? '',
     });
 
@@ -59,9 +67,25 @@ export default function Form({ team }: { team: Team | null }) {
                                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="country">País</Label>
-                                <Input id="country" value={data.country} onChange={(e) => setData('country', e.target.value)} placeholder="España" />
-                                {errors.country && <p className="text-sm text-destructive">{errors.country}</p>}
+                                <Label htmlFor="abbreviation">Abreviatura UCI</Label>
+                                <Input
+                                    id="abbreviation"
+                                    value={data.abbreviation}
+                                    onChange={(e) => setData('abbreviation', e.target.value.toUpperCase())}
+                                    placeholder="TJV"
+                                    maxLength={3}
+                                    className="font-mono uppercase"
+                                />
+                                {errors.abbreviation && <p className="text-sm text-destructive">{errors.abbreviation}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="country_id">País</Label>
+                                <SearchableSelect
+                                    options={countries}
+                                    value={data.country_id}
+                                    onChange={(v) => setData('country_id', v)}
+                                />
+                                {errors.country_id && <p className="text-sm text-destructive">{errors.country_id}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="logo_url">URL del logo</Label>

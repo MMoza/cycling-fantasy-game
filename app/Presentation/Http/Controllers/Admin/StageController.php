@@ -35,6 +35,7 @@ class StageController extends Controller
                 'name' => $s->name,
                 'date' => $s->date->format('Y-m-d'),
                 'type' => $s->type->label(),
+                'type_value' => $s->type->value,
                 'distance' => $s->distance,
                 'elevation_gain' => $s->elevation_gain,
                 'difficulty' => $s->difficulty,
@@ -175,7 +176,7 @@ class StageController extends Controller
             'profile_image' => 'nullable|image|max:2048',
         ]);
 
-        $data = $validated;
+        $data = collect($validated)->except('profile_image')->toArray();
 
         if ($request->hasFile('profile_image')) {
             $path = $request->file('profile_image')->store('stages/profiles', 'public');
@@ -197,10 +198,16 @@ class StageController extends Controller
             ->where('competition_participants.competition_id', $edition->competition_id)
             ->where('competition_participants.edition_id', $editionId)
             ->where('competition_participants.team_id', '!=', '') // all
-            ->select('riders.id', 'riders.name', 'riders.nationality')
+            ->select('riders.id', 'riders.first_name', 'riders.last_name', 'riders.country_id')
             ->distinct()
-            ->orderBy('riders.name')
-            ->get();
+            ->orderBy('riders.last_name')
+            ->orderBy('riders.first_name')
+            ->get()
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'name' => trim("{$r->last_name} {$r->first_name}"),
+                'country_id' => $r->country_id,
+            ]);
 
         $results = DB::table('stage_results')
             ->where('stage_id', $stage->id)
@@ -218,6 +225,7 @@ class StageController extends Controller
                 'number' => $stage->number,
                 'name' => $stage->name,
                 'type' => $stage->type->label(),
+                'type_value' => $stage->type->value,
                 'date' => $stage->date->format('Y-m-d'),
                 'distance' => $stage->distance,
                 'elevation_gain' => $stage->elevation_gain,

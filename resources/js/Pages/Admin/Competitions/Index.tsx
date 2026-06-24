@@ -4,17 +4,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit } from 'lucide-react';
+import { FlagIcon } from '@/components/ui/flag-icon';
 
 interface Competition {
     id: string;
     name: string;
     type: string;
-    country: string;
+    country_id: string | null;
     active: boolean;
     editions_count: number;
 }
 
-export default function Index({ competitions }: { competitions: Competition[] }) {
+interface CountryOption {
+    value: string;
+    label: string;
+}
+
+export default function Index({ competitions, countries }: { competitions: Competition[]; countries: CountryOption[] }) {
+    const countryLabel = (id: string | null) => countries.find((c) => c.value === id)?.label ?? id ?? '—';
+
     return (
         <AdminLayout>
             <Head title="Competiciones" />
@@ -47,7 +55,7 @@ export default function Index({ competitions }: { competitions: Competition[] })
                                             <div>
                                                 <p className="font-medium">{competition.name}</p>
                                                 <p className="text-sm text-muted-foreground">
-                                                    {competition.type} · {competition.country} · {competition.editions_count} ediciones
+                                                    {competition.type} · {competition.country_id && <FlagIcon code={competition.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}{countryLabel(competition.country_id)} · {competition.editions_count} ediciones
                                                 </p>
                                             </div>
                                         </div>

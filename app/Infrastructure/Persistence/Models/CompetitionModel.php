@@ -21,9 +21,14 @@ class CompetitionModel extends Model
         'id',
         'name',
         'type',
-        'country',
+        'country_id',
         'active',
     ];
+
+    public function country(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(CountryModel::class, 'country_id', 'id');
+    }
 
     protected $casts = [
         'active' => 'boolean',

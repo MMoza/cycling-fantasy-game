@@ -12,6 +12,21 @@ uses(TestCase::class)->in('Feature', 'Integration');
 
 /*
 |--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+*/
+
+use App\Infrastructure\Persistence\Models\CountryModel;
+
+function createCountry(string $code = 'FR', string $name = 'Francia'): string
+{
+    CountryModel::create(['id' => $code, 'name' => $name]);
+
+    return $code;
+}
+
+/*
+|--------------------------------------------------------------------------
 | Expectations
 |--------------------------------------------------------------------------
 */

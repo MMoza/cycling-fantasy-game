@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy, Star, Bike, MapPin, Ruler } from 'lucide-react';
+import { StageTypeIcon } from '@/components/ui/stage-type-icon';
 
 interface Rider {
     id: string;
     name: string;
-    nationality: string | null;
+    country_id: string | null;
 }
 
 interface Result {
@@ -28,6 +29,7 @@ interface Stage {
     number: number;
     name: string;
     type: string;
+    type_value: string;
     date: string;
     distance: number | null;
     elevation_gain: number | null;
@@ -99,6 +101,7 @@ export default function Show({ edition, stage, availableRiders, results }: {
                     <div className="flex-1">
                         <h1 className="text-2xl font-semibold tracking-tight">
                             Etapa {stage.number}: {stage.name}
+                            <StageTypeIcon type={stage.type_value} className="ml-2 inline-block h-5 w-5 align-text-bottom text-muted-foreground/70" />
                         </h1>
                         <p className="text-sm text-muted-foreground">
                             {edition.competition} {edition.year}

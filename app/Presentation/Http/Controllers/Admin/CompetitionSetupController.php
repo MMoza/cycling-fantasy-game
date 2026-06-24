@@ -7,7 +7,6 @@ namespace App\Presentation\Http\Controllers\Admin;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\CompetitionParticipantModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
-use App\Infrastructure\Persistence\Models\RiderModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -22,22 +21,31 @@ class CompetitionSetupController extends Controller
     {
         $competition = CompetitionModel::findOrFail($competitionId);
         $edition = EditionModel::with('stages')->findOrFail($editionId);
+        $year = $edition->year;
 
-        $participants = CompetitionParticipantModel::where('competition_id', $competitionId)
+        $teamIds = CompetitionParticipantModel::where('competition_id', $competitionId)
             ->where('edition_id', $editionId)
-            ->with(['team', 'rider'])
+            ->distinct()
+            ->pluck('team_id');
+
+        $activeRiderIds = CompetitionParticipantModel::where('competition_id', $competitionId)
+            ->where('edition_id', $editionId)
+            ->pluck('rider_id')
+            ->toArray();
+
+        $participants = TeamModel::whereIn('id', $teamIds)
+            ->with(['rosters' => fn ($q) => $q->where('year', $year)->with('rider.country')])
             ->get()
-            ->groupBy(fn ($p) => $p->team->name)
-            ->map(fn ($group, $teamName) => [
-                'team_id' => $group->first()->team->id,
-                'team_name' => $teamName,
-                'riders' => $group->map(fn ($p) => [
-                    'id' => $p->rider->id,
-                    'name' => $p->rider->name,
-                    'nationality' => $p->rider->nationality,
-                ])->values(),
-            ])
-            ->values();
+            ->map(fn ($team) => [
+                'team_id' => $team->id,
+                'team_name' => $team->name,
+                'riders' => $team->rosters->map(fn ($r) => [
+                    'id' => $r->rider->id,
+                    'full_name' => $r->rider->full_name,
+                    'country' => $r->rider->country?->name,
+                    'active' => in_array($r->rider_id, $activeRiderIds),
+                ]),
+            ]);
 
         $allTeams = TeamModel::orderBy('name')->get(['id', 'name']);
 

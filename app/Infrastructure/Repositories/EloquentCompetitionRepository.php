@@ -37,7 +37,7 @@ class EloquentCompetitionRepository implements CompetitionRepositoryInterface
             [
                 'name' => $competition->name,
                 'type' => $competition->type,
-                'country' => $competition->country,
+                'country_id' => $competition->country,
                 'active' => $competition->active,
             ]
         );
@@ -54,7 +54,7 @@ class EloquentCompetitionRepository implements CompetitionRepositoryInterface
             id: $model->id,
             name: $model->name,
             type: $model->type,
-            country: $model->country,
+            country: $model->country_id,
             active: $model->active,
         );
     }

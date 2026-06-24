@@ -14,6 +14,7 @@ readonly class ScoreEvent
         public int $points,
         public string $description,
         public string $context,
+        public ?string $stageId = null,
     ) {
     }
 
@@ -24,6 +25,7 @@ readonly class ScoreEvent
         int $points,
         string $description,
         string $context,
+        ?string $stageId = null,
     ): self {
         return new self(
             id: \Illuminate\Support\Str::uuid()->toString(),
@@ -33,6 +35,7 @@ readonly class ScoreEvent
             points: $points,
             description: $description,
             context: $context,
+            stageId: $stageId,
         );
     }
 

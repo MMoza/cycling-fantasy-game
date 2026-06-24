@@ -3,15 +3,26 @@ import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, Bike } from 'lucide-react';
+import { FlagIcon } from '@/components/ui/flag-icon';
 
 interface Rider {
     id: string;
-    name: string;
-    nationality: string | null;
-    birth_date: string | null;
+    first_name: string;
+    last_name: string;
+    full_name: string;
+    country_id: string | null;
+    profile_image: string | null;
+    age: number | null;
 }
 
-export default function Index({ riders }: { riders: Rider[] }) {
+interface CountryOption {
+    value: string;
+    label: string;
+}
+
+export default function Index({ riders, countries }: { riders: Rider[]; countries: CountryOption[] }) {
+    const countryLabel = (id: string | null) => countries.find((c) => c.value === id)?.label ?? id ?? '—';
+
     return (
         <AdminLayout>
             <Head title="Corredores" />
@@ -41,12 +52,24 @@ export default function Index({ riders }: { riders: Rider[] }) {
                             <div className="divide-y">
                                 {riders.map((rider) => (
                                     <div key={rider.id} className="flex items-center justify-between p-4">
-                                        <div>
-                                            <p className="font-medium">{rider.name}</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {rider.nationality ?? '—'}
-                                                {rider.birth_date ? ` · ${rider.birth_date}` : ''}
-                                            </p>
+                                        <div className="flex items-center gap-3">
+                                            {rider.profile_image ? (
+                                                <img src={rider.profile_image} alt="" className="h-9 w-9 rounded-full object-cover object-top" />
+                                            ) : (
+                                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
+                                                    <Bike className="h-4 w-4 text-muted-foreground" />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <p className="font-medium">
+                                                    <span className="uppercase">{rider.last_name}</span> {rider.first_name}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {rider.country_id && <FlagIcon code={rider.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}
+                                                    {countryLabel(rider.country_id)}
+                                                    {rider.age !== null ? ` · ${rider.age} años` : ''}
+                                                </p>
+                                            </div>
                                         </div>
                                         <Button variant="ghost" size="sm" asChild>
                                             <Link href={route('admin.riders.edit', rider.id)}>

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, Trash2, Bike, Users, Check, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Bike, Users } from 'lucide-react';
+import { FlagIcon } from '@/components/ui/flag-icon';
 
 interface Team {
     id: string;
@@ -14,8 +15,9 @@ interface Team {
 
 interface Rider {
     id: string;
-    name: string;
-    nationality: string | null;
+    full_name: string;
+    country: string | null;
+    active: boolean;
 }
 
 interface ParticipantGroup {
@@ -107,7 +109,7 @@ export default function Setup({ competition, edition, participants, teams }: {
                             </Button>
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">
-                            Se añadirán todos los corredores de la plantilla del equipo para esta temporada.
+                            Todos los corredores aparecerán activados por defecto. Puedes desactivar los que no participen.
                         </p>
                     </CardContent>
                 </Card>
@@ -124,7 +126,9 @@ export default function Setup({ competition, edition, participants, teams }: {
                                 <CardHeader className="flex flex-row items-center justify-between pb-3">
                                     <CardTitle className="text-base">{group.team_name}</CardTitle>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="secondary">{group.riders.length}</Badge>
+                                        <Badge variant="secondary">
+                                            {group.riders.filter((r) => r.active).length}/{group.riders.length}
+                                        </Badge>
                                         <Button variant="ghost" size="sm" onClick={() => removeTeam(group.team_id)}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
@@ -136,9 +140,28 @@ export default function Setup({ competition, edition, participants, teams }: {
                                             <div key={rider.id} className="flex items-center justify-between px-4 py-2">
                                                 <div className="flex items-center gap-2">
                                                     <Bike className="h-3 w-3 text-muted-foreground" />
-                                                    <span className="text-sm">{rider.name}</span>
+                                                    <span className="text-sm">{rider.full_name}</span>
                                                 </div>
-                                                <span className="text-xs text-muted-foreground">{rider.nationality}</span>
+                                                <div className="flex items-center gap-2">
+                                                    {rider.country && <FlagIcon code={rider.country} className="inline-block h-3 w-4 rounded-sm" />}
+                                                    <span className="text-xs text-muted-foreground">{rider.country}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleRider(group.team_id, rider.id, !rider.active)}
+                                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                                                            rider.active
+                                                                ? 'bg-green-600 hover:bg-green-700'
+                                                                : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                                                        }`}
+                                                        title={rider.active ? 'Activo' : 'Inactivo'}
+                                                    >
+                                                        <span
+                                                            className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform ${
+                                                                rider.active ? 'translate-x-5' : 'translate-x-0'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

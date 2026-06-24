@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,41 +39,22 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         difficulty: stage?.difficulty ?? '',
         origin: stage?.origin ?? '',
         destination: stage?.destination ?? '',
+        profile_image: null as File | null,
         status: stage?.status ?? 'upcoming',
     });
-
-    const [profileFile, setProfileFile] = useState<File | null>(null);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        const formData = new FormData();
-        formData.append('number', String(data.number));
-        formData.append('name', data.name);
-        formData.append('date', data.date);
-        formData.append('type', data.type);
-        formData.append('distance', String(data.distance));
-        formData.append('elevation_gain', String(data.elevation_gain));
-        formData.append('difficulty', String(data.difficulty));
-        formData.append('origin', data.origin);
-        formData.append('destination', data.destination);
-        if (stage) {
-            formData.append('_method', 'PATCH');
-        }
-        if (profileFile) {
-            formData.append('profile_image', profileFile);
-        }
+        const options = {
+            forceFormData: true,
+            onSuccess: () => {},
+        } as any;
 
         if (stage) {
-            post(route('admin.editions.stages.update', [edition.id, stage.id]), {
-                data: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-            } as any);
+            patch(route('admin.editions.stages.update', [edition.id, stage.id]), options);
         } else {
-            post(route('admin.editions.stages.store', edition.id), {
-                data: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-            } as any);
+            post(route('admin.editions.stages.store', edition.id), options);
         }
     };
 
@@ -203,7 +183,7 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
                                     id="profile_image"
                                     type="file"
                                     accept="image/*"
-                                    onChange={(e) => setProfileFile(e.target.files?.[0] ?? null)}
+                                    onChange={(e) => setData('profile_image', e.target.files?.[0] ?? null)}
                                 />
                                 {stage?.profile_image && (
                                     <p className="text-xs text-muted-foreground">

@@ -24,6 +24,7 @@ class ScoreEventModel extends Model
         'points',
         'description',
         'context',
+        'stage_id',
     ];
 
     protected $casts = [

@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Edit, ArrowLeft, Eye, Users, Star } from 'lucide-react';
+import { StageTypeIcon } from '@/components/ui/stage-type-icon';
 
 interface Stage {
     id: string;
@@ -11,6 +12,7 @@ interface Stage {
     name: string;
     date: string;
     type: string;
+    type_value: string;
     distance: number | null;
     elevation_gain: number | null;
     difficulty: number | null;
@@ -72,6 +74,7 @@ export default function Index({ edition, stages }: { edition: { id: string; year
                                             <div>
                                                 <p className="font-medium">{stage.name}</p>
                                                 <p className="text-sm text-muted-foreground">
+                                                    <StageTypeIcon type={stage.type_value} className="mr-1 inline-block h-3.5 w-3.5 align-middle" />
                                                     {stage.type} · {stage.distance ? `${stage.distance} km` : '-'}
                                                     {stage.elevation_gain ? ` · ${stage.elevation_gain.toLocaleString()} m` : ''}
                                                     {stage.difficulty ? ` · ${'★'.repeat(stage.difficulty)}` : ''}

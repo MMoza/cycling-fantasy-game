@@ -107,7 +107,7 @@ class ScoreStageCommand extends Command
                 $prediction = Prediction::fromModel($predictionModel);
 
                 foreach ($stageResults as $stageResult) {
-                    $scoreEvent = $engine->calculateStageScore($prediction, $stageResult);
+                    $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageId);
 
                     if ($scoreEvent->points > 0) {
                         $this->persistScoreEvent($scoreEvent);
@@ -153,6 +153,7 @@ class ScoreStageCommand extends Command
             'points' => $event->points,
             'description' => $event->description,
             'context' => $event->context,
+            'stage_id' => $event->stageId,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
