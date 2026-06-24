@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Star } from 'lucide-react';
 
 interface StageType {
     value: string;
@@ -21,13 +21,15 @@ interface Stage {
     type: string;
     distance: number | null;
     elevation_gain: number | null;
+    difficulty: number | null;
     origin: string;
     destination: string;
     profile_image: string | null;
     status: string;
 }
 
-export default function Form({ edition, stage, stageTypes }: { edition: { id: string; year: number; competition: string }; stage: Stage | null; stageTypes: StageType[] }) {
+export default function Form({ edition, stage, stageTypes }: { edition: { id: string; year: number; competition: string; competition_id: string; competition_type: string }; stage: Stage | null; stageTypes: StageType[] }) {
+    const isClassic = edition.competition_type === 'classic';
     const { data, setData, post, patch, processing, errors } = useForm({
         number: stage?.number ?? 1,
         name: stage?.name ?? '',
@@ -35,6 +37,7 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         type: stage?.type ?? 'flat',
         distance: stage?.distance ?? '',
         elevation_gain: stage?.elevation_gain ?? '',
+        difficulty: stage?.difficulty ?? '',
         origin: stage?.origin ?? '',
         destination: stage?.destination ?? '',
         status: stage?.status ?? 'upcoming',
@@ -52,6 +55,7 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         formData.append('type', data.type);
         formData.append('distance', String(data.distance));
         formData.append('elevation_gain', String(data.elevation_gain));
+        formData.append('difficulty', String(data.difficulty));
         formData.append('origin', data.origin);
         formData.append('destination', data.destination);
         if (stage) {
@@ -143,6 +147,43 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
                                     <Input id="elevation_gain" type="number" min={0} value={data.elevation_gain} onChange={(e) => setData('elevation_gain', e.target.value)} />
                                     {errors.elevation_gain && <p className="text-sm text-destructive">{errors.elevation_gain}</p>}
                                 </div>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="difficulty">Dificultad</Label>
+                                    <Select value={String(data.difficulty)} onValueChange={(v) => setData('difficulty', v ? Number(v) : '')}>
+                                        <SelectTrigger><SelectValue placeholder="Sin determinar" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="1">
+                                                <span className="flex items-center gap-1">
+                                                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                                                </span>
+                                            </SelectItem>
+                                            <SelectItem value="2">
+                                                <span className="flex items-center gap-1">
+                                                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                                                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                                                </span>
+                                            </SelectItem>
+                                            <SelectItem value="3">
+                                                <span className="flex items-center gap-1">
+                                                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                                                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                                                    <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                                                </span>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.difficulty && <p className="text-sm text-destructive">{errors.difficulty}</p>}
+                                </div>
+                                {isClassic && !stage && (
+                                    <div className="space-y-2">
+                                        <Label>Nota</Label>
+                                        <p className="text-sm text-muted-foreground">
+                                            Las clásicas solo pueden tener una etapa.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">

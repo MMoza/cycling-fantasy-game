@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, ArrowLeft, Eye, Users } from 'lucide-react';
+import { Plus, Edit, ArrowLeft, Eye, Users, Star } from 'lucide-react';
 
 interface Stage {
     id: string;
@@ -13,6 +13,7 @@ interface Stage {
     type: string;
     distance: number | null;
     elevation_gain: number | null;
+    difficulty: number | null;
     origin: string;
     destination: string;
     status: string;
@@ -57,7 +58,7 @@ export default function Index({ edition, stages }: { edition: { id: string; year
                 <Card>
                     <CardContent className="p-0">
                         {stages.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
                                 <p className="text-sm text-muted-foreground">No hay etapas</p>
                             </div>
                         ) : (
@@ -73,6 +74,7 @@ export default function Index({ edition, stages }: { edition: { id: string; year
                                                 <p className="text-sm text-muted-foreground">
                                                     {stage.type} · {stage.distance ? `${stage.distance} km` : '-'}
                                                     {stage.elevation_gain ? ` · ${stage.elevation_gain.toLocaleString()} m` : ''}
+                                                    {stage.difficulty ? ` · ${'★'.repeat(stage.difficulty)}` : ''}
                                                 </p>
                                             </div>
                                         </div>

@@ -98,7 +98,7 @@ export default function Index({ leagues }: IndexProps) {
 
                 {leagues.length === 0 ? (
                     <Card>
-                        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                        <CardContent className="flex flex-col items-center justify-center px-6 py-16 text-center">
                             <Users className="h-12 w-12 text-muted-foreground" />
                             <h3 className="mt-4 text-lg font-medium">No hay ligas aún</h3>
                             <p className="mt-2 text-sm text-muted-foreground">

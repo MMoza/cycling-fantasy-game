@@ -85,7 +85,9 @@ export default function Setup({ competition, edition, participants, teams }: {
                         <div className="flex items-end gap-3">
                             <div className="flex-1 space-y-2">
                                 <Select value={selectedTeam} onValueChange={(v) => v && setSelectedTeam(v)}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccionar equipo..." /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="Seleccionar equipo...">
+                                        {(value: string) => teamOptions.find(t => t.id === value)?.name ?? value}
+                                    </SelectValue></SelectTrigger>
                                     <SelectContent>
                                         {teamOptions.length === 0 ? (
                                             <div className="px-2 py-4 text-center text-sm text-muted-foreground">

@@ -42,7 +42,7 @@ export default function Index({ competition, editions }: { competition: { id: st
                 <Card>
                     <CardContent className="p-0">
                         {editions.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
                                 <p className="text-sm text-muted-foreground">No hay ediciones</p>
                             </div>
                         ) : (

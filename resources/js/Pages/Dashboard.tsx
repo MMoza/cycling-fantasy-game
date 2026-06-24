@@ -19,7 +19,7 @@ export default function Dashboard() {
 
                 <Card className="overflow-hidden">
                     <div className="h-1 bg-gradient-to-r from-brand-600 to-accent-500" />
-                    <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                    <CardContent className="flex flex-col items-center justify-center px-6 py-16 text-center">
                         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/20">
                             <Bike className="h-8 w-8 text-accent-500" />
                         </div>

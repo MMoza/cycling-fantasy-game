@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy } from 'lucide-react';
+import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy, Star, Bike, MapPin, Ruler } from 'lucide-react';
 
 interface Rider {
     id: string;
@@ -27,6 +27,13 @@ interface Stage {
     id: string;
     number: number;
     name: string;
+    type: string;
+    date: string;
+    distance: number | null;
+    elevation_gain: number | null;
+    difficulty: number | null;
+    origin: string;
+    destination: string;
     status: string;
     status_label: string;
 }
@@ -114,6 +121,37 @@ export default function Show({ edition, stage, availableRiders, results }: {
                     )}
                 </div>
 
+                <div className="grid gap-4 sm:grid-cols-4">
+                    <Card>
+                        <CardContent className="flex flex-col items-center gap-1 p-4 text-center">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Recorrido</span>
+                            <span className="text-sm font-medium">{stage.origin} → {stage.destination}</span>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="flex flex-col items-center gap-1 p-4 text-center">
+                            <Ruler className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Distancia</span>
+                            <span className="text-sm font-medium">{stage.distance ? `${stage.distance} km` : '-'}</span>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="flex flex-col items-center gap-1 p-4 text-center">
+                            <Bike className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Desnivel</span>
+                            <span className="text-sm font-medium">{stage.elevation_gain ? `${stage.elevation_gain.toLocaleString()} m` : '-'}</span>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="flex flex-col items-center gap-1 p-4 text-center">
+                            <Star className="h-4 w-4 text-yellow-500" />
+                            <span className="text-xs text-muted-foreground">Dificultad</span>
+                            <span className="text-sm font-medium">{stage.difficulty ? '★'.repeat(stage.difficulty) : '-'}</span>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <Card>
                     <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2">
@@ -134,7 +172,9 @@ export default function Show({ edition, stage, availableRiders, results }: {
                                             value={entry.rider_id}
                                             onValueChange={(v) => v && updateRow(index, 'rider_id', v)}
                                         >
-                                            <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                                            <SelectTrigger><SelectValue placeholder="Seleccionar...">
+                                                {(value: string) => availableRiders.find(r => r.id === value)?.name ?? value}
+                                            </SelectValue></SelectTrigger>
                                             <SelectContent>
                                                 {availableRiders.map((r) => (
                                                     <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>

@@ -81,7 +81,9 @@ export default function Show({ team, rosters, allRiders }: { team: { id: string;
                             <div className="flex-1 space-y-2">
                                 <Label htmlFor="rider">Corredor</Label>
                                 <Select value={selectedRider} onValueChange={(v) => v && setSelectedRider(v)}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="Seleccionar...">
+                                        {(value: string) => allRiders.find(r => r.id === value)?.name ?? value}
+                                    </SelectValue></SelectTrigger>
                                     <SelectContent>
                                         {allRiders.map((r) => (
                                             <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
@@ -107,7 +109,7 @@ export default function Show({ team, rosters, allRiders }: { team: { id: string;
                     </CardHeader>
                     <CardContent className="p-0">
                         {!currentRoster || currentRoster.riders.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
                                 <p className="text-sm text-muted-foreground">Sin corredores en esta temporada</p>
                             </div>
                         ) : (

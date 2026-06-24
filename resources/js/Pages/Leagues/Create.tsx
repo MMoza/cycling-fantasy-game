@@ -88,7 +88,12 @@ export default function Create({ editions, scoringSystems }: CreateProps) {
                                     onValueChange={(value: string | null) => { if (value) setData('edition_id', value); }}
                                 >
                                     <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Selecciona una competición" />
+                                        <SelectValue placeholder="Selecciona una competición">
+                                            {(value: string) => {
+                                                const edition = editions.find(e => e.id === value);
+                                                return edition ? `${edition.competition.name} ${edition.year}` : value;
+                                            }}
+                                        </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {editions.map((edition) => (
@@ -113,7 +118,12 @@ export default function Create({ editions, scoringSystems }: CreateProps) {
                                     onValueChange={(value: string | null) => { if (value) setData('scoring_system_id', value); }}
                                 >
                                     <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Selecciona un sistema" />
+                                        <SelectValue placeholder="Selecciona un sistema">
+                                            {(value: string) => {
+                                                const system = scoringSystems.find(s => s.id === value);
+                                                return system ? `${system.name} - ${system.description}` : value;
+                                            }}
+                                        </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {scoringSystems.map((system) => (

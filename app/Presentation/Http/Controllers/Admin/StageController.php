@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers\Admin;
 
+use App\Domain\ValueObjects\CompetitionType;
 use App\Domain\ValueObjects\StageType;
+use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Domain\ValueObjects\StageStatus;
@@ -35,6 +37,7 @@ class StageController extends Controller
                 'type' => $s->type->label(),
                 'distance' => $s->distance,
                 'elevation_gain' => $s->elevation_gain,
+                'difficulty' => $s->difficulty,
                 'origin' => $s->origin,
                 'destination' => $s->destination,
                 'status' => $s->status->label(),
@@ -60,6 +63,8 @@ class StageController extends Controller
                 'id' => $edition->id,
                 'year' => $edition->year,
                 'competition' => $edition->competition->name,
+                'competition_id' => $edition->competition->id,
+                'competition_type' => $edition->competition->type->value,
             ],
             'stage' => null,
             'stageTypes' => collect(StageType::cases())->map(fn ($t) => [
@@ -71,7 +76,14 @@ class StageController extends Controller
 
     public function store(Request $request, string $editionId): RedirectResponse
     {
-        $edition = EditionModel::findOrFail($editionId);
+        $edition = EditionModel::with('competition')->findOrFail($editionId);
+
+        if ($edition->competition->type === CompetitionType::Classic) {
+            $existing = StageModel::where('edition_id', $editionId)->count();
+            if ($existing >= 1) {
+                return redirect()->back()->withErrors(['error' => 'Las clásicas solo pueden tener una etapa.']);
+            }
+        }
 
         $validated = $request->validate([
             'number' => 'required|integer|min:1',
@@ -80,6 +92,7 @@ class StageController extends Controller
             'type' => 'required|string',
             'distance' => 'nullable|numeric|min:0',
             'elevation_gain' => 'nullable|integer|min:0',
+            'difficulty' => 'nullable|integer|min:1|max:3',
             'origin' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
             'profile_image' => 'nullable|image|max:2048',
@@ -101,6 +114,7 @@ class StageController extends Controller
             'type' => $validated['type'],
             'distance' => $validated['distance'],
             'elevation_gain' => $validated['elevation_gain'],
+            'difficulty' => $validated['difficulty'],
             'origin' => $validated['origin'],
             'destination' => $validated['destination'],
             'profile_image' => $profileImage,
@@ -120,6 +134,8 @@ class StageController extends Controller
                 'id' => $edition->id,
                 'year' => $edition->year,
                 'competition' => $edition->competition->name,
+                'competition_id' => $edition->competition->id,
+                'competition_type' => $edition->competition->type->value,
             ],
             'stage' => [
                 'id' => $stage->id,
@@ -129,6 +145,7 @@ class StageController extends Controller
                 'type' => $stage->type->value,
                 'distance' => $stage->distance,
                 'elevation_gain' => $stage->elevation_gain,
+                'difficulty' => $stage->difficulty,
                 'origin' => $stage->origin,
                 'destination' => $stage->destination,
                 'profile_image' => $stage->profile_image,
@@ -152,6 +169,7 @@ class StageController extends Controller
             'type' => 'required|string',
             'distance' => 'nullable|numeric|min:0',
             'elevation_gain' => 'nullable|integer|min:0',
+            'difficulty' => 'nullable|integer|min:1|max:3',
             'origin' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
             'profile_image' => 'nullable|image|max:2048',
@@ -199,6 +217,13 @@ class StageController extends Controller
                 'id' => $stage->id,
                 'number' => $stage->number,
                 'name' => $stage->name,
+                'type' => $stage->type->label(),
+                'date' => $stage->date->format('Y-m-d'),
+                'distance' => $stage->distance,
+                'elevation_gain' => $stage->elevation_gain,
+                'difficulty' => $stage->difficulty,
+                'origin' => $stage->origin,
+                'destination' => $stage->destination,
                 'status' => $stage->status->value,
                 'status_label' => $stage->status->label(),
             ],
