@@ -37,7 +37,7 @@ const STATUS_STYLES: Record<string, { card: string; num: string }> = {
         num: 'bg-muted/50 text-muted-foreground',
     },
     ongoing: {
-        card: 'uci-rainbow-border border-2 bg-accent/[0.04]',
+        card: 'uci-rainbow-border bg-card',
         num: 'bg-accent text-accent-foreground',
     },
     upcoming: {
