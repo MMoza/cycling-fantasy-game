@@ -102,6 +102,7 @@ class StageController extends Controller
             'difficulty' => 'nullable|integer|min:1|max:3',
             'origin' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
+            'scheduled_start' => 'nullable|date',
             'profile_image' => 'nullable|image|max:2048',
         ]);
 
@@ -124,6 +125,7 @@ class StageController extends Controller
             'difficulty' => $validated['difficulty'],
             'origin' => $validated['origin'],
             'destination' => $validated['destination'],
+            'scheduled_start' => $validated['scheduled_start'],
             'profile_image' => $profileImage,
             'status' => 'upcoming',
         ]);
@@ -179,6 +181,7 @@ class StageController extends Controller
             'difficulty' => 'nullable|integer|min:1|max:3',
             'origin' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
+            'scheduled_start' => 'nullable|date',
             'profile_image' => 'nullable|image|max:2048',
         ]);
 

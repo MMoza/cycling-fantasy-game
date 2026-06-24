@@ -24,6 +24,7 @@ interface Stage {
     origin: string;
     destination: string;
     profile_image: string | null;
+    scheduled_start: string | null;
     status: string;
 }
 
@@ -39,6 +40,7 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         difficulty: stage?.difficulty ?? '',
         origin: stage?.origin ?? '',
         destination: stage?.destination ?? '',
+        scheduled_start: stage?.scheduled_start ?? '',
         profile_image: null as File | null,
         status: stage?.status ?? 'upcoming',
     });
@@ -103,6 +105,13 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
                                     <Input id="date" type="date" value={data.date} onChange={(e) => setData('date', e.target.value)} />
                                     {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
                                 </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="scheduled_start">Hora de inicio (UTC)</Label>
+                                    <Input id="scheduled_start" type="datetime-local" value={data.scheduled_start} onChange={(e) => setData('scheduled_start', e.target.value)} />
+                                    {errors.scheduled_start && <p className="text-sm text-destructive">{errors.scheduled_start}</p>}
+                                </div>
+                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="type">Tipo</Label>
                                     <Select value={data.type} onValueChange={(v) => v && setData('type', v)}>
