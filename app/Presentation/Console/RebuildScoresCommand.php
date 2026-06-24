@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Presentation\Console;
 
-use App\Domain\Entities\StageResult;
 use App\Domain\Entities\Prediction;
-use App\Domain\Entities\ScoreEvent;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
+use App\Domain\Entities\StageResult;
 use App\Domain\Services\ScoringEngine;
 use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
@@ -69,6 +68,7 @@ class RebuildScoresCommand extends Command
 
             if ($finishedStages->isEmpty()) {
                 $this->info("No finished stages for league {$league->name}");
+
                 continue;
             }
 

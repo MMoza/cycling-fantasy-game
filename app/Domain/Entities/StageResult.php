@@ -15,8 +15,9 @@ readonly class StageResult
         public int $position,
         public ?string $time,
         public ?string $gap,
-    ) {
-    }
+        public bool $isGcLeader = false,
+        public bool $isCombativo = false,
+    ) {}
 
     public static function create(
         string $stageId,
@@ -24,6 +25,8 @@ readonly class StageResult
         int $position,
         ?string $time = null,
         ?string $gap = null,
+        bool $isGcLeader = false,
+        bool $isCombativo = false,
     ): self {
         return new self(
             id: Str::uuid()->toString(),
@@ -32,6 +35,8 @@ readonly class StageResult
             position: $position,
             time: $time,
             gap: $gap,
+            isGcLeader: $isGcLeader,
+            isCombativo: $isCombativo,
         );
     }
 
@@ -44,6 +49,8 @@ readonly class StageResult
             position: (int) $row->position,
             time: $row->time ?? null,
             gap: $row->gap ?? null,
+            isGcLeader: (bool) ($row->is_gc_leader ?? false),
+            isCombativo: (bool) ($row->is_combativo ?? false),
         );
     }
 

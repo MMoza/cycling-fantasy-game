@@ -14,6 +14,7 @@ use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
@@ -151,6 +152,9 @@ test('stage show renders component with stage data', function () {
         ->where('stage.origin', 'Paris')
         ->where('stage.destination', 'Lyon')
         ->where('is_locked', false)
+        ->where('is_finished', false)
+        ->where('stage_results', [])
+        ->where('stage_classification', [])
         ->has('predictions')
         ->has('navigation')
         ->has('all_stages')
@@ -176,5 +180,53 @@ test('stage show shows locked when scheduled_start has passed', function () {
 
     $response->assertInertia(fn ($page) => $page
         ->where('is_locked', true)
+    );
+});
+
+test('stage show shows results and classification when finished', function () {
+    StageModel::where('id', $this->stage2->id)->update(['status' => 'finished']);
+
+    $riderId = Str::uuid()->toString();
+    DB::table('riders')->insert([
+        'id' => $riderId,
+        'first_name' => 'Test',
+        'last_name' => 'Rider',
+        'country_id' => createCountry('ES', 'España'),
+    ]);
+
+    DB::table('stage_results')->insert([
+        'id' => Str::uuid()->toString(),
+        'stage_id' => $this->stage2->id,
+        'rider_id' => $riderId,
+        'position' => 1,
+        'time' => '4:30:00',
+        'gap' => null,
+    ]);
+
+    DB::table('score_events')->insert([
+        'id' => Str::uuid()->toString(),
+        'user_id' => $this->user->id,
+        'league_id' => $this->league->id,
+        'scoring_rule_id' => Str::uuid()->toString(),
+        'points' => 30,
+        'description' => 'Test score',
+        'context' => 'stage_1',
+        'stage_id' => $this->stage2->id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($this->user)->get(route('stages.show', [$this->league->id, $this->stage2->id]));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Stages/Show')
+        ->where('is_finished', true)
+        ->has('stage_results', 1)
+        ->where('stage_results.0.rider_name', 'Rider Test')
+        ->where('stage_results.0.time', '4:30:00')
+        ->has('stage_classification', 1)
+        ->where('stage_classification.0.user_id', $this->user->id)
+        ->where('stage_classification.0.total_points', 30)
     );
 });

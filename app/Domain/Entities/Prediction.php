@@ -20,8 +20,7 @@ readonly class Prediction
         public ?string $stageId,
         public array $predictionValue,
         public ?string $lockedAt,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $userId,

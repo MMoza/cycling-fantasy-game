@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy, Star, Bike, MapPin, Ruler } from 'lucide-react';
+import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy, Star, Bike, MapPin, Ruler, Crown, Flame } from 'lucide-react';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
+import { cn } from '@/lib/utils';
 
 interface Rider {
     id: string;
@@ -22,6 +23,8 @@ interface Result {
     position: number;
     time: string | null;
     gap: string | null;
+    is_gc_leader?: boolean;
+    is_combativo?: boolean;
 }
 
 interface Stage {
@@ -60,9 +63,9 @@ export default function Show({ edition, stage, availableRiders, results }: {
         setResultEntries(resultEntries.filter((_, i) => i !== index));
     };
 
-    const updateRow = (index: number, field: keyof Result, value: string | number) => {
+    const updateRow = (index: number, field: keyof Result, value: string | number | boolean) => {
         const updated = [...resultEntries];
-        updated[index] = { ...updated[index], [field]: value };
+        (updated[index] as any)[field] = value;
         setResultEntries(updated);
     };
 
@@ -72,6 +75,8 @@ export default function Show({ edition, stage, availableRiders, results }: {
             position: i + 1,
             time: r.time || null,
             gap: r.gap || null,
+            is_gc_leader: r.is_gc_leader ?? false,
+            is_combativo: r.is_combativo ?? false,
         }));
 
         router.post(route('admin.editions.stages.results', [edition.id, stage.id]), { results: data });
@@ -166,7 +171,7 @@ export default function Show({ edition, stage, availableRiders, results }: {
                         <div className="space-y-3">
                             {resultEntries.map((entry, index) => (
                                 <div key={index} className="flex items-end gap-2">
-                                    <div className="w-12 text-center">
+                                    <div className="w-8 text-center">
                                         <Label className="text-xs text-muted-foreground">#{index + 1}</Label>
                                     </div>
                                     <div className="flex-1 space-y-1">
@@ -185,7 +190,7 @@ export default function Show({ edition, stage, availableRiders, results }: {
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="w-28 space-y-1">
+                                    <div className="w-24 space-y-1">
                                         <Label className="text-xs text-muted-foreground">Tiempo</Label>
                                         <Input
                                             value={entry.time ?? ''}
@@ -193,13 +198,37 @@ export default function Show({ edition, stage, availableRiders, results }: {
                                             placeholder="4:30:00"
                                         />
                                     </div>
-                                    <div className="w-28 space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Diferencia</Label>
+                                    <div className="w-20 space-y-1">
+                                        <Label className="text-xs text-muted-foreground">Dif.</Label>
                                         <Input
                                             value={entry.gap ?? ''}
                                             onChange={(e) => updateRow(index, 'gap', e.target.value)}
                                             placeholder="+0:00"
                                         />
+                                    </div>
+                                    <div className="flex flex-col items-center gap-1 pt-5">
+                                        <button
+                                            type="button"
+                                            onClick={() => updateRow(index, 'is_gc_leader', !entry.is_gc_leader)}
+                                            className={cn(
+                                                'flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors',
+                                                entry.is_gc_leader ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-600' : 'border-border text-muted-foreground/50 hover:text-muted-foreground',
+                                            )}
+                                            title="Líder GC"
+                                        >
+                                            <Crown className="h-3.5 w-3.5" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => updateRow(index, 'is_combativo', !entry.is_combativo)}
+                                            className={cn(
+                                                'flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors',
+                                                entry.is_combativo ? 'border-red-500/50 bg-red-500/10 text-red-600' : 'border-border text-muted-foreground/50 hover:text-muted-foreground',
+                                            )}
+                                            title="Supercombativo"
+                                        >
+                                            <Flame className="h-3.5 w-3.5" />
+                                        </button>
                                     </div>
                                     {resultEntries.length > 1 && (
                                         <Button variant="ghost" size="icon" onClick={() => removeRow(index)}>

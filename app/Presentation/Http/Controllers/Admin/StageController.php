@@ -5,20 +5,18 @@ declare(strict_types=1);
 namespace App\Presentation\Http\Controllers\Admin;
 
 use App\Domain\ValueObjects\CompetitionType;
+use App\Domain\ValueObjects\StageStatus;
 use App\Domain\ValueObjects\StageType;
-use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
-use App\Domain\ValueObjects\StageStatus;
-use App\Infrastructure\Persistence\Models\CompetitionParticipantModel;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class StageController extends Controller
 {
@@ -242,6 +240,8 @@ class StageController extends Controller
                 'position' => $r->position,
                 'time' => $r->time,
                 'gap' => $r->gap,
+                'is_gc_leader' => (bool) $r->is_gc_leader,
+                'is_combativo' => (bool) $r->is_combativo,
             ]),
         ]);
     }
@@ -269,6 +269,8 @@ class StageController extends Controller
             'results.*.position' => 'required|integer|min:1',
             'results.*.time' => 'nullable|string|max:50',
             'results.*.gap' => 'nullable|string|max:50',
+            'results.*.is_gc_leader' => 'nullable|boolean',
+            'results.*.is_combativo' => 'nullable|boolean',
         ]);
 
         DB::table('stage_results')->where('stage_id', $stage->id)->delete();
@@ -281,6 +283,8 @@ class StageController extends Controller
                 'position' => $result['position'],
                 'time' => $result['time'] ?? null,
                 'gap' => $result['gap'] ?? null,
+                'is_gc_leader' => $result['is_gc_leader'] ?? false,
+                'is_combativo' => $result['is_combativo'] ?? false,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

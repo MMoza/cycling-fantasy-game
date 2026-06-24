@@ -1,7 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, FileCheck, FileX, MapPin, Ruler, Star, Trophy, ArrowRight } from 'lucide-react';
+import { FileCheck, FileX, MapPin, Ruler, TrendingUp, Calendar, Trophy } from 'lucide-react';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
 import { cn } from '@/lib/utils';
 
@@ -13,11 +12,13 @@ interface Stage {
     type: string;
     type_value: string;
     distance: number | null;
+    elevation_gain: number | null;
     origin: string;
     destination: string;
     status: string;
     difficulty: number | null;
     profile_image: string | null;
+    scheduled_start: string | null;
 }
 
 interface IndexProps {
@@ -30,17 +31,38 @@ interface IndexProps {
     pointsPerStage: Record<string, number>;
 }
 
-const STATUS_STYLES: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-    finished: { bg: 'bg-muted/30', border: 'border-muted', text: 'text-muted-foreground', badge: 'bg-muted-foreground/10 text-muted-foreground border-muted-foreground/20' },
-    ongoing: { bg: 'bg-accent/10', border: 'border-accent', text: 'text-accent-foreground', badge: 'bg-accent/20 text-accent-foreground border-accent/30' },
-    upcoming: { bg: 'bg-background', border: 'border-border', text: 'text-foreground', badge: 'bg-secondary text-secondary-foreground border-border' },
+const STATUS_STYLES: Record<string, { card: string; num: string }> = {
+    finished: {
+        card: 'bg-muted/20 border-muted/40 hover:bg-muted/30',
+        num: 'bg-muted/50 text-muted-foreground',
+    },
+    ongoing: {
+        card: 'border-accent bg-accent/[0.04] ring-1 ring-accent/30',
+        num: 'bg-accent text-accent-foreground',
+    },
+    upcoming: {
+        card: 'bg-background border-border hover:bg-accent/5',
+        num: 'bg-secondary/70 text-secondary-foreground',
+    },
 };
+
+function DifficultyStars({ difficulty }: { difficulty: number | null }) {
+    if (!difficulty) return null;
+    return (
+        <span className="ml-2 inline-flex items-center gap-0.5 rounded-full bg-black/85 px-2 py-0.5 text-xs leading-none">
+            {Array.from({ length: 3 }, (_, i) => (
+                <span key={i} className={cn(i < difficulty ? 'text-yellow-400' : 'text-white/20')}>★</span>
+            ))}
+        </span>
+    );
+}
 
 export default function Index({ league_id, league_name, competition, year, stages, predictionsPerStage, pointsPerStage }: IndexProps) {
     const isOngoing = (stage: Stage) => stage.status === 'ongoing';
     const isFinished = (stage: Stage) => stage.status === 'finished';
     const hasPrediction = (stage: Stage) => predictionsPerStage[stage.id] === true;
     const points = (stage: Stage) => pointsPerStage[stage.id] ?? 0;
+    const elevation = (stage: Stage) => stage.elevation_gain != null ? `${stage.elevation_gain.toLocaleString()} m` : null;
 
     return (
         <AppLayout>
@@ -55,82 +77,92 @@ export default function Index({ league_id, league_name, competition, year, stage
                 <div className="space-y-2">
                     {stages.map((stage) => {
                         const style = isOngoing(stage) ? STATUS_STYLES.ongoing : isFinished(stage) ? STATUS_STYLES.finished : STATUS_STYLES.upcoming;
+                        const elev = elevation(stage);
 
                         return (
                             <Link
                                 key={stage.id}
                                 href={route('stages.show', [league_id, stage.id])}
                                 className={cn(
-                                    'flex items-center gap-4 rounded-xl border p-4 transition-colors hover:bg-accent/5',
-                                    style.bg,
-                                    style.border,
+                                    'flex items-start gap-4 rounded-xl border p-4 transition-colors',
+                                    style.card,
+                                    isFinished(stage) && 'opacity-70',
                                 )}
                             >
-                                <div className={cn(
-                                    'flex flex-col items-center justify-center shrink-0',
-                                )}>
+                                <div className="flex shrink-0 flex-col items-center gap-0.5">
                                     <div className={cn(
-                                        'flex h-10 w-10 items-center justify-center rounded-lg font-bold text-base',
-                                        isOngoing(stage) ? 'bg-accent text-accent-foreground' : isFinished(stage) ? 'bg-muted text-muted-foreground' : 'bg-secondary text-secondary-foreground',
+                                        'flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold',
+                                        style.num,
                                     )}>
                                         {stage.number}
                                     </div>
-                                    <StageTypeIcon type={stage.type_value} className="mt-0.5 h-3.5 w-3.5 text-muted-foreground/60" />
+                                    <StageTypeIcon type={stage.type_value} className="h-3.5 w-3.5 text-muted-foreground/50" />
                                 </div>
 
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <span className={cn('font-medium truncate', style.text)}>{stage.name || `Etapa ${stage.number}`}</span>
+                                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className={cn(
+                                            'truncate text-sm font-medium',
+                                            isOngoing(stage) && 'text-accent-foreground',
+                                            isFinished(stage) && 'text-muted-foreground',
+                                        )}>
+                                            {stage.name || `Etapa ${stage.number}`}
+                                        </span>
+                                        <DifficultyStars difficulty={stage.difficulty} />
                                     </div>
-                                    <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs mt-0.5', isFinished(stage) ? 'text-muted-foreground/70' : 'text-muted-foreground')}>
+
+                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                                        <MapPin className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">{stage.origin} → {stage.destination}</span>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground/60">
                                         <span className="flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
                                             {stage.date}
+                                            {stage.scheduled_start && (
+                                                <span className="tabular-nums">
+                                                    {new Date(stage.scheduled_start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
+                                                </span>
+                                            )}
                                         </span>
-                                        <span className="flex items-center gap-1">
-                                            <MapPin className="h-3 w-3" />
-                                            {stage.origin} → {stage.destination}
-                                        </span>
+                                        <span className="text-muted-foreground/30">|</span>
                                         {stage.distance && (
-                                            <span className="flex items-center gap-1">
-                                                <Ruler className="h-3 w-3" />
-                                                {stage.distance} km
-                                            </span>
+                                            <>
+                                                <span className="flex items-center gap-1">
+                                                    <Ruler className="h-3 w-3" />
+                                                    {stage.distance} km
+                                                </span>
+                                                <span className="text-muted-foreground/30">|</span>
+                                            </>
                                         )}
-                                        {stage.difficulty && (
-                                            <span className="flex items-center gap-0.5">
-                                                <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                                                {'★'.repeat(stage.difficulty)}
+                                        {elev && (
+                                            <span className="flex items-center gap-1">
+                                                <TrendingUp className="h-3 w-3" />
+                                                {elev}
                                             </span>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="flex shrink-0 items-center gap-3">
-                                    {isFinished(stage) && (
-                                        <div className="flex items-center gap-1.5">
-                                            <Trophy className="h-4 w-4 text-muted-foreground" />
-                                            <span className={cn('font-semibold tabular-nums', points(stage) > 0 ? 'text-accent-foreground' : 'text-muted-foreground')}>
+                                <div className="flex shrink-0 items-center gap-3 self-center">
+                                    {isFinished(stage) ? (
+                                        <>
+                                            <Trophy className={cn('h-4 w-4', points(stage) > 0 ? 'text-accent-500' : 'text-muted-foreground/30')} />
+                                            <span className={cn(
+                                                'text-sm font-semibold tabular-nums',
+                                                points(stage) > 0 ? 'text-accent-foreground' : 'text-muted-foreground/40',
+                                            )}>
                                                 {points(stage)} pts
                                             </span>
-                                        </div>
+                                        </>
+                                    ) : (
+                                        hasPrediction(stage) ? (
+                                            <FileCheck className="h-4 w-4 text-green-500" />
+                                        ) : (
+                                            <FileX className="h-4 w-4 text-muted-foreground/30" />
+                                        )
                                     )}
-                                    {!isFinished(stage) && (
-                                        <div className="flex items-center gap-1.5">
-                                            {hasPrediction(stage) ? (
-                                                <FileCheck className="h-4 w-4 text-green-500" />
-                                            ) : (
-                                                <FileX className="h-4 w-4 text-muted-foreground/50" />
-                                            )}
-                                            <span className={cn(
-                                                'text-xs',
-                                                hasPrediction(stage) ? 'text-green-600' : 'text-muted-foreground/50',
-                                            )}>
-                                                {hasPrediction(stage) ? 'Pronosticado' : 'Sin pronóstico'}
-                                            </span>
-                                        </div>
-                                    )}
-                                    <ArrowRight className={cn('h-4 w-4', isFinished(stage) ? 'text-muted-foreground/30' : 'text-muted-foreground/50')} />
                                 </div>
                             </Link>
                         );

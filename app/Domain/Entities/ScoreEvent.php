@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use Illuminate\Support\Str;
+
 readonly class ScoreEvent
 {
     public function __construct(
@@ -15,8 +17,7 @@ readonly class ScoreEvent
         public string $description,
         public string $context,
         public ?string $stageId = null,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $userId,
@@ -28,7 +29,7 @@ readonly class ScoreEvent
         ?string $stageId = null,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             userId: $userId,
             leagueId: $leagueId,
             scoringRuleId: $scoringRuleId,

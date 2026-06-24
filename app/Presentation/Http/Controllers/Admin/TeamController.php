@@ -137,7 +137,7 @@ class TeamController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'abbreviation' => 'nullable|string|size:3|unique:teams,abbreviation,' . $id,
+            'abbreviation' => 'nullable|string|size:3|unique:teams,abbreviation,'.$id,
             'country_id' => 'nullable|string|size:2|exists:countries,id',
             'logo_url' => 'nullable|string|max:255',
         ]);

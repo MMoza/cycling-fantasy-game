@@ -8,6 +8,7 @@ use App\Domain\Entities\Stage;
 use App\Domain\Interfaces\CyclingDataFetcherInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class ImportStagesCommand extends Command
 {
@@ -43,7 +44,7 @@ class ImportStagesCommand extends Command
         $imported = 0;
 
         foreach ($stagesData as $stageData) {
-            $existing = \Illuminate\Support\Facades\DB::table('stages')
+            $existing = DB::table('stages')
                 ->where('edition_id', $editionId)
                 ->where('number', $stageData['number'])
                 ->first();
@@ -66,7 +67,7 @@ class ImportStagesCommand extends Command
                 destination: $stageData['destination'],
             );
 
-            \Illuminate\Support\Facades\DB::table('stages')->insert([
+            DB::table('stages')->insert([
                 'id' => $stage->id,
                 'edition_id' => $editionId,
                 'number' => $stage->number,

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/ui/searchable-select';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
-import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck, Trophy, Medal, Users, Crown, Flame, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Stage {
@@ -38,6 +38,23 @@ interface Prediction {
     locked_at: string | null;
 }
 
+interface StageResult {
+    position: number;
+    rider_id: string;
+    rider_name: string;
+    time: string | null;
+    gap: string | null;
+    profile_image: string | null;
+    is_gc_leader: boolean;
+    is_combativo: boolean;
+}
+
+interface ClassificationEntry {
+    user_id: string;
+    user_name: string;
+    total_points: number;
+}
+
 interface Option {
     value: string;
     label: string;
@@ -46,8 +63,11 @@ interface Option {
 interface ShowProps {
     league_id: string;
     stage: Stage;
+    is_finished: boolean;
     is_locked: boolean;
     predictions: Record<string, Prediction>;
+    stage_results: StageResult[];
+    stage_classification: ClassificationEntry[];
     navigation: Navigation;
     all_stages: { id: string; number: number; name: string }[];
     availableRiders: Option[];
@@ -62,7 +82,152 @@ const PREDICTION_CATEGORIES = [
     { key: 'stage_combativo', label: 'Combativo del día' },
 ];
 
-export default function Show({ league_id, stage, is_locked, predictions, navigation, availableRiders, availableTeams }: ShowProps) {
+const MEDAL_COLORS = ['text-yellow-500', 'text-gray-400', 'text-amber-700'];
+
+const STEP_COLORS = ['', 'text-gray-500', 'text-yellow-600'];
+
+function StageResultsCard({ results }: { results: StageResult[] }) {
+    const [expanded, setExpanded] = useState(false);
+    const podium = results.slice(0, 3);
+    const top5 = results.slice(0, 5);
+    const hideable = results.slice(5);
+    const visible = expanded ? results : top5;
+    const hasMore = hideable.length > 0;
+
+    const gcLeader = results.find((r) => r.is_gc_leader);
+    const combativo = results.find((r) => r.is_combativo);
+
+    return (
+        <Card>
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-accent-500" />
+                    Clasificación de la etapa
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5 px-6">
+                {/* Podium: 2-1-3 */}
+                <div className="grid grid-cols-3 items-end gap-3">
+                    {[podium[1], podium[0], podium[2]].map((r, i) => {
+                        if (!r) return <div key={i} />;
+                        const pos = [2, 1, 3][i];
+                        const colors = [
+                            'border-gray-300 bg-gray-50',
+                            'border-yellow-400 bg-yellow-50',
+                            'border-amber-600 bg-amber-50',
+                        ];
+                        const stepColors = ['', 'text-yellow-600', 'text-gray-500'];
+                        return (
+                            <div
+                                key={r.rider_id}
+                                className={cn(
+                                    'flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-center',
+                                    colors[i],
+                                    i === 1 ? 'pt-5' : 'pt-3',
+                                )}
+                            >
+                                <div className={cn('relative', i === 1 ? 'h-14 w-14' : 'h-12 w-12')}>
+                                    {r.profile_image ? (
+                                        <img
+                                            src={r.profile_image}
+                                            alt={r.rider_name}
+                                            className="h-full w-full rounded-full object-cover object-top"
+                                        />
+                                    ) : (
+                                        <div className="flex h-full w-full items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+                                            {r.rider_name.split(' ').pop()?.charAt(0)}
+                                        </div>
+                                    )}
+                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-0.5">
+                                        {gcLeader?.rider_id === r.rider_id && (
+                                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-sm">
+                                                <Crown className="h-3 w-3 text-yellow-500" />
+                                            </span>
+                                        )}
+                                        {combativo?.rider_id === r.rider_id && (
+                                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white shadow-sm">
+                                                <Flame className="h-3 w-3 text-red-500" />
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <span className="text-xs font-semibold leading-tight">{r.rider_name}</span>
+                                {r.time && <span className="text-xs text-muted-foreground tabular-nums">{r.time}</span>}
+                                <Medal className={cn('h-5 w-5', MEDAL_COLORS[pos - 1])} />
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Positions 4+ (list) */}
+                <div className="space-y-1">
+                    {visible.slice(3).map((r) => (
+                        <div
+                            key={r.rider_id}
+                            className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted/50"
+                        >
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                                {r.position}
+                            </div>
+                            {r.profile_image ? (
+                                <img
+                                    src={r.profile_image}
+                                    alt=""
+                                    className="h-7 w-7 shrink-0 rounded-full object-cover object-top"
+                                />
+                            ) : (
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                                    {r.rider_name.split(' ').pop()?.charAt(0)}
+                                </div>
+                            )}
+                            <span className="flex-1 text-sm font-medium">{r.rider_name}</span>
+                            {r.is_gc_leader && <Crown className="h-4 w-4 text-yellow-500" />}
+                            {r.is_combativo && <Flame className="h-4 w-4 text-red-500" />}
+                            {r.time && <span className="text-xs text-muted-foreground tabular-nums">{r.time}</span>}
+                            {r.gap && <span className="text-xs text-muted-foreground tabular-nums">{r.gap}</span>}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Expand button */}
+                {hasMore && (
+                    <div className="text-center">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExpanded(!expanded)}
+                            className="text-xs text-muted-foreground"
+                        >
+                            {expanded ? (
+                                <>Ver menos <ChevronUp className="ml-1 h-3 w-3" /></>
+                            ) : (
+                                <>Ver más ({hideable.length} restantes) <ChevronDown className="ml-1 h-3 w-3" /></>
+                            )}
+                        </Button>
+                    </div>
+                )}
+
+                {/* GC leader + Combativo summary */}
+                {(gcLeader || combativo) && (
+                    <div className="flex justify-center gap-4">
+                        {gcLeader && (
+                            <span className="flex items-center gap-1">
+                                <Crown className="h-4 w-4 text-yellow-500" />
+                            </span>
+                        )}
+                        {combativo && (
+                            <span className="flex items-center gap-1">
+                                <Flame className="h-4 w-4 text-red-500" />
+                            </span>
+                        )}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+export default function Show({ league_id, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams }: ShowProps) {
     const { errors } = usePage().props as any;
     const isTimeTrial = stage.type_value === 'time_trial' || stage.type_value === 'team_time_trial';
     const isTTT = stage.type_value === 'team_time_trial';
@@ -93,13 +258,11 @@ export default function Show({ league_id, stage, is_locked, predictions, navigat
 
     const hasSavedPredictions = useMemo(() =>
         categories.some(({ key }) => !!savedSnapshotRef.current[key]),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [savedVersion]
     );
 
     const hasUnsavedChanges = useMemo(() =>
         categories.some(({ key }) => formData[key] !== savedSnapshotRef.current[key]),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [formData, savedVersion]
     );
 
@@ -151,10 +314,14 @@ export default function Show({ league_id, stage, is_locked, predictions, navigat
         });
     };
 
+    const myStagePoints = stage_classification.find((e) => e.user_id === (usePage().props as any).auth?.user?.id)?.total_points ?? 0;
+    const predictionCount = Object.keys(predictions).length;
+
     const statCards = [
         { label: 'Tipo', value: stage.type, iconType: stage.type_value, color: 'bg-brand-600' },
         { label: 'Distancia', value: stage.distance ?? '-', color: 'bg-accent-500' },
         { label: 'Fecha', value: stage.date, color: 'bg-blue-500' },
+        { label: 'Salida', value: stage.scheduled_start ? new Date(stage.scheduled_start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC' : '-', color: 'bg-indigo-500' },
         { label: 'Desnivel', value: stage.elevation_gain ? `${stage.elevation_gain.toLocaleString()} m` : '-', color: 'bg-green-600' },
         { label: 'Recorrido', value: `${stage.origin} → ${stage.destination}`, color: 'bg-purple-500' },
         ...(stage.difficulty ? [{ label: 'Dificultad', value: '★'.repeat(stage.difficulty), color: 'bg-yellow-500' }] : []),
@@ -223,44 +390,91 @@ export default function Show({ league_id, stage, is_locked, predictions, navigat
                     ))}
                 </div>
 
+                {is_finished && stage_results.length > 0 && (
+                    <StageResultsCard results={stage_results} />
+                )}
+
+                {is_finished && stage_classification.length > 0 && (
+        <Card className="border-0">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2">
+                                <Users className="h-5 w-5 text-accent-500" />
+                                Clasificación de la liga — Etapa {stage.number}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="divide-y">
+                                {stage_classification.map((entry, i) => (
+                                    <div key={entry.user_id} className={cn(
+                                        'flex items-center gap-3 px-6 py-2.5',
+                                        entry.user_id === (usePage().props as any).auth?.user?.id && 'bg-accent/5',
+                                    )}>
+                                        <span className={cn(
+                                            'flex h-6 w-6 shrink-0 items-center justify-center text-xs font-bold',
+                                            i < 3 ? '' : 'text-muted-foreground',
+                                        )}>
+                                            {i < 3 ? (
+                                                <Medal className={cn('h-4 w-4', MEDAL_COLORS[i])} />
+                                            ) : (
+                                                `#${i + 1}`
+                                            )}
+                                        </span>
+                                        <span className="flex-1 text-sm font-medium">{entry.user_name}</span>
+                                        <span className="text-sm font-semibold tabular-nums">{entry.total_points} pts</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card className="overflow-visible">
                     <CardHeader className="px-6 pb-4 pt-6 sm:px-8">
                         <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-2">
-                                {isTTT ? 'Pronóstico por equipos' : 'Pronósticos de etapa'}
+                                {isTTT ? 'Pronóstico por equipos' : 'Mis pronósticos'}
                             </CardTitle>
-                            {is_locked && (
+                            {is_finished && (
+                                <Badge variant="secondary" className={cn(
+                                    'flex items-center gap-1',
+                                    myStagePoints > 0 ? 'border-green-500/30 text-green-600' : 'text-muted-foreground',
+                                )}>
+                                    <Trophy className="h-3 w-3" />
+                                    {myStagePoints} pts
+                                </Badge>
+                            )}
+                            {!is_finished && is_locked && (
                                 <Badge variant="secondary" className="flex items-center gap-1">
                                     <Lock className="h-3 w-3" />
                                     Bloqueado
                                 </Badge>
                             )}
-                            {!is_locked && hasSavedPredictions && !hasUnsavedChanges && (
+                            {!is_finished && !is_locked && hasSavedPredictions && !hasUnsavedChanges && (
                                 <Badge variant="secondary" className="flex items-center gap-1 border-green-500/30 text-green-600">
                                     <FileCheck className="h-3 w-3" />
                                     Guardado
                                 </Badge>
                             )}
-                            {!is_locked && hasUnsavedChanges && (
+                            {!is_finished && !is_locked && hasUnsavedChanges && (
                                 <Badge variant="secondary" className="flex items-center gap-1 border-amber-500/30 text-amber-600">
                                     <Save className="h-3 w-3" />
                                     Sin guardar
                                 </Badge>
                             )}
                         </div>
-                        {isTTT && (
+                        {!is_finished && isTTT && (
                             <p className="text-sm text-muted-foreground">
                                 Para las posiciones de etapa selecciona equipos. El líder GC sigue siendo un corredor.
                             </p>
                         )}
-                        {stage.type_value === 'time_trial' && (
+                        {!is_finished && stage.type_value === 'time_trial' && (
                             <p className="text-sm text-muted-foreground">
                                 Las etapas contrarreloj no tienen premio a la combatividad.
                             </p>
                         )}
                     </CardHeader>
                     <CardContent className="space-y-6 px-6 py-5 sm:px-8 sm:py-6">
-                        {is_locked ? (
+                        {is_finished || is_locked ? (
                             <div className="space-y-5">
                                 {categories.map(({ key, label }) => {
                                     const prediction = predictions[key];

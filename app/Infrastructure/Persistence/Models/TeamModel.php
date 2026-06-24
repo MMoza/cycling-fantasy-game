@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -24,7 +25,7 @@ class TeamModel extends Model
         'logo_url',
     ];
 
-    public function country(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function country(): BelongsTo
     {
         return $this->belongsTo(CountryModel::class, 'country_id', 'id');
     }

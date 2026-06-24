@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Interfaces;
 
-use App\Domain\ValueObjects\StageType;
-
 interface CyclingDataFetcherInterface
 {
     public function fetchStages(string $editionId): array;

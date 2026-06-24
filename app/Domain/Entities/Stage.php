@@ -6,6 +6,7 @@ namespace App\Domain\Entities;
 
 use App\Domain\ValueObjects\StageStatus;
 use App\Domain\ValueObjects\StageType;
+use Illuminate\Support\Str;
 
 readonly class Stage
 {
@@ -23,8 +24,7 @@ readonly class Stage
         public ?int $elevationGain = null,
         public ?string $profileImage = null,
         public ?int $difficulty = null,
-    ) {
-    }
+    ) {}
 
     public static function create(
         string $editionId,
@@ -40,7 +40,7 @@ readonly class Stage
         ?int $difficulty = null,
     ): self {
         return new self(
-            id: \Illuminate\Support\Str::uuid()->toString(),
+            id: Str::uuid()->toString(),
             editionId: $editionId,
             number: $number,
             name: $name,

@@ -9,9 +9,9 @@ use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Str;
 
 class EditionController extends Controller
 {

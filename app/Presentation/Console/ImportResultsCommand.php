@@ -8,6 +8,7 @@ use App\Domain\Entities\StageResult;
 use App\Domain\Interfaces\CyclingDataFetcherInterface;
 use App\Infrastructure\Persistence\Models\StageModel;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class ImportResultsCommand extends Command
 {
@@ -43,7 +44,7 @@ class ImportResultsCommand extends Command
         $imported = 0;
 
         foreach ($resultsData as $resultData) {
-            $existing = \Illuminate\Support\Facades\DB::table('stage_results')
+            $existing = DB::table('stage_results')
                 ->where('stage_id', $stageId)
                 ->where('position', $resultData['position'])
                 ->first();
@@ -63,7 +64,7 @@ class ImportResultsCommand extends Command
                 gap: $resultData['gap'],
             );
 
-            \Illuminate\Support\Facades\DB::table('stage_results')->insert([
+            DB::table('stage_results')->insert([
                 'id' => $result->id,
                 'stage_id' => $stageId,
                 'rider_id' => $result->riderId,

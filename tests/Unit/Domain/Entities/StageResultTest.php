@@ -48,3 +48,16 @@ test('identifies top five', function () {
     expect($fifth->isTopFive())->toBeTrue();
     expect($sixth->isTopFive())->toBeFalse();
 });
+
+test('creates stage result with gc leader and combativo flags', function () {
+    $result = StageResult::create(
+        stageId: 'stage-uuid',
+        riderId: 'rider-uuid',
+        position: 1,
+        isGcLeader: true,
+        isCombativo: true,
+    );
+
+    expect($result->isGcLeader)->toBeTrue();
+    expect($result->isCombativo)->toBeTrue();
+});

@@ -22,10 +22,14 @@ class StageResultModel extends Model
         'position',
         'time',
         'gap',
+        'is_gc_leader',
+        'is_combativo',
     ];
 
     protected $casts = [
         'position' => 'integer',
+        'is_gc_leader' => 'boolean',
+        'is_combativo' => 'boolean',
     ];
 
     public function stage(): BelongsTo

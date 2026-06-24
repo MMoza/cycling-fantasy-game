@@ -1,5 +1,6 @@
 <?php
 
+use App\Presentation\Http\Middleware\EnsureIsSuperAdmin;
 use App\Presentation\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'super-admin' => \App\Presentation\Http\Middleware\EnsureIsSuperAdmin::class,
+            'super-admin' => EnsureIsSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

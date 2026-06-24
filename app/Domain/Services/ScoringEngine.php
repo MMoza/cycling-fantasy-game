@@ -16,8 +16,7 @@ class ScoringEngine
 {
     public function __construct(
         private readonly ScoringSystem $scoringSystem,
-    ) {
-    }
+    ) {}
 
     public function calculateStageScore(
         Prediction $prediction,

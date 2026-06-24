@@ -6,6 +6,7 @@ namespace App\Infrastructure\Persistence\Models;
 
 use App\Domain\ValueObjects\CompetitionType;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
@@ -25,7 +26,7 @@ class CompetitionModel extends Model
         'active',
     ];
 
-    public function country(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function country(): BelongsTo
     {
         return $this->belongsTo(CountryModel::class, 'country_id', 'id');
     }

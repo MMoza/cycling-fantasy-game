@@ -69,7 +69,7 @@ class ScoreStageCommand extends Command
         $alreadyScored = DB::table('score_events')
             ->whereIn('league_id', $leagueIds)
             ->where('user_id', $userId)
-            ->where('context', 'like', "stage_%")
+            ->where('context', 'like', 'stage_%')
             ->exists();
 
         if ($alreadyScored && ! $this->option('force')) {
@@ -81,7 +81,7 @@ class ScoreStageCommand extends Command
         if ($this->option('force')) {
             DB::table('score_events')
                 ->whereIn('league_id', $leagueIds)
-                ->where('context', 'like', "stage_%")
+                ->where('context', 'like', 'stage_%')
                 ->delete();
 
             $this->info('Cleared existing score events for re-scoring');

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers;
 
-use App\Domain\ValueObjects\PredictionCategory;
 use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\LeagueModel;
@@ -52,7 +51,7 @@ class PredictionController extends Controller
 
         $validated = $request->validate([
             'predictions' => ['required', 'array'],
-            'predictions.*.category' => ['required', 'string', 'in:' . implode(',', self::PRE_STAGE_CATEGORIES)],
+            'predictions.*.category' => ['required', 'string', 'in:'.implode(',', self::PRE_STAGE_CATEGORIES)],
             'predictions.*.value' => ['required'],
         ]);
 
@@ -133,7 +132,7 @@ class PredictionController extends Controller
 
         $validated = $request->validate([
             'predictions' => ['required', 'array'],
-            'predictions.*.category' => ['required', 'string', 'in:' . implode(',', self::PRE_RACE_CATEGORIES)],
+            'predictions.*.category' => ['required', 'string', 'in:'.implode(',', self::PRE_RACE_CATEGORIES)],
             'predictions.*.value' => ['required'],
         ]);
 
