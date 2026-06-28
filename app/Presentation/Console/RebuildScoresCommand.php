@@ -19,6 +19,7 @@ use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class RebuildScoresCommand extends Command
@@ -176,7 +177,7 @@ class RebuildScoresCommand extends Command
         return self::SUCCESS;
     }
 
-    private function buildPositionMap(\Illuminate\Support\Collection $items): array
+    private function buildPositionMap(Collection $items): array
     {
         if ($items->isEmpty()) {
             return [];

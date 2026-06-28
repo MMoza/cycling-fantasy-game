@@ -7,7 +7,6 @@ namespace App\Application\UseCases\Admin\Competition;
 use App\Application\DTOs\Admin\CompetitionDTO;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\CountryModel;
-use Illuminate\Support\Collection;
 
 class ListCompetitionsUseCase
 {

@@ -15,6 +15,7 @@ use App\Infrastructure\Persistence\Models\FinalClassificationModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ScorePreRaceCommand extends Command
@@ -125,7 +126,7 @@ class ScorePreRaceCommand extends Command
         return self::SUCCESS;
     }
 
-    private function buildPositionMap(\Illuminate\Support\Collection $items): array
+    private function buildPositionMap(Collection $items): array
     {
         if ($items->isEmpty()) {
             return [];

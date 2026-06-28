@@ -11,7 +11,6 @@ use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Models\User;
-use Illuminate\Support\Collection;
 
 class ListStagesUseCase
 {
