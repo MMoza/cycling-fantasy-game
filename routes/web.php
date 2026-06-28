@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -45,7 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/leagues/{league}/classification', [ClassificationController::class, 'index'])->name('classification.index');
 });
 
-Route::middleware(['auth', 'verified', 'super-admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [App\Presentation\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
     // Competitions
