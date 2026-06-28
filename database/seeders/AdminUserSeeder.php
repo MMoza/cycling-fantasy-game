@@ -22,6 +22,7 @@ class AdminUserSeeder extends Seeder
             'email' => 'admin@cyclingfantasy.com',
             'password' => bcrypt('admin1234'),
             'is_admin' => true,
+            'email_verified_at' => now(),
         ]);
     }
 }
