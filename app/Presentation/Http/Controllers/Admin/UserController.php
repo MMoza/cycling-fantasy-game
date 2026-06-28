@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers\Admin;
 
-use App\Models\User;
+use App\Application\UseCases\Admin\User\ListUsersUseCase;
+use App\Application\UseCases\Admin\User\ToggleAdminUseCase;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,18 +14,14 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly ListUsersUseCase $listUsersUseCase,
+        private readonly ToggleAdminUseCase $toggleAdminUseCase,
+    ) {}
+
     public function index(Request $request): Response
     {
-        $users = User::orderBy('name')
-            ->get()
-            ->map(fn ($u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'email' => $u->email,
-                'is_admin' => $u->is_admin,
-                'leagues_count' => $u->leagues()->count(),
-                'created_at' => $u->created_at->format('Y-m-d'),
-            ]);
+        $users = $this->listUsersUseCase->execute();
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
@@ -33,8 +30,7 @@ class UserController extends Controller
 
     public function toggleAdmin(string $id): RedirectResponse
     {
-        $user = User::findOrFail($id);
-        $user->update(['is_admin' => ! $user->is_admin]);
+        $this->toggleAdminUseCase->execute($id);
 
         return redirect()->route('admin.users.index');
     }

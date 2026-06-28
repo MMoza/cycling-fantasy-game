@@ -14,27 +14,15 @@ return new class extends Migration
             $table->unsignedTinyInteger('difficulty')->nullable()->after('context');
             $table->unsignedTinyInteger('position')->nullable()->after('difficulty');
             $table->unique(['scoring_system_id', 'type', 'difficulty', 'position']);
-            $table->foreign('scoring_system_id')
-                ->references('id')
-                ->on('scoring_systems')
-                ->cascadeOnDelete();
         });
     }
 
     public function down(): void
     {
         Schema::table('scoring_rules', function (Blueprint $table) {
-            $table->dropForeign(['scoring_system_id']);
             $table->dropUnique(['scoring_system_id', 'type', 'difficulty', 'position']);
             $table->dropColumn('difficulty');
             $table->dropColumn('position');
-        });
-
-        Schema::table('scoring_rules', function (Blueprint $table) {
-            $table->foreign('scoring_system_id')
-                ->references('id')
-                ->on('scoring_systems')
-                ->cascadeOnDelete();
         });
     }
 };

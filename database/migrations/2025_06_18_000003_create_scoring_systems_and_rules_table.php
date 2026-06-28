@@ -31,7 +31,7 @@ return new class extends Migration
                 ->on('scoring_systems')
                 ->cascadeOnDelete();
 
-            $table->unique(['scoring_system_id', 'type']);
+            $table->index(['scoring_system_id', 'type']);
         });
     }
 

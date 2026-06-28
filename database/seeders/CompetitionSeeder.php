@@ -20,7 +20,7 @@ class CompetitionSeeder extends Seeder
         ], [
             'id' => Str::uuid()->toString(),
             'type' => CompetitionType::GrandTour,
-            'country' => 'Francia',
+            'country_id' => 'FR',
             'active' => true,
         ]);
 

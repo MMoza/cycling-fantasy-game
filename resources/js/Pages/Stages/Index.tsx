@@ -37,7 +37,7 @@ const STATUS_STYLES: Record<string, { card: string; num: string }> = {
         num: 'bg-muted/50 text-muted-foreground',
     },
     ongoing: {
-        card: 'uci-rainbow-border bg-card',
+        card: 'uci-rainbow-border bg-accent/[0.04]',
         num: 'bg-accent text-accent-foreground',
     },
     upcoming: {
@@ -156,6 +156,10 @@ export default function Index({ league_id, league_name, competition, year, stage
                                                 {points(stage)} pts
                                             </span>
                                         </>
+                                    ) : isOngoing(stage) ? (
+                                        <span className="inline-flex items-center rounded-full border border-accent/40 bg-accent/[0.08] px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
+                                            En curso
+                                        </span>
                                     ) : (
                                         hasPrediction(stage) ? (
                                             <FileCheck className="h-4 w-4 text-green-500" />

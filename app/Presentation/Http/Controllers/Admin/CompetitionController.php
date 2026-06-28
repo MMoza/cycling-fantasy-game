@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers\Admin;
 
-use App\Infrastructure\Persistence\Models\CompetitionModel;
-use App\Infrastructure\Persistence\Models\CountryModel;
+use App\Application\UseCases\Admin\Competition\GetCompetitionFormDataUseCase;
+use App\Application\UseCases\Admin\Competition\ListCompetitionsUseCase;
+use App\Application\UseCases\Admin\Competition\StoreCompetitionUseCase;
+use App\Application\UseCases\Admin\Competition\UpdateCompetitionUseCase;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,40 +16,30 @@ use Inertia\Response;
 
 class CompetitionController extends Controller
 {
+    public function __construct(
+        private readonly ListCompetitionsUseCase $listCompetitionsUseCase,
+        private readonly GetCompetitionFormDataUseCase $getCompetitionFormDataUseCase,
+        private readonly StoreCompetitionUseCase $storeCompetitionUseCase,
+        private readonly UpdateCompetitionUseCase $updateCompetitionUseCase,
+    ) {}
+
     public function index(): Response
     {
-        $competitions = CompetitionModel::with('country')
-            ->withCount('editions')
-            ->orderBy('name')
-            ->get()
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'name' => $c->name,
-                'type' => $c->type->label(),
-                'country_id' => $c->country_id,
-                'active' => $c->active,
-                'editions_count' => $c->editions_count,
-            ]);
-
-        $countries = CountryModel::orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
+        $data = $this->listCompetitionsUseCase->execute();
 
         return Inertia::render('Admin/Competitions/Index', [
-            'competitions' => $competitions,
-            'countries' => $countries,
+            'competitions' => $data['competitions'],
+            'countries' => $data['countries'],
         ]);
     }
 
     public function create(): Response
     {
-        $countries = CountryModel::orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
+        $data = $this->getCompetitionFormDataUseCase->execute();
 
         return Inertia::render('Admin/Competitions/Form', [
-            'competition' => null,
-            'countries' => $countries,
+            'competition' => $data['competition'],
+            'countries' => $data['countries'],
         ]);
     }
 
@@ -59,35 +51,23 @@ class CompetitionController extends Controller
             'country_id' => 'required|string|size:2|exists:countries,id',
         ]);
 
-        CompetitionModel::create($validated);
+        $this->storeCompetitionUseCase->execute($validated);
 
         return redirect()->route('admin.competitions.index');
     }
 
     public function edit(string $id): Response
     {
-        $competition = CompetitionModel::findOrFail($id);
-
-        $countries = CountryModel::orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
+        $data = $this->getCompetitionFormDataUseCase->execute($id);
 
         return Inertia::render('Admin/Competitions/Form', [
-            'competition' => [
-                'id' => $competition->id,
-                'name' => $competition->name,
-                'type' => $competition->type->value,
-                'country_id' => $competition->country_id,
-                'active' => $competition->active,
-            ],
-            'countries' => $countries,
+            'competition' => $data['competition'],
+            'countries' => $data['countries'],
         ]);
     }
 
     public function update(Request $request, string $id): RedirectResponse
     {
-        $competition = CompetitionModel::findOrFail($id);
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|in:grand_tour,one_week,classic',
@@ -95,7 +75,7 @@ class CompetitionController extends Controller
             'active' => 'boolean',
         ]);
 
-        $competition->update($validated);
+        $this->updateCompetitionUseCase->execute($id, $validated);
 
         return redirect()->route('admin.competitions.index');
     }

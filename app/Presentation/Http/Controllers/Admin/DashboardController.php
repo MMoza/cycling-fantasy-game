@@ -4,25 +4,20 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers\Admin;
 
-use App\Infrastructure\Persistence\Models\CompetitionModel;
-use App\Infrastructure\Persistence\Models\EditionModel;
-use App\Infrastructure\Persistence\Models\StageModel;
-use App\Models\User;
+use App\Application\UseCases\Admin\ShowAdminDashboardUseCase;
 use App\Presentation\Http\Controllers\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly ShowAdminDashboardUseCase $showAdminDashboardUseCase,
+    ) {}
+
     public function index(): Response
     {
-        $stats = [
-            'competitions_count' => CompetitionModel::count(),
-            'editions_count' => EditionModel::count(),
-            'stages_count' => StageModel::count(),
-            'users_count' => User::count(),
-            'active_competitions' => CompetitionModel::where('active', true)->count(),
-        ];
+        $stats = $this->showAdminDashboardUseCase->execute();
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,

@@ -4,73 +4,62 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers;
 
-use App\Infrastructure\Persistence\Models\EditionModel;
-use App\Infrastructure\Persistence\Models\LeagueModel;
-use App\Infrastructure\Persistence\Models\ScoringSystemModel;
+use App\Application\DTOs\CreateLeagueDTO;
+use App\Application\UseCases\League\CreateLeagueUseCase;
+use App\Application\UseCases\League\GetCreateLeagueFormDataUseCase;
+use App\Application\UseCases\League\JoinLeagueUseCase;
+use App\Application\UseCases\League\ListLeaguesUseCase;
+use App\Application\UseCases\League\ShowLeagueUseCase;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class LeagueController extends Controller
 {
+    public function __construct(
+        private readonly ListLeaguesUseCase $listLeaguesUseCase,
+        private readonly GetCreateLeagueFormDataUseCase $getCreateLeagueFormDataUseCase,
+        private readonly CreateLeagueUseCase $createLeagueUseCase,
+        private readonly ShowLeagueUseCase $showLeagueUseCase,
+        private readonly JoinLeagueUseCase $joinLeagueUseCase,
+    ) {}
+
     public function index(Request $request)
     {
-        $leagues = $request->user()->leagues()->with(['edition', 'scoringSystem'])->get();
+        $leagues = $this->listLeaguesUseCase->execute($request->user());
 
         return Inertia::render('Leagues/Index', [
-            'leagues' => $leagues->map(fn ($league) => [
-                'id' => $league->id,
-                'name' => $league->name,
+            'leagues' => $leagues->map(fn ($dto) => [
+                'id' => $dto->id,
+                'name' => $dto->name,
                 'edition' => [
-                    'name' => $league->edition->competition->name,
-                    'year' => $league->edition->year,
+                    'name' => $dto->editionName,
+                    'year' => $dto->editionYear,
                 ],
                 'scoring_system' => [
-                    'name' => $league->scoringSystem->name,
+                    'name' => $dto->scoringSystemName,
                 ],
-                'member_count' => $league->users()->count(),
-                'owner_id' => $league->owner_id,
-                'invite_code' => $league->invite_code,
-                'max_players' => $league->max_players,
-                'is_public' => $league->is_public,
+                'member_count' => $dto->memberCount,
+                'owner_id' => $dto->ownerId,
+                'invite_code' => $dto->inviteCode,
+                'max_players' => $dto->maxPlayers,
+                'is_public' => $dto->isPublic,
             ]),
         ]);
     }
 
     public function create()
     {
-        $editions = EditionModel::with('competition')->get();
-        $scoringSystems = ScoringSystemModel::all();
+        $data = $this->getCreateLeagueFormDataUseCase->execute();
 
         return Inertia::render('Leagues/Create', [
-            'editions' => $editions->filter->competition->values()->map(fn ($e) => [
-                'id' => $e->id,
-                'name' => $e->competition->name,
-                'year' => $e->year,
-                'competition' => ['name' => $e->competition->name],
-            ]),
-            'scoringSystems' => $scoringSystems->map(fn ($s) => [
-                'id' => $s->id,
-                'name' => $s->name,
-                'description' => $s->description,
-                'type' => $s->type->value,
-            ]),
+            'editions' => $data['editions'],
+            'scoringSystems' => $data['scoringSystems'],
         ]);
     }
 
     public function show(Request $request, string $league)
     {
-        $user = $request->user();
-
-        $leagueModel = LeagueModel::with(['edition.competition', 'scoringSystem', 'stages', 'users'])
-            ->find($league);
-
-        if (! $leagueModel || ! $user->leagues()->where('leagues.id', $league)->exists()) {
-            abort(404);
-        }
-
-        $user->update(['last_visited_league_id' => $league]);
+        $leagueModel = $this->showLeagueUseCase->execute($request->user(), $league);
 
         $nextStage = $leagueModel->stages()
             ->where('status', 'upcoming')
@@ -138,21 +127,15 @@ class LeagueController extends Controller
             'is_public' => ['required', 'boolean'],
         ]);
 
-        $league = LeagueModel::create([
-            'id' => Str::uuid()->toString(),
-            'name' => $validated['name'],
-            'edition_id' => $validated['edition_id'],
-            'scoring_system_id' => $validated['scoring_system_id'],
-            'owner_id' => Auth::id(),
-            'invite_code' => Str::random(8),
-            'max_players' => $validated['max_players'],
-            'is_public' => $validated['is_public'],
-        ]);
+        $dto = new CreateLeagueDTO(
+            name: $validated['name'],
+            editionId: $validated['edition_id'],
+            scoringSystemId: $validated['scoring_system_id'],
+            maxPlayers: $validated['max_players'],
+            isPublic: $validated['is_public'],
+        );
 
-        $league->users()->attach(Auth::id(), [
-            'id' => Str::uuid()->toString(),
-            'role' => 'owner',
-        ]);
+        $league = $this->createLeagueUseCase->execute($request->user(), $dto);
 
         return redirect()->route('leagues.show', $league->id);
     }
@@ -163,16 +146,7 @@ class LeagueController extends Controller
             'invite_code' => ['required', 'string', 'exists:leagues,invite_code'],
         ]);
 
-        $league = LeagueModel::where('invite_code', $validated['invite_code'])->first();
-
-        if ($request->user()->leagues()->where('leagues.id', $league->id)->exists()) {
-            return redirect()->route('leagues.show', $league->id);
-        }
-
-        $league->users()->attach($request->user()->id, [
-            'id' => Str::uuid()->toString(),
-            'role' => 'member',
-        ]);
+        $league = $this->joinLeagueUseCase->execute($request->user(), $validated['invite_code']);
 
         return redirect()->route('leagues.show', $league->id);
     }

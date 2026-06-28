@@ -4,30 +4,24 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers;
 
-use App\Infrastructure\Persistence\Models\LeagueModel;
+use App\Application\UseCases\Dashboard\ShowDashboardUseCase;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly ShowDashboardUseCase $showDashboardUseCase,
+    ) {}
+
     public function index(Request $request)
     {
         $user = $request->user();
 
-        if ($user->last_visited_league_id) {
-            $league = LeagueModel::find($user->last_visited_league_id);
+        $leagueId = $this->showDashboardUseCase->execute($user);
 
-            if ($league && $user->leagues()->where('leagues.id', $league->id)->exists()) {
-                return redirect()->route('leagues.show', $league->id);
-            }
-        }
-
-        $leagues = $user->leagues()->with(['edition.competition', 'scoringSystem'])->get();
-
-        if ($leagues->isNotEmpty()) {
-            $firstLeague = $leagues->first();
-
-            return redirect()->route('leagues.show', $firstLeague->id);
+        if ($leagueId) {
+            return redirect()->route('leagues.show', $leagueId);
         }
 
         return Inertia::render('Dashboard');
