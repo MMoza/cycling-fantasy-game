@@ -13,6 +13,7 @@ use App\Presentation\Console\LockPredictionsCommand;
 use App\Presentation\Console\RebuildScoresCommand;
 use App\Presentation\Console\ScorePreRaceCommand;
 use App\Presentation\Console\ScoreStageCommand;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->isProduction()) {
+            URL::forceScheme('https');
+        }
+
         Vite::prefetch(concurrency: 3);
 
         $this->commands([
