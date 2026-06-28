@@ -89,8 +89,8 @@ jobs:
           echo "DB_PASSWORD=root" >> .env
           php artisan key:generate
 
-      - name: Run migrations
-        run: php artisan migrate --force
+      - name: Run migrations and seeders
+        run: php artisan app:deploy --seed
 
       - name: Run Pest tests
         run: ./vendor/bin/pest --ci

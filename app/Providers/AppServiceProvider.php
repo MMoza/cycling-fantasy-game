@@ -56,6 +56,7 @@ use App\Domain\Interfaces\CyclingDataFetcherInterface;
 use App\Infrastructure\Services\MockCyclingDataFetcher;
 use App\Presentation\Console\ImportResultsCommand;
 use App\Presentation\Console\ImportStagesCommand;
+use App\Presentation\Console\Deploy\AppDeployCommand;
 use App\Presentation\Console\LockPredictionsCommand;
 use App\Presentation\Console\RebuildScoresCommand;
 use App\Presentation\Console\ScorePreRaceCommand;
@@ -75,6 +76,7 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         $this->commands([
+            AppDeployCommand::class,
             ImportStagesCommand::class,
             ImportResultsCommand::class,
             ScoreStageCommand::class,
