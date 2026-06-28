@@ -11,15 +11,14 @@ use App\Presentation\Http\Controllers\Admin\TeamController;
 use App\Presentation\Http\Controllers\Admin\UserController;
 use App\Presentation\Http\Controllers\ClassificationController;
 use App\Presentation\Http\Controllers\DashboardController;
+use App\Presentation\Http\Controllers\LandingController;
 use App\Presentation\Http\Controllers\LeagueController;
 use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
 use App\Presentation\Http\Controllers\StageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return redirect()->route('dashboard');
-});
+Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])

@@ -7,13 +7,13 @@ use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_redirects_to_dashboard(): void
+    public function test_the_landing_page_is_accessible(): void
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertStatus(200);
+        $response->assertInertia(fn ($page) => $page
+            ->component('Landing')
+        );
     }
 }
