@@ -12,7 +12,16 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        if (User::where('email', 'admin@cyclingfantasy.com')->exists()) {
+        $admin = User::where('email', 'admin@cyclingfantasy.com')->first();
+
+        if ($admin) {
+            if (! $admin->email_verified_at || ! $admin->is_admin) {
+                $admin->update([
+                    'is_admin' => true,
+                    'email_verified_at' => $admin->email_verified_at ?? now(),
+                ]);
+            }
+
             return;
         }
 
