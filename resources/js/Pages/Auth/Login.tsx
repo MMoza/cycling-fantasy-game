@@ -37,7 +37,7 @@ export default function Login({
                 </div>
             )}
 
-            <form onSubmit={submit}>
+            <form onSubmit={submit} className="space-y-5">
                 <div>
                     <InputLabel htmlFor="email" value="Correo electrónico" />
 
@@ -55,7 +55,7 @@ export default function Login({
                     <InputError message={errors.email} className="mt-2" />
                 </div>
 
-                <div className="mt-4">
+                <div>
                     <InputLabel htmlFor="password" value="Contraseña" />
 
                     <TextInput
@@ -71,41 +71,39 @@ export default function Login({
                     <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                <div className="mt-4 block">
-                    <label className="flex items-center">
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) =>
-                                setData(
-                                    'remember',
-                                    (e.target.checked || false) as false,
-                                )
-                            }
-                        />
-                        <span className="ms-2 text-sm text-gray-600">
-                            Recordarme
-                        </span>
-                    </label>
-                </div>
+                <label className="flex items-center gap-2">
+                    <Checkbox
+                        name="remember"
+                        checked={data.remember}
+                        onChange={(e) =>
+                            setData(
+                                'remember',
+                                (e.target.checked || false) as false,
+                            )
+                        }
+                    />
+                    <span className="text-sm text-muted-foreground">
+                        Recordarme
+                    </span>
+                </label>
 
-                <div className="mt-4 flex items-center justify-end">
+                <div className="space-y-3">
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="inline-flex w-full items-center justify-center rounded-md bg-accent-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
+                    >
+                        {processing ? 'Entrando...' : 'Entrar'}
+                    </button>
+
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
+                            className="block text-center text-sm text-muted-foreground underline hover:text-foreground transition-colors"
                         >
                             ¿Olvidaste tu contraseña?
                         </Link>
                     )}
-
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="inline-flex h-10 items-center justify-center rounded-md bg-accent-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
-                    >
-                        {processing ? 'Entrando...' : 'Entrar'}
-                    </button>
                 </div>
             </form>
         </GuestLayout>

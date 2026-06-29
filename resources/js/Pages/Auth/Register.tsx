@@ -25,7 +25,7 @@ export default function Register() {
         <GuestLayout>
             <Head title="Crear cuenta" />
 
-            <form onSubmit={submit}>
+            <form onSubmit={submit} className="space-y-5">
                 <div>
                     <InputLabel htmlFor="name" value="Nombre" />
 
@@ -43,7 +43,7 @@ export default function Register() {
                     <InputError message={errors.name} className="mt-2" />
                 </div>
 
-                <div className="mt-4">
+                <div>
                     <InputLabel htmlFor="email" value="Correo electrónico" />
 
                     <TextInput
@@ -60,7 +60,7 @@ export default function Register() {
                     <InputError message={errors.email} className="mt-2" />
                 </div>
 
-                <div className="mt-4">
+                <div>
                     <InputLabel htmlFor="password" value="Contraseña" />
 
                     <TextInput
@@ -77,7 +77,7 @@ export default function Register() {
                     <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                <div className="mt-4">
+                <div>
                     <InputLabel
                         htmlFor="password_confirmation"
                         value="Confirmar contraseña"
@@ -102,21 +102,21 @@ export default function Register() {
                     />
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    <Link
-                        href={route('login')}
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
-                    >
-                        ¿Ya tienes cuenta?
-                    </Link>
-
+                <div className="space-y-3">
                     <button
                         type="submit"
                         disabled={processing}
-                        className="inline-flex h-10 items-center justify-center rounded-md bg-accent-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
+                        className="inline-flex w-full items-center justify-center rounded-md bg-accent-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
                     >
                         {processing ? 'Creando cuenta...' : 'Crear cuenta'}
                     </button>
+
+                    <Link
+                        href={route('login')}
+                        className="block text-center text-sm text-muted-foreground underline hover:text-foreground transition-colors"
+                    >
+                        ¿Ya tienes cuenta?
+                    </Link>
                 </div>
             </form>
         </GuestLayout>

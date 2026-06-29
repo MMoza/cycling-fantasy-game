@@ -1,4 +1,3 @@
-import PrimaryButton from '@/breeze/PrimaryButton';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
@@ -14,37 +13,41 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
     return (
         <GuestLayout>
-            <Head title="Email Verification" />
+            <Head title="Verificar correo" />
 
-            <div className="mb-4 text-sm text-gray-600">
-                Thanks for signing up! Before getting started, could you verify
-                your email address by clicking on the link we just emailed to
-                you? If you didn't receive the email, we will gladly send you
-                another.
+            <div className="text-sm text-muted-foreground space-y-3">
+                <p>
+                    Gracias por registrarte. Verifica tu correo electrónico
+                    usando el enlace que te hemos enviado.
+                </p>
+                <p>
+                    Si no recibiste el correo, solicita uno nuevo más abajo.
+                </p>
             </div>
 
             {status === 'verification-link-sent' && (
-                <div className="mb-4 text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
+                <div className="text-sm font-medium text-green-600">
+                    Se ha enviado un nuevo enlace de verificación a tu correo.
                 </div>
             )}
 
-            <form onSubmit={submit}>
-                <div className="mt-4 flex items-center justify-between">
-                    <PrimaryButton disabled={processing}>
-                        Resend Verification Email
-                    </PrimaryButton>
+            <form onSubmit={submit} className="space-y-4">
+                <button
+                    type="submit"
+                    disabled={processing}
+                    className="inline-flex w-full items-center justify-center rounded-md bg-accent-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
+                >
+                    {processing ? 'Enviando...' : 'Reenviar verificación'}
+                </button>
 
-                    <Link
-                        href={route('logout')}
-                        method="post"
-                        as="button"
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Log Out
-                    </Link>
-                </div>
+                <Link
+                    href={route('logout')}
+                    method="post"
+                    as="button"
+                    className="block w-full text-center text-sm text-muted-foreground underline hover:text-foreground transition-colors"
+                >
+                    Cerrar sesión
+                </Link>
             </form>
         </GuestLayout>
     );

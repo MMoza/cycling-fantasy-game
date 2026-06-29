@@ -1,21 +1,20 @@
-import { Link } from '@inertiajs/react';
 import { PropsWithChildren } from 'react';
 
 export default function Guest({ children }: PropsWithChildren) {
     return (
-        <div className="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0">
-            <div>
-                <Link href="/">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
+            <div className="w-full max-w-sm">
+                <div className="mb-8 text-center">
                     <img
                         src="/logo-pedales.png"
                         alt="Pedales"
-                        className="h-24 w-auto"
+                        className="mx-auto h-20 w-20 rounded-full object-cover ring-4 ring-border sm:h-24 sm:w-24"
                     />
-                </Link>
-            </div>
+                </div>
 
-            <div className="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg">
-                {children}
+                <div className="space-y-6 sm:rounded-xl sm:border sm:p-8">
+                    {children}
+                </div>
             </div>
         </div>
     );

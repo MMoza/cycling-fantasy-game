@@ -1,5 +1,5 @@
 import InputError from '@/breeze/InputError';
-import PrimaryButton from '@/breeze/PrimaryButton';
+import InputLabel from '@/breeze/InputLabel';
 import TextInput from '@/breeze/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
@@ -18,38 +18,43 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
     return (
         <GuestLayout>
-            <Head title="Forgot Password" />
+            <Head title="Recuperar contraseña" />
 
-            <div className="mb-4 text-sm text-gray-600">
-                Forgot your password? No problem. Just let us know your email
-                address and we will email you a password reset link that will
-                allow you to choose a new one.
+            <div className="text-sm text-muted-foreground">
+                ¿Olvidaste tu contraseña? Indícanos tu correo y te enviaremos un
+                enlace para restablecerla.
             </div>
 
             {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
+                <div className="text-sm font-medium text-green-600">
                     {status}
                 </div>
             )}
 
-            <form onSubmit={submit}>
-                <TextInput
-                    id="email"
-                    type="email"
-                    name="email"
-                    value={data.email}
-                    className="mt-1 block w-full"
-                    isFocused={true}
-                    onChange={(e) => setData('email', e.target.value)}
-                />
+            <form onSubmit={submit} className="space-y-5">
+                <div>
+                    <InputLabel htmlFor="email" value="Correo electrónico" />
 
-                <InputError message={errors.email} className="mt-2" />
+                    <TextInput
+                        id="email"
+                        type="email"
+                        name="email"
+                        value={data.email}
+                        className="mt-1 block w-full"
+                        isFocused={true}
+                        onChange={(e) => setData('email', e.target.value)}
+                    />
 
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Email Password Reset Link
-                    </PrimaryButton>
+                    <InputError message={errors.email} className="mt-2" />
                 </div>
+
+                <button
+                    type="submit"
+                    disabled={processing}
+                    className="inline-flex w-full items-center justify-center rounded-md bg-accent-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
+                >
+                    {processing ? 'Enviando...' : 'Enviar enlace'}
+                </button>
             </form>
         </GuestLayout>
     );
