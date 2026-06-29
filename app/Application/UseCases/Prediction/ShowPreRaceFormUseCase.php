@@ -15,7 +15,7 @@ class ShowPreRaceFormUseCase
 {
     public function execute(User $user, string $leagueId): array
     {
-        $league = LeagueModel::with('edition.competition')->findOrFail($leagueId);
+        $league = LeagueModel::with(['edition.competition', 'scoringSystem.rules'])->findOrFail($leagueId);
 
         if (! $user->leagues()->where('leagues.id', $leagueId)->exists()) {
             abort(404);
@@ -65,6 +65,7 @@ class ShowPreRaceFormUseCase
             'predictions' => $predictions,
             'availableRiders' => $availableRiders,
             'availableTeams' => $availableTeams,
+            'scoringSystem' => $league->scoringSystem,
         ];
     }
 }

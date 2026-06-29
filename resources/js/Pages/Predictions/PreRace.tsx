@@ -6,12 +6,29 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/ui/searchable-select';
-import { Lock, Save, Target } from 'lucide-react';
+import { Lock, Save, Target, Info, X } from 'lucide-react';
 
 interface Prediction {
     category: string;
     value: string | string[] | Record<string, string>;
     locked_at: string | null;
+}
+
+interface ScoringRule {
+    id: string;
+    type: string;
+    label: string;
+    points: number;
+    position: number | null;
+    difficulty: number | null;
+    context: string | null;
+}
+
+interface ScoringSystem {
+    id: string;
+    name: string;
+    description: string;
+    rules: ScoringRule[];
 }
 
 interface PreRaceProps {
@@ -25,6 +42,7 @@ interface PreRaceProps {
     predictions: Record<string, Prediction>;
     availableRiders: { value: string; label: string }[];
     availableTeams: { value: string; label: string }[];
+    scoring_system: ScoringSystem;
 }
 
 const GC_TOP_5_SLOTS = [
@@ -64,8 +82,9 @@ function initArrayPredictions(predictions: Record<string, Prediction>, key: stri
     return arr;
 }
 
-export default function PreRace({ league_id, league_name, competition, is_locked, predictions, availableRiders, availableTeams }: PreRaceProps) {
+export default function PreRace({ league_id, league_name, competition, is_locked, predictions, availableRiders, availableTeams, scoring_system }: PreRaceProps) {
     const { errors } = usePage().props as any;
+    const [scoringInfoOpen, setScoringInfoOpen] = useState(false);
 
     const riderMap = useMemo(() => {
         const map: Record<string, string> = {};
@@ -167,11 +186,17 @@ export default function PreRace({ league_id, league_name, competition, is_locked
             <Head title={`Pronósticos — ${competition.name} ${competition.year}`} />
 
             <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-0">
-                <div>
-                    <h1 className="text-2xl font-semibold tracking-tight">Pronósticos pre-carrera</h1>
-                    <p className="text-sm text-muted-foreground">
-                        {competition.name} {competition.year} · {league_name}
-                    </p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-semibold tracking-tight">Pronósticos pre-carrera</h1>
+                        <p className="text-sm text-muted-foreground">
+                            {competition.name} {competition.year} · {league_name}
+                        </p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setScoringInfoOpen(true)} className="shrink-0">
+                        <Info className="mr-1.5 h-4 w-4" />
+                        Puntuación
+                    </Button>
                 </div>
 
                 {errors.race && (
@@ -368,6 +393,182 @@ export default function PreRace({ league_id, league_name, competition, is_locked
                         )}
                     </CardContent>
                 </Card>
+                {scoringInfoOpen && (
+                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+                        <div className="fixed inset-0 bg-black/50" onClick={() => setScoringInfoOpen(false)} />
+                        <div className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-t-xl bg-popover p-6 shadow-lg sm:rounded-xl animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-8 sm:slide-in-from-bottom-0">
+                            <div className="mb-6 flex items-center justify-between">
+                                <h2 className="text-lg font-semibold">Sistema de puntuación</h2>
+                                <button
+                                    type="button"
+                                    onClick={() => setScoringInfoOpen(false)}
+                                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <p className="mb-6 text-sm text-muted-foreground">
+                                {scoring_system.name}: {scoring_system.description}
+                            </p>
+
+                            <div className="space-y-8">
+                                <div>
+                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <span className="h-px flex-1 bg-border" />
+                                        Clasificación general
+                                        <span className="h-px flex-1 bg-border" />
+                                    </h3>
+                                    <div className="space-y-1.5">
+                                        {[1, 2, 3, 4, 5].map((pos) => {
+                                            const rule = scoring_system.rules.find((r) => r.type === 'gc_top_5' && r.position === pos);
+                                            return (
+                                                <div key={pos} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
+                                                    <span className="text-sm font-medium">{pos}º clasificado</span>
+                                                    <span className="text-sm font-semibold text-accent-500">{rule?.points ?? '-'} pts</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {(() => {
+                                        const partial = scoring_system.rules.find((r) => r.type === 'gc_top_5_partial');
+                                        return partial ? (
+                                            <p className="mt-2 text-xs text-muted-foreground">
+                                                Si aciertas un corredor del Top 5 pero en posición incorrecta: <span className="font-semibold text-accent-500">{partial.points} pts</span>
+                                            </p>
+                                        ) : null;
+                                    })()}
+                                </div>
+
+                                <div>
+                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <span className="h-px flex-1 bg-border" />
+                                        Clasificaciones secundarias
+                                        <span className="h-px flex-1 bg-border" />
+                                    </h3>
+                                    {['points_winner', 'mountains_winner', 'youth_winner'].map((type) => {
+                                        const podium = [1, 2, 3].map((pos) =>
+                                            scoring_system.rules.find((r) => r.type === type && r.position === pos)
+                                        ).filter(Boolean);
+                                        const label = type === 'points_winner' ? 'Maillot verde' : type === 'mountains_winner' ? 'Maillot montaña' : 'Maillot blanco';
+                                        const partial = scoring_system.rules.find((r) => r.type === `${type}_partial`);
+                                        return (
+                                            <div key={type} className="mb-4 last:mb-0">
+                                                <p className="mb-2 text-sm font-medium">{label}</p>
+                                                <div className="space-y-1.5">
+                                                    {podium.map((rule) => (
+                                                        <div key={rule!.position} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2">
+                                                            <span className="text-sm">{rule!.position}º clasificado</span>
+                                                            <span className="text-sm font-semibold text-accent-500">{rule!.points} pts</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                {partial && (
+                                                    <p className="mt-1.5 text-xs text-muted-foreground">
+                                                        Acierto parcial (corredor en el podio pero posición incorrecta): <span className="font-semibold text-accent-500">{partial.points} pts</span>
+                                                    </p>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div>
+                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <span className="h-px flex-1 bg-border" />
+                                        Otras predicciones pre-carrera
+                                        <span className="h-px flex-1 bg-border" />
+                                    </h3>
+                                    <div className="space-y-1.5">
+                                        {(() => {
+                                            const teamRule = scoring_system.rules.find((r) => r.type === 'teams_winner');
+                                            return (
+                                                <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
+                                                    <span className="text-sm font-medium">Ganador clasificación equipos</span>
+                                                    <span className="text-sm font-semibold text-accent-500">{teamRule?.points ?? '-'} pts</span>
+                                                </div>
+                                            );
+                                        })()}
+                                        {(() => {
+                                            const scRule = scoring_system.rules.find((r) => r.type === 'super_combativo');
+                                            return (
+                                                <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
+                                                    <span className="text-sm font-medium">Supercombativo final</span>
+                                                    <span className="text-sm font-semibold text-accent-500">{scRule?.points ?? '-'} pts</span>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                        <span className="h-px flex-1 bg-border" />
+                                        Pronósticos por etapa
+                                        <span className="h-px flex-1 bg-border" />
+                                    </h3>
+
+                                    {[1, 2, 3].map((diff) => {
+                                        const rules = scoring_system.rules.filter(
+                                            (r) => r.context === 'pre_stage' && r.difficulty === diff && r.type !== 'stage_leader'
+                                        );
+                                        if (rules.length === 0) return null;
+                                        const stars = '★'.repeat(diff) + '☆'.repeat(3 - diff);
+                                        return (
+                                            <div key={diff} className="mb-4 last:mb-0">
+                                                <div className="mb-2 flex items-center gap-2">
+                                                    <span className="text-sm font-medium">Dificultad {stars}</span>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    {rules.map((rule) => (
+                                                        <div key={rule.type} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2">
+                                                            <span className="text-sm">{rule.label}</span>
+                                                            <span className="text-sm font-semibold text-accent-500">{rule.points} pts</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {(() => {
+                                        const leaderRule = scoring_system.rules.find((r) => r.type === 'stage_leader');
+                                        return leaderRule ? (
+                                            <div key="leader" className="mb-4">
+                                                <div className="mb-2 flex items-center gap-2">
+                                                    <span className="text-sm font-medium">Líder de la etapa</span>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2">
+                                                        <span className="text-sm">Adivinar el líder al final de la etapa</span>
+                                                        <span className="text-sm font-semibold text-accent-500">{leaderRule.points} pts</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : null;
+                                    })()}
+
+                                    {(() => {
+                                        const combativoRule = scoring_system.rules.find((r) => r.type === 'stage_combativo');
+                                        return combativoRule ? (
+                                            <div key="combativo" className="mb-4">
+                                                <div className="mb-2 flex items-center gap-2">
+                                                    <span className="text-sm font-medium">Combativo de la etapa</span>
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2">
+                                                        <span className="text-sm">Adivinar el combativo de la etapa</span>
+                                                        <span className="text-sm font-semibold text-accent-500">{combativoRule.points} pts</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AppLayout>
     );

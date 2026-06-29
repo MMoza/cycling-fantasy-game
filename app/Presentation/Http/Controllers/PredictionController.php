@@ -73,6 +73,7 @@ class PredictionController extends Controller
             'predictions' => $data['predictions'],
             'availableRiders' => $data['availableRiders'],
             'availableTeams' => $data['availableTeams'],
+            'scoring_system' => $data['scoringSystem'],
         ]);
     }
 
