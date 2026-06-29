@@ -6,22 +6,22 @@ const features = [
     {
         icon: Swords,
         title: 'Modo Híbrido',
-        description: 'Pronósticos antes del Tour y antes de cada etapa. Combina estrategia a largo plazo con decisiones día a día.',
+        description: 'Antes del Tour: elige Top 5 General, Maillot Verde, Blanco, Montaña y equipos. En cada etapa: acierta ganador, podio y líder. Estrategia global y microdecisiones.',
     },
     {
         icon: Star,
-        title: 'Clasificaciones Múltiples',
-        description: 'General, Montaña, Sprint, Juventud y más. Puntúa en todas las clasificaciones del ciclismo profesional.',
+        title: '6 Clasificaciones',
+        description: 'Puntúas por la General, la Montaña, el Sprint, la Juventud, el Supercombativo y los Equipos. Cada etapa reparte puntos en múltiples frentes.',
     },
     {
         icon: Eye,
-        title: 'Apuestas a ciegas',
-        description: 'Tus pronósticos se revelan solo tras el cierre. Sin copiar, sin influencias. Puro conocimiento ciclista.',
+        title: 'Pronósticos sellados',
+        description: 'Nadie ve tus apuestas hasta que cierra la etapa. Sin copiar a los favoritos, sin dejarse llevar. Solo tú y tu criterio.',
     },
     {
         icon: Users,
         title: 'Ligas privadas',
-        description: 'Crea tu liga con amigos o únete con un código. Compite solo contra los tuyos.',
+        description: 'Monta tu liga entre amigos o únete a una ya creada. Cada uno con su código. Compites en tu propio grupo, pero contra todo el pelotón.',
     },
 ];
 
@@ -29,20 +29,20 @@ const steps = [
     {
         number: '01',
         icon: Trophy,
-        title: 'Crea o únete a una liga',
-        description: 'Forma parte de una liga con tus amigos o crea la tuya propia para la próxima Gran Vuelta.',
+        title: 'Monta tu liga',
+        description: 'Crea una liga para el Tour, el Giro o la Vuelta. Invita a tus amigos con un código y elegid juntos el sistema de puntuación.',
     },
     {
         number: '02',
         icon: Medal,
         title: 'Haz tus pronósticos',
-        description: 'Antes del Tour: Top 5 general, maillots y equipos. Antes de cada etapa: ganador, podio y líder.',
+        description: 'Antes de la Grandísima Vuelta: elige Top 5, maillots y equipos. Antes de cada etapa: ganador, podio y líder. Todo se sella hasta el cierre.',
     },
     {
         number: '03',
         icon: Route,
-        title: 'Gana puntos y sube',
-        description: 'Cada acierto suma puntos. El líder juega conservador, el perseguidor asume riesgos. Todo puede pasar.',
+        title: 'Súe en la clasificación',
+        description: 'Cada acierto suma puntos. El líder juega conservador; el perseguidor arriesga. La emoción hasta el último puerto de montaña.',
     },
 ];
 
@@ -63,20 +63,15 @@ export default function Landing() {
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-accent-500/10 via-transparent to-transparent" />
                 <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
                     <div className="mx-auto max-w-3xl text-center">
-                        <div className="mb-6 flex justify-center">
-                            <span className="inline-flex items-center gap-2 rounded-full bg-accent-500/10 px-4 py-1.5 text-sm font-medium text-accent-500 ring-1 ring-inset ring-accent-500/20">
-                                <Bike className="h-4 w-4" />
-                                Grandes Vueltas 2026
-                            </span>
-                        </div>
+                        
                         <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
-                            Fantasy Cycling
-                            <span className="block text-accent-400">como debe ser</span>
+                            PEDALES
+                            <span className="block text-accent-400">Fantasy Cycling</span>
                         </h1>
                         <p className="mt-6 text-lg leading-8 text-gray-300">
-                            Predice, compite y demuestra tu conocimiento del ciclismo.
-                            Pronósticos híbridos antes y durante cada Gran Vuelta.
-                            Ligas privadas. Puntuación inteligente. Sin trampas.
+                            Elige tu top 5 para los Campos Elíseos, el maillot verde y la montaña.
+                            Después, acierta el ganador de cada etapa, el podio y quién viste el amarillo.
+                            Gana puntos, supera a tus amigos y demuestra quién manda en el pelotón.
                         </p>
                         <div className="mt-10 flex items-center justify-center gap-4">
                             <Link
@@ -179,10 +174,10 @@ export default function Landing() {
                         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-accent-500/10 via-transparent to-transparent" />
                         <div className="relative">
                             <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                                ¿Preparado para la Grandísima Vuelta?
+                                ¿Quién será el primero en tu grupo?
                             </h2>
                             <p className="mx-auto mt-4 max-w-xl text-gray-300">
-                                Únete a la comunidad, crea tu liga y demuestra quién sabe más de ciclismo.
+                                El Tour 2026 se acerca. Forma tu liga, estudia el recorrido y haz tus apuestas. En los Campos Elíseos solo uno gana el maillot amarillo de tu grupo.
                             </p>
                             <div className="mt-8 flex items-center justify-center gap-4">
                                 <Link
