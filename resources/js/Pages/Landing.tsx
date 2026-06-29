@@ -64,21 +64,20 @@ export default function Landing() {
                 <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
                     <div className="mx-auto max-w-3xl text-center">
                         
-                        <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
-                            PEDALES
-                            <span className="block text-accent-400">Fantasy Cycling</span>
-                        </h1>
+                        <img
+                            src="/logo-pedales.png"
+                            alt="Pedales"
+                            className="mx-auto h-32 w-32 rounded-full object-cover shadow-2xl ring-4 ring-white/10 sm:h-40 sm:w-40"
+                        />
                         <p className="mt-6 text-lg leading-8 text-gray-300">
-                            Elige tu top 5 para los Campos Elíseos, el maillot verde y la montaña.
-                            Después, acierta el ganador de cada etapa, el podio y quién viste el amarillo.
-                            Gana puntos, supera a tus amigos y demuestra quién manda en el pelotón.
+                            Fantasy Cycling para los que saben de verdad.
                         </p>
                         <div className="mt-10 flex items-center justify-center gap-4">
                             <Link
                                 href={route('register')}
                                 className="inline-flex h-12 items-center justify-center rounded-md bg-accent-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30"
                             >
-                                Crear cuenta gratis
+                                Registrarse
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Link>
                             <Link
