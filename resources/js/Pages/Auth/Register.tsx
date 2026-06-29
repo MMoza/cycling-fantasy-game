@@ -1,4 +1,4 @@
-import GoogleButton from '@/Components/GoogleButton';
+import GoogleButton from '@/components/GoogleButton';
 import InputError from '@/breeze/InputError';
 import InputLabel from '@/breeze/InputLabel';
 import TextInput from '@/breeze/TextInput';
