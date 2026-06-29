@@ -1,6 +1,6 @@
 import LandingLayout from '@/Layouts/LandingLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Bike, Trophy, Users, Route, Medal, ArrowRight, Star, Eye, Swords } from 'lucide-react';
+import { Trophy, Users, Route, Medal, ArrowRight, Star, Eye, Swords } from 'lucide-react';
 
 const features = [
     {
@@ -67,10 +67,10 @@ export default function Landing() {
                         <img
                             src="/logo-pedales.png"
                             alt="Pedales"
-                            className="mx-auto h-32 w-32 rounded-full object-cover shadow-2xl ring-4 ring-white/10 sm:h-40 sm:w-40"
+                            className="mx-auto h-42 w-42 rounded-full object-cover shadow-2xl ring-4 ring-white/10 sm:h-40 sm:w-40"
                         />
                         <p className="mt-6 text-lg leading-8 text-gray-300">
-                            Fantasy Cycling para los que saben de verdad.
+                            
                         </p>
                         <div className="mt-10 flex items-center justify-center gap-4">
                             <Link
@@ -91,19 +91,17 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* Grandes Vueltas */}
-            <section className="border-b bg-muted/30">
-                <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-                    <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center sm:gap-12">
-                        {grandTours.map((tour) => (
-                            <div key={tour.name} className="flex items-center gap-3">
-                                <div className={`h-4 w-4 rounded-full ${tour.color}`} />
-                                <span className={`text-lg font-semibold ${tour.textColor}`}>
-                                    {tour.name}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
+            {/* Grandes Vueltas — Infinite Carousel */}
+            <section className="overflow-hidden border-b bg-muted/30 py-8">
+                <div className="marquee-track flex w-max items-center gap-16">
+                    {[...grandTours, ...grandTours].map((tour, i) => (
+                        <div key={`${tour.name}-${i}`} className="flex items-center gap-3 px-8">
+                            <div className={`h-5 w-5 rounded-full ${tour.color} shadow-sm`} />
+                            <span className={`text-xl font-bold tracking-wide ${tour.textColor}`}>
+                                {tour.name}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             </section>
 
