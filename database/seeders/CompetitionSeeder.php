@@ -15,23 +15,52 @@ class CompetitionSeeder extends Seeder
 {
     public function run(): void
     {
-        $tour = CompetitionModel::firstOrCreate([
-            'name' => 'Tour de Francia',
+        $this->createCompetition(
+            name: 'Tour de Francia',
+            countryId: 'FR',
+            editions: [
+                ['year' => 2026, 'start' => '2026-07-01', 'end' => '2026-07-23'],
+            ],
+        );
+
+        $this->createCompetition(
+            name: 'Giro de Italia',
+            countryId: 'IT',
+            editions: [
+                ['year' => 2026, 'start' => '2026-05-09', 'end' => '2026-05-31'],
+            ],
+        );
+
+        $this->createCompetition(
+            name: 'La Vuelta',
+            countryId: 'ES',
+            editions: [
+                ['year' => 2026, 'start' => '2026-08-15', 'end' => '2026-09-06'],
+            ],
+        );
+    }
+
+    private function createCompetition(string $name, string $countryId, array $editions): void
+    {
+        $competition = CompetitionModel::firstOrCreate([
+            'name' => $name,
         ], [
             'id' => Str::uuid()->toString(),
             'type' => CompetitionType::GrandTour,
-            'country_id' => 'FR',
+            'country_id' => $countryId,
             'active' => true,
         ]);
 
-        EditionModel::firstOrCreate([
-            'competition_id' => $tour->id,
-            'year' => 2026,
-        ], [
-            'id' => Str::uuid()->toString(),
-            'start_date' => '2026-07-01',
-            'end_date' => '2026-07-23',
-            'status' => EditionStatus::Upcoming,
-        ]);
+        foreach ($editions as $edition) {
+            EditionModel::firstOrCreate([
+                'competition_id' => $competition->id,
+                'year' => $edition['year'],
+            ], [
+                'id' => Str::uuid()->toString(),
+                'start_date' => $edition['start'],
+                'end_date' => $edition['end'],
+                'status' => EditionStatus::Upcoming,
+            ]);
+        }
     }
 }
