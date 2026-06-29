@@ -67,7 +67,11 @@ const grandTours = [
 export default function Landing() {
     return (
         <LandingLayout>
-            <Head title="Pedales — Fantasy Cycling" />
+            <Head title="Pedales — Fantasy Cycling">
+                <meta name="description" content="Pedales es el fantasy de ciclismo para Grandes Vueltas. Crea tu liga, pronostica el Top 5, maillots, ganadores de etapa y compite con tus amigos en el Tour de Francia, Giro de Italia y La Vuelta." />
+                <meta name="keywords" content="fantasy cycling, ciclismo fantasy, tour de francia, giro de italia, la vuelta, porras ciclismo, juego ciclismo, liga ciclismo" />
+                <meta name="robots" content="index, follow" />
+            </Head>
 
             {/* Hero */}
             <section className="relative overflow-hidden">

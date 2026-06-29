@@ -1,0 +1,19 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="200" cy="180" r="120" fill="url(#accent)" opacity="0.15"/>
+  <circle cx="1000" cy="450" r="200" fill="url(#accent)" opacity="0.1"/>
+  <text x="600" y="240" font-family="system-ui, sans-serif" font-size="72" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="-1">Pedales</text>
+  <text x="600" y="300" font-family="system-ui, sans-serif" font-size="28" font-weight="500" fill="#f59e0b" text-anchor="middle" letter-spacing="4">FANTASY CYCLING</text>
+  <line x1="400" y1="340" x2="800" y2="340" stroke="#f59e0b" stroke-width="2" opacity="0.5"/>
+  <text x="600" y="400" font-family="system-ui, sans-serif" font-size="24" fill="#94a3b8" text-anchor="middle">Tour de Francia · Giro de Italia · La Vuelta</text>
+</svg>
