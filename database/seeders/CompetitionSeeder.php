@@ -19,7 +19,7 @@ class CompetitionSeeder extends Seeder
             name: 'Tour de Francia',
             countryId: 'FR',
             editions: [
-                ['year' => 2026, 'start' => '2026-07-01', 'end' => '2026-07-23'],
+                ['year' => 2026, 'start' => '2026-07-04', 'end' => '2026-07-26'],
             ],
         );
 
