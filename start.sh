@@ -52,6 +52,9 @@ if [ -z "${APP_KEY}" ]; then
     php artisan key:generate --force
 fi
 
+# Create storage symlink for uploaded images
+php artisan storage:link --force
+
 # Clear and cache config for production
 php artisan config:cache
 php artisan route:cache
