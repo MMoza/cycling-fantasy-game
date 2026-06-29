@@ -71,15 +71,16 @@ test('user not in league cannot access classification page', function () {
     $response->assertNotFound();
 });
 
-test('classification renders with empty leaderboard when no scores', function () {
+test('classification renders all members even when no scores', function () {
     $response = $this->actingAs($this->user)->get(route('classification.index', $this->league->id));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
         ->component('Classification/Index')
         ->where('league_name', 'Amigos del Tour')
-        ->has('leaderboard', 0)
-        ->where('user_position.rank', '-')
+        ->has('leaderboard', 1)
+        ->where('user_position.rank', 1)
+        ->where('user_position.points', 0)
     );
 });
 

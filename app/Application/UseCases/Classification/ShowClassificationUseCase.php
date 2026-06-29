@@ -7,6 +7,7 @@ namespace App\Application\UseCases\Classification;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ShowClassificationUseCase
 {
@@ -20,20 +21,30 @@ class ShowClassificationUseCase
 
         $user->update(['last_visited_league_id' => $leagueId]);
 
-        $scores = ScoreEventModel::where('league_id', $leagueId)
+        $scoresPerUser = ScoreEventModel::where('league_id', $leagueId)
             ->selectRaw('user_id, SUM(points) as total_points')
             ->groupBy('user_id')
-            ->with('user')
-            ->orderBy('total_points', 'desc')
+            ->pluck('total_points', 'user_id');
+
+        $members = DB::table('league_user')
+            ->where('league_id', $leagueId)
+            ->join('users', 'users.id', '=', 'league_user.user_id')
+            ->select('users.id', 'users.name')
             ->get();
 
-        $leaderboard = $scores->map(fn ($score, $index) => [
-            'rank' => $index + 1,
-            'user_name' => $score->user->name,
-            'user_id' => $score->user_id,
-            'points' => (int) $score->total_points,
-            'is_current_user' => $score->user_id === $user->id,
-        ]);
+        $leaderboard = $members
+            ->map(fn ($member) => [
+                'user_id' => $member->id,
+                'user_name' => $member->name,
+                'points' => (int) ($scoresPerUser[$member->id] ?? 0),
+                'is_current_user' => $member->id === $user->id,
+            ])
+            ->sortByDesc('points')
+            ->values()
+            ->map(fn ($entry, $index) => [
+                'rank' => $index + 1,
+                ...$entry,
+            ]);
 
         $topPoints = $leaderboard->first()['points'] ?? 0;
 
@@ -47,7 +58,7 @@ class ShowClassificationUseCase
         return [
             'leagueId' => $league->id,
             'leagueName' => $league->name,
-            'leaderboard' => $leaderboard,
+            'leaderboard' => $leaderboard->values()->all(),
             'userPosition' => $userEntry ? [
                 'rank' => $userEntry['rank'],
                 'points' => $userEntry['points'],
