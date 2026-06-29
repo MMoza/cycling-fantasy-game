@@ -12,7 +12,7 @@ class ShowLeagueUseCase
 {
     public function execute(User $user, string $leagueId): LeagueModel
     {
-        $league = LeagueModel::with(['edition.competition', 'scoringSystem', 'stages', 'users'])
+        $league = LeagueModel::with(['edition.competition', 'scoringSystem.rules', 'stages', 'users'])
             ->find($leagueId);
 
         if (! $league || ! $user->leagues()->where('leagues.id', $leagueId)->exists()) {

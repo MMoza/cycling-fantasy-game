@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Calendar, Route, ChevronRight, Users, Target, Mountain, Settings, X, Save, Copy } from 'lucide-react';
+import { Trophy, Calendar, Route, ChevronRight, Users, Target, Mountain, Settings, X, Save, Copy, Info } from 'lucide-react';
 
 interface League {
     id: string;
@@ -21,6 +21,14 @@ interface League {
         name: string;
         type: string;
         description: string;
+        rules: {
+            type: string;
+            label: string;
+            context: string;
+            points: number;
+            difficulty: number | null;
+            position: number | null;
+        }[];
     };
     is_public: boolean;
     max_players: number;
@@ -73,6 +81,7 @@ interface ShowProps {
 
 export default function Show({ league, next_stage, user_position, stages, leaderboard }: ShowProps) {
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [scoringInfoOpen, setScoringInfoOpen] = useState(false);
     const [formName, setFormName] = useState(league.name);
     const [formMaxPlayers, setFormMaxPlayers] = useState(league.max_players);
     const [formIsPublic, setFormIsPublic] = useState(league.is_public);
@@ -141,7 +150,19 @@ export default function Show({ league, next_stage, user_position, stages, leader
 
                             <div className="space-y-6">
                                 <div className="space-y-3">
-                                    <Label className="text-base font-medium">Sistema de puntuación</Label>
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-base font-medium">Sistema de puntuación</Label>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setScoringInfoOpen(true)}
+                                            className="gap-1"
+                                        >
+                                            <Info className="h-4 w-4" />
+                                            Detalles
+                                        </Button>
+                                    </div>
                                     <div className="rounded-lg border bg-muted/50 p-4">
                                         <p className="font-medium">{league.scoring_system.name}</p>
                                         <p className="mt-1 text-sm text-muted-foreground">{league.scoring_system.description}</p>
@@ -239,6 +260,69 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {scoringInfoOpen && (
+                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+                        <div className="fixed inset-0 bg-black/50" onClick={() => setScoringInfoOpen(false)} />
+                        <div className="relative z-10 w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-t-xl bg-popover p-6 shadow-lg sm:rounded-xl animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-8 sm:slide-in-from-bottom-0">
+                            <div className="mb-6 flex items-center justify-between">
+                                <h2 className="text-lg font-semibold">Sistema de puntuación</h2>
+                                <button
+                                    type="button"
+                                    onClick={() => setScoringInfoOpen(false)}
+                                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <p className="mb-6 text-sm text-muted-foreground">
+                                {league.scoring_system.name}: {league.scoring_system.description}
+                            </p>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Pronósticos pre-carrera</h3>
+                                    <div className="space-y-2">
+                                        {league.scoring_system.rules
+                                            .filter((r) => r.context === 'pre_race')
+                                            .map((rule) => (
+                                                <div key={rule.type} className="flex items-center justify-between rounded-lg border p-3">
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium">{rule.label}</p>
+                                                    </div>
+                                                    <span className="ml-4 shrink-0 text-sm font-semibold text-accent-500">{rule.points} pts</span>
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Pronósticos por etapa</h3>
+                                    <div className="space-y-2">
+                                        {league.scoring_system.rules
+                                            .filter((r) => r.context === 'pre_stage')
+                                            .map((rule) => (
+                                                <div key={rule.type} className="flex items-center justify-between rounded-lg border p-3">
+                                                    <div className="flex-1">
+                                                        <p className="text-sm font-medium">{rule.label}</p>
+                                                        {rule.difficulty && (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Dificultad {rule.difficulty}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <span className="ml-4 shrink-0 text-sm font-semibold text-accent-500">
+                                                        {rule.points} pts
+                                                    </span>
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
