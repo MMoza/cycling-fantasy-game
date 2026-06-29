@@ -1,7 +1,6 @@
 import Checkbox from '@/breeze/Checkbox';
 import InputError from '@/breeze/InputError';
 import InputLabel from '@/breeze/InputLabel';
-import PrimaryButton from '@/breeze/PrimaryButton';
 import TextInput from '@/breeze/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -30,7 +29,7 @@ export default function Login({
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title="Iniciar sesión" />
 
             {status && (
                 <div className="mb-4 text-sm font-medium text-green-600">
@@ -40,7 +39,7 @@ export default function Login({
 
             <form onSubmit={submit}>
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value="Correo electrónico" />
 
                     <TextInput
                         id="email"
@@ -57,7 +56,7 @@ export default function Login({
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                    <InputLabel htmlFor="password" value="Contraseña" />
 
                     <TextInput
                         id="password"
@@ -85,7 +84,7 @@ export default function Login({
                             }
                         />
                         <span className="ms-2 text-sm text-gray-600">
-                            Remember me
+                            Recordarme
                         </span>
                     </label>
                 </div>
@@ -94,15 +93,19 @@ export default function Login({
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
                         >
-                            Forgot your password?
+                            ¿Olvidaste tu contraseña?
                         </Link>
                     )}
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="inline-flex h-10 items-center justify-center rounded-md bg-accent-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
+                    >
+                        {processing ? 'Entrando...' : 'Entrar'}
+                    </button>
                 </div>
             </form>
         </GuestLayout>
