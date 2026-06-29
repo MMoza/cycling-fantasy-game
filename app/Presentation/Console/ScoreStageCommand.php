@@ -65,33 +65,29 @@ class ScoreStageCommand extends Command
 
         $this->info("Found {$predictions->count()} predictions to score");
 
-        $leagueIds = $predictions->pluck('league_id')->unique()->toArray();
-        $userId = $predictions->first()->user_id;
-
-        $alreadyScored = DB::table('score_events')
-            ->whereIn('league_id', $leagueIds)
-            ->where('user_id', $userId)
-            ->where('context', 'like', 'stage_%')
-            ->exists();
-
-        if ($alreadyScored && ! $this->option('force')) {
-            $this->warn('Stage already scored. Use --force to re-score.');
-
-            return self::SUCCESS;
-        }
-
-        if ($this->option('force')) {
-            DB::table('score_events')
-                ->whereIn('league_id', $leagueIds)
-                ->where('context', 'like', 'stage_%')
-                ->delete();
-
-            $this->info('Cleared existing score events for re-scoring');
-        }
-
         $scored = 0;
 
         foreach ($predictions->groupBy('league_id') as $leagueId => $leaguePredictions) {
+            $alreadyScored = DB::table('score_events')
+                ->where('league_id', $leagueId)
+                ->where('stage_id', $stageId)
+                ->exists();
+
+            if ($alreadyScored) {
+                if ($this->option('force')) {
+                    DB::table('score_events')
+                        ->where('league_id', $leagueId)
+                        ->where('stage_id', $stageId)
+                        ->delete();
+
+                    $this->warn("Cleared existing score events for league {$leagueId}");
+                } else {
+                    $this->warn("League {$leagueId} already scored. Use --force to re-score.");
+
+                    continue;
+                }
+            }
+
             $firstPrediction = $leaguePredictions->first();
             $scoringSystemModel = $firstPrediction->league->scoringSystem;
 

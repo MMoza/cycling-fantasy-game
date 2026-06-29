@@ -23,7 +23,7 @@ use Illuminate\Support\Str;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $user = User::factory()->create();
+    $this->user = User::factory()->create();
 
     $competition = CompetitionModel::create([
         'id' => Str::uuid()->toString(),
@@ -73,18 +73,18 @@ beforeEach(function () {
         'points' => 20,
     ]);
 
-    $league = LeagueModel::create([
+    $this->league = LeagueModel::create([
         'id' => Str::uuid()->toString(),
         'name' => 'Amigos del Tour',
         'edition_id' => $edition->id,
         'scoring_system_id' => $scoringSystem->id,
-        'owner_id' => $user->id,
+        'owner_id' => $this->user->id,
         'invite_code' => Str::random(8),
         'max_players' => 20,
         'is_public' => false,
     ]);
 
-    $league->users()->attach($user->id, [
+    $this->league->users()->attach($this->user->id, [
         'id' => Str::uuid()->toString(),
         'role' => 'owner',
     ]);
@@ -137,8 +137,8 @@ beforeEach(function () {
 
     PredictionModel::create([
         'id' => Str::uuid()->toString(),
-        'user_id' => $user->id,
-        'league_id' => $league->id,
+        'user_id' => $this->user->id,
+        'league_id' => $this->league->id,
         'stage_id' => $this->stage->id,
         'type' => 'pre_stage',
         'category' => 'stage_winner',
@@ -148,8 +148,8 @@ beforeEach(function () {
 
     PredictionModel::create([
         'id' => Str::uuid()->toString(),
-        'user_id' => $user->id,
-        'league_id' => $league->id,
+        'user_id' => $this->user->id,
+        'league_id' => $this->league->id,
         'stage_id' => $this->stage->id,
         'type' => 'pre_stage',
         'category' => 'stage_second',
@@ -159,8 +159,8 @@ beforeEach(function () {
 
     PredictionModel::create([
         'id' => Str::uuid()->toString(),
-        'user_id' => $user->id,
-        'league_id' => $league->id,
+        'user_id' => $this->user->id,
+        'league_id' => $this->league->id,
         'stage_id' => $this->stage->id,
         'type' => 'pre_stage',
         'category' => 'stage_third',
@@ -239,4 +239,44 @@ test('command warns when no predictions exist', function () {
     $this->artisan('race:score-stage', ['stage_id' => $this->stage->id])
         ->expectsOutputToContain('No predictions found')
         ->assertExitCode(0);
+});
+
+test('command scores predictions for all users in a league without duplicates', function () {
+    $otherUser = User::factory()->create();
+    $this->league->users()->attach($otherUser->id, [
+        'id' => Str::uuid()->toString(),
+        'role' => 'member',
+    ]);
+
+    PredictionModel::create([
+        'id' => Str::uuid()->toString(),
+        'user_id' => $otherUser->id,
+        'league_id' => $this->league->id,
+        'stage_id' => $this->stage->id,
+        'type' => 'pre_stage',
+        'category' => 'stage_winner',
+        'prediction_value' => ['rider_id' => 'rider-1'],
+        'locked_at' => now()->subDay(),
+    ]);
+
+    PredictionModel::create([
+        'id' => Str::uuid()->toString(),
+        'user_id' => $otherUser->id,
+        'league_id' => $this->league->id,
+        'stage_id' => $this->stage->id,
+        'type' => 'pre_stage',
+        'category' => 'stage_second',
+        'prediction_value' => ['rider_id' => 'rider-2'],
+        'locked_at' => now()->subDay(),
+    ]);
+
+    $this->artisan('race:score-stage', ['stage_id' => $this->stage->id])
+        ->assertExitCode(0);
+
+    expect(ScoreEventModel::count())->toBe(4);
+
+    $this->artisan('race:score-stage', ['stage_id' => $this->stage->id])
+        ->assertExitCode(0);
+
+    expect(ScoreEventModel::count())->toBe(4);
 });
