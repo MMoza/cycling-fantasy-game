@@ -2,7 +2,6 @@ import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Trophy, Calendar, Route, ChevronRight, Users, Target, Mountain } from 'lucide-react';
 
 interface League {
@@ -34,8 +33,10 @@ interface Stage {
 
 interface LeaderboardEntry {
     rank: number;
+    user_id: string;
     user_name: string;
     points: number;
+    behind_leader: number;
     is_current_user: boolean;
 }
 
@@ -64,7 +65,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
         <AppLayout>
             <Head title={league.name} />
 
-            <div className="space-y-6">
+            <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-0">
                 <div>
                     <h1 className="text-2xl font-semibold tracking-tight">{league.name}</h1>
                     <p className="text-sm text-muted-foreground">
@@ -127,36 +128,32 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </Card>
                 </div>
 
-                <Card>
-                    <CardContent className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/20">
+                <Link href={route('predictions.pre-race', league.id)} className="block">
+                    <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+                        <CardContent className="flex items-center gap-3 p-4">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/20">
                                 <Target className="h-5 w-5 text-accent-500" />
                             </div>
-                            <div>
+                            <div className="flex-1">
                                 <p className="font-medium">Pronósticos pre-carrera</p>
                                 <p className="text-sm text-muted-foreground">
                                     Top 5 GC, maillots y supercombativo
                                 </p>
                             </div>
-                        </div>
-                        <Button size="sm" asChild>
-                            <Link href={route('predictions.pre-race', league.id)}>
-                                Ir
-                            </Link>
-                        </Button>
-                    </CardContent>
-                </Card>
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        </CardContent>
+                    </Card>
+                </Link>
 
                 {next_stage && (
                     <Card>
-                        <CardHeader className="pb-3">
+                        <CardHeader className="pb-3 px-6 pt-6">
                             <CardTitle className="flex items-center gap-2">
                                 <Mountain className="h-4 w-4 text-brand-600" />
                                 Próxima etapa
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="px-6 pb-6">
                             <Link
                                 href={route('stages.show', [league.id, stages.find(s => s.number === next_stage.number)?.id ?? ''])}
                                 className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
@@ -185,10 +182,10 @@ export default function Show({ league, next_stage, user_position, stages, leader
                 )}
 
                 <Card>
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 px-6 pt-6">
                         <CardTitle>Clasificación</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-6 pb-6">
                         {leaderboard.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-center">
                                 <Users className="h-12 w-12 text-muted-foreground" />
@@ -200,7 +197,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                             <div className="space-y-2">
                                 {leaderboard.map((entry) => (
                                     <div
-                                        key={entry.rank}
+                                        key={entry.user_id}
                                         className={`flex items-center justify-between rounded-lg p-3 ${
                                             entry.is_current_user
                                                 ? 'bg-accent-100/50 dark:bg-accent-900/10 border border-accent-200 dark:border-accent-800'
@@ -208,15 +205,32 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                         }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span className="w-8 text-center text-sm font-medium text-muted-foreground">
-                                                {entry.rank}º
-                                            </span>
-                                            <span className={`text-sm ${entry.is_current_user ? 'font-semibold' : ''}`}>
-                                                {entry.user_name}
-                                                {entry.is_current_user && (
-                                                    <span className="ml-2 text-xs text-muted-foreground">(tú)</span>
+                                            <div className="flex h-8 w-8 items-center justify-center">
+                                                {entry.rank === 1 ? (
+                                                    <Trophy className="h-5 w-5 text-yellow-500" />
+                                                ) : entry.rank === 2 ? (
+                                                    <Trophy className="h-5 w-5 text-gray-400" />
+                                                ) : entry.rank === 3 ? (
+                                                    <Trophy className="h-5 w-5 text-amber-700" />
+                                                ) : (
+                                                    <span className="w-6 text-center text-sm font-medium text-muted-foreground">
+                                                        {entry.rank}º
+                                                    </span>
                                                 )}
-                                            </span>
+                                            </div>
+                                            <div>
+                                                <span className={`text-sm ${entry.is_current_user ? 'font-semibold' : ''}`}>
+                                                    {entry.user_name}
+                                                    {entry.is_current_user && (
+                                                        <span className="ml-2 text-xs text-muted-foreground">(tú)</span>
+                                                    )}
+                                                </span>
+                                                {entry.behind_leader > 0 && (
+                                                    <span className="ml-3 text-xs text-muted-foreground">
+                                                        -{entry.behind_leader} pts
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <span className="text-sm font-medium">{entry.points} pts</span>
                                     </div>

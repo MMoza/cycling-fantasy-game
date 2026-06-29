@@ -10,7 +10,9 @@ use App\Application\UseCases\League\GetCreateLeagueFormDataUseCase;
 use App\Application\UseCases\League\JoinLeagueUseCase;
 use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\ShowLeagueUseCase;
+use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class LeagueController extends Controller
@@ -69,6 +71,42 @@ class LeagueController extends Controller
         $totalStages = $leagueModel->stages()->where('type', '!=', 'rest')->count();
         $completedStages = $leagueModel->stages()->where('status', 'finished')->count();
 
+        $userId = $request->user()->id;
+
+        $scoresPerUser = ScoreEventModel::where('league_id', $leagueModel->id)
+            ->selectRaw('user_id, SUM(points) as total_points')
+            ->groupBy('user_id')
+            ->pluck('total_points', 'user_id');
+
+        $members = DB::table('league_user')
+            ->where('league_id', $leagueModel->id)
+            ->join('users', 'users.id', '=', 'league_user.user_id')
+            ->select('users.id', 'users.name')
+            ->get();
+
+        $leaderboard = $members
+            ->map(fn ($member) => [
+                'user_id' => $member->id,
+                'user_name' => $member->name,
+                'points' => (int) ($scoresPerUser[$member->id] ?? 0),
+                'is_current_user' => $member->id === $userId,
+            ])
+            ->sortByDesc('points')
+            ->values()
+            ->map(fn ($entry, $index) => [
+                'rank' => $index + 1,
+                ...$entry,
+            ]);
+
+        $topPoints = $leaderboard->first()['points'] ?? 0;
+
+        $leaderboard = $leaderboard->map(fn ($entry) => [
+            ...$entry,
+            'behind_leader' => $topPoints - $entry['points'],
+        ]);
+
+        $userEntry = $leaderboard->firstWhere('is_current_user', true);
+
         return Inertia::render('Leagues/Show', [
             'league' => [
                 'id' => $leagueModel->id,
@@ -95,9 +133,13 @@ class LeagueController extends Controller
                 'origin' => $nextStage->origin,
                 'destination' => $nextStage->destination,
             ] : null,
-            'user_position' => [
+            'user_position' => $userEntry ? [
+                'rank' => (string) $userEntry['rank'],
+                'points' => (string) $userEntry['points'],
+                'behind_leader' => $userEntry['behind_leader'].' pts',
+            ] : [
                 'rank' => '-',
-                'points' => '-',
+                'points' => '0',
                 'behind_leader' => '-',
             ],
             'stages' => $leagueModel->stages()
@@ -113,7 +155,7 @@ class LeagueController extends Controller
                     'distance' => $s->distance ? "{$s->distance} km" : null,
                     'status' => $s->status->value,
                 ]),
-            'leaderboard' => [],
+            'leaderboard' => $leaderboard->values(),
         ]);
     }
 
