@@ -41,7 +41,7 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         origin: stage?.origin ?? '',
         destination: stage?.destination ?? '',
         scheduled_start: stage?.scheduled_start ?? '',
-        profile_image: null as File | null,
+        profile_image: stage?.profile_image ?? '',
         status: stage?.status ?? 'upcoming',
     });
 
@@ -49,7 +49,6 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         e.preventDefault();
 
         const options = {
-            forceFormData: true,
             onSuccess: () => {},
         } as any;
 
@@ -187,19 +186,25 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="profile_image">Imagen de perfil</Label>
+                                <Label htmlFor="profile_image">URL de imagen de perfil</Label>
                                 <Input
                                     id="profile_image"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => setData('profile_image', e.target.files?.[0] ?? null)}
+                                    type="url"
+                                    placeholder="https://ejemplo.com/perfil-etapa.jpg"
+                                    value={data.profile_image}
+                                    onChange={(e) => setData('profile_image', e.target.value)}
                                 />
-                                {stage?.profile_image && (
-                                    <p className="text-xs text-muted-foreground">
-                                        Imagen actual: {stage.profile_image}
-                                    </p>
-                                )}
                                 {(errors as any).profile_image && <p className="text-sm text-destructive">{(errors as any).profile_image}</p>}
+                                {data.profile_image && (
+                                    <div className="mt-2 overflow-hidden rounded-lg border">
+                                        <img
+                                            src={data.profile_image}
+                                            alt="Vista previa"
+                                            className="max-h-32 w-full object-cover"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             {stage && (
                                 <div className="space-y-2">

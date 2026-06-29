@@ -66,13 +66,12 @@ class StageController extends Controller
             'origin' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
             'scheduled_start' => 'nullable|date',
-            'profile_image' => 'nullable|image|max:2048',
+            'profile_image' => 'nullable|url|max:2048',
         ]);
 
         $this->storeStageUseCase->execute(
             $editionId,
             $validated,
-            $request->hasFile('profile_image') ? $request->file('profile_image') : null,
         );
 
         return redirect()->route('admin.editions.stages.index', $editionId);
@@ -102,14 +101,13 @@ class StageController extends Controller
             'origin' => 'required|string|max:255',
             'destination' => 'required|string|max:255',
             'scheduled_start' => 'nullable|date',
-            'profile_image' => 'nullable|image|max:2048',
+            'profile_image' => 'nullable|url|max:2048',
         ]);
 
         $this->updateStageUseCase->execute(
             $editionId,
             $id,
             $validated,
-            $request->hasFile('profile_image') ? $request->file('profile_image') : null,
         );
 
         return redirect()->route('admin.editions.stages.index', $editionId);

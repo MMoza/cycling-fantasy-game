@@ -8,13 +8,11 @@ use App\Application\Exceptions\ApplicationException;
 use App\Domain\ValueObjects\CompetitionType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class StoreStageUseCase
 {
-    public function execute(string $editionId, array $data, ?UploadedFile $profileImage = null): StageModel
+    public function execute(string $editionId, array $data): StageModel
     {
         $edition = EditionModel::with('competition')->findOrFail($editionId);
 
@@ -23,13 +21,6 @@ class StoreStageUseCase
             if ($existing >= 1) {
                 throw new ApplicationException('Las clásicas solo pueden tener una etapa.');
             }
-        }
-
-        $imagePath = null;
-
-        if ($profileImage) {
-            $path = $profileImage->store('stages/profiles', 'public');
-            $imagePath = Storage::url($path);
         }
 
         return StageModel::create([
@@ -45,7 +36,7 @@ class StoreStageUseCase
             'origin' => $data['origin'],
             'destination' => $data['destination'],
             'scheduled_start' => $data['scheduled_start'] ?? null,
-            'profile_image' => $imagePath,
+            'profile_image' => $data['profile_image'] ?? null,
             'status' => 'upcoming',
         ]);
     }
