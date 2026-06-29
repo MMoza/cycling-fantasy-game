@@ -391,11 +391,11 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
 
                 <Card className="overflow-hidden border">
                     {stage.profile_image && (
-                        <div className="aspect-[3/1] overflow-hidden">
+                        <div className="w-full">
                             <img
                                 src={stage.profile_image}
                                 alt={`Perfil de la etapa ${stage.number}`}
-                                className="h-full w-full object-cover"
+                                className="w-full"
                             />
                         </div>
                     )}
