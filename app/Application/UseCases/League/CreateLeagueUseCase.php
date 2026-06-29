@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\UseCases\League;
 
 use App\Application\DTOs\CreateLeagueDTO;
+use App\Application\Exceptions\ApplicationException;
 use App\Domain\Entities\League;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Models\User;
@@ -14,6 +15,21 @@ class CreateLeagueUseCase
 {
     public function execute(User $user, CreateLeagueDTO $dto): LeagueModel
     {
+        $plan = $user->plan;
+
+        $leagueCount = $user->leagues()->count();
+        if ($leagueCount >= $plan->maxLeagues()) {
+            throw new ApplicationException(
+                "Has alcanzado el límite de {$plan->maxLeagues()} ligas de tu plan {$plan->label()}."
+            );
+        }
+
+        if ($dto->maxPlayers > $plan->maxPlayersPerLeague()) {
+            throw new ApplicationException(
+                "Tu plan {$plan->label()} permite máximo {$plan->maxPlayersPerLeague()} jugadores por liga."
+            );
+        }
+
         $league = League::create(
             name: $dto->name,
             editionId: $dto->editionId,

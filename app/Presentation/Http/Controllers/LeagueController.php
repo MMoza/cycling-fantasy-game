@@ -206,7 +206,11 @@ class LeagueController extends Controller
             isPublic: $validated['is_public'],
         );
 
-        $league = $this->createLeagueUseCase->execute($request->user(), $dto);
+        try {
+            $league = $this->createLeagueUseCase->execute($request->user(), $dto);
+        } catch (ApplicationException $e) {
+            return redirect()->back()->withErrors(['plan' => $e->getMessage()])->withInput();
+        }
 
         return redirect()->route('leagues.show', $league->id);
     }
@@ -217,7 +221,11 @@ class LeagueController extends Controller
             'invite_code' => ['required', 'string', 'exists:leagues,invite_code'],
         ]);
 
-        $league = $this->joinLeagueUseCase->execute($request->user(), $validated['invite_code']);
+        try {
+            $league = $this->joinLeagueUseCase->execute($request->user(), $validated['invite_code']);
+        } catch (ApplicationException $e) {
+            return redirect()->back()->withErrors(['invite_code' => $e->getMessage()]);
+        }
 
         return redirect()->route('leagues.show', $league->id);
     }

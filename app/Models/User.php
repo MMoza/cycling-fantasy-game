@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\ValueObjects\UserPlan;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,7 @@ class User extends Authenticatable
         'google_id',
         'avatar',
         'is_admin',
+        'plan',
         'last_visited_league_id',
     ];
 
@@ -29,12 +31,17 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    protected $attributes = [
+        'plan' => 'free',
+    ];
+
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'plan' => UserPlan::class,
         ];
     }
 

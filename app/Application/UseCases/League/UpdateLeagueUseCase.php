@@ -18,9 +18,18 @@ class UpdateLeagueUseCase
             throw new ApplicationException('Solo el creador de la liga puede modificarla');
         }
 
+        $maxPlayers = $data['max_players'] ?? $league->max_players;
+
+        $plan = $user->plan;
+        if ($maxPlayers > $plan->maxPlayersPerLeague()) {
+            throw new ApplicationException(
+                "Tu plan {$plan->label()} permite máximo {$plan->maxPlayersPerLeague()} jugadores por liga."
+            );
+        }
+
         $league->update([
             'name' => $data['name'] ?? $league->name,
-            'max_players' => $data['max_players'] ?? $league->max_players,
+            'max_players' => $maxPlayers,
             'is_public' => $data['is_public'] ?? $league->is_public,
         ]);
 

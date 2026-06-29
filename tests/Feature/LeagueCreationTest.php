@@ -81,7 +81,7 @@ test('authenticated user can create a league', function () {
         'name' => 'Amigos del Tour',
         'edition_id' => $edition->id,
         'scoring_system_id' => $scoringSystem->id,
-        'max_players' => 25,
+        'max_players' => 10,
         'is_public' => true,
     ]);
 
@@ -99,7 +99,7 @@ test('authenticated user can create a league', function () {
         'edition_id' => $edition->id,
         'scoring_system_id' => $scoringSystem->id,
         'owner_id' => $user->id,
-        'max_players' => 25,
+        'max_players' => 10,
         'is_public' => true,
     ]);
 
