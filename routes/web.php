@@ -9,6 +9,7 @@ use App\Presentation\Http\Controllers\Admin\FinalClassificationController;
 use App\Presentation\Http\Controllers\Admin\RiderController;
 use App\Presentation\Http\Controllers\Admin\TeamController;
 use App\Presentation\Http\Controllers\Admin\UserController;
+use App\Presentation\Http\Controllers\Auth\SocialiteController;
 use App\Presentation\Http\Controllers\ClassificationController;
 use App\Presentation\Http\Controllers\DashboardController;
 use App\Presentation\Http\Controllers\LandingController;
@@ -104,5 +105,8 @@ Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->gro
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/{id}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
 });
+
+Route::get('/auth/{provider}/redirect', [SocialiteController::class, 'redirect'])->name('socialite.redirect');
+Route::get('/auth/{provider}/callback', [SocialiteController::class, 'callback'])->name('socialite.callback');
 
 require __DIR__.'/auth.php';
