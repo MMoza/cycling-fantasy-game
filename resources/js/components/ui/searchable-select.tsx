@@ -43,22 +43,10 @@ export default function SearchableSelect({
       }
     }
 
-    function handleScroll() {
-      if (open) setOpen(false);
-    }
-
-    function handleResize() {
-      if (open) setOpen(false);
-    }
-
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, true);
-    window.addEventListener('resize', handleResize);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleResize);
     };
   }, [open]);
 
