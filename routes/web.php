@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/leagues', [LeagueController::class, 'store'])->name('leagues.store');
     Route::get('/leagues/{league}', [LeagueController::class, 'show'])->name('leagues.show');
     Route::post('/leagues/join', [LeagueController::class, 'join'])->name('leagues.join');
+    Route::match(['put', 'patch'], '/leagues/{league}', [LeagueController::class, 'update'])->name('leagues.update');
 
     Route::get('/leagues/{league}/stage', [StageController::class, 'index'])->name('stages.index');
     Route::get('/leagues/{league}/stage/{stage}', [StageController::class, 'show'])->name('stages.show');

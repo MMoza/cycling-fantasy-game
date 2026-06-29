@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Presentation\Http\Controllers;
 
 use App\Application\DTOs\CreateLeagueDTO;
+use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\League\CreateLeagueUseCase;
 use App\Application\UseCases\League\GetCreateLeagueFormDataUseCase;
 use App\Application\UseCases\League\JoinLeagueUseCase;
 use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\ShowLeagueUseCase;
+use App\Application\UseCases\League\UpdateLeagueUseCase;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +25,7 @@ class LeagueController extends Controller
         private readonly CreateLeagueUseCase $createLeagueUseCase,
         private readonly ShowLeagueUseCase $showLeagueUseCase,
         private readonly JoinLeagueUseCase $joinLeagueUseCase,
+        private readonly UpdateLeagueUseCase $updateLeagueUseCase,
     ) {}
 
     public function index(Request $request)
@@ -116,9 +119,17 @@ class LeagueController extends Controller
                     'name' => $leagueModel->edition->competition->name,
                     'year' => $leagueModel->edition->year,
                 ],
+                'owner_id' => $leagueModel->owner_id,
                 'scoring_system' => [
                     'name' => $leagueModel->scoringSystem->name,
+                    'type' => $leagueModel->scoringSystem->type->value,
+                    'description' => $leagueModel->scoringSystem->type->description(),
                 ],
+                'is_public' => $leagueModel->is_public,
+                'max_players' => $leagueModel->max_players,
+                'invite_code' => $leagueModel->invite_code,
+                'member_count' => $members->count(),
+                'is_owner' => $leagueModel->owner_id === $userId,
                 'progress' => [
                     'current_stage' => $completedStages + 1,
                     'total_stages' => $totalStages,
@@ -191,5 +202,22 @@ class LeagueController extends Controller
         $league = $this->joinLeagueUseCase->execute($request->user(), $validated['invite_code']);
 
         return redirect()->route('leagues.show', $league->id);
+    }
+
+    public function update(Request $request, string $league)
+    {
+        $validated = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'max_players' => ['sometimes', 'integer', 'min:2', 'max:200'],
+            'is_public' => ['sometimes', 'boolean'],
+        ]);
+
+        try {
+            $this->updateLeagueUseCase->execute($request->user(), $league, $validated);
+        } catch (ApplicationException $e) {
+            return redirect()->back()->withErrors(['settings' => $e->getMessage()]);
+        }
+
+        return redirect()->back();
     }
 }
