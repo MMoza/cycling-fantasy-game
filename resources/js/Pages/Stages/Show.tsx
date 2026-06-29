@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/ui/searchable-select';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
-import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck, Trophy, Medal, Users, Crown, Flame, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck, Trophy, Medal, Users, Crown, Flame, ChevronDown, ChevronUp, Route, Mountain, Clock, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Stage {
@@ -227,6 +227,16 @@ function StageResultsCard({ results }: { results: StageResult[] }) {
     );
 }
 
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+    return (
+        <div className="flex flex-col items-center gap-1.5">
+            {icon}
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+            <span className="text-center text-sm font-semibold leading-tight">{value}</span>
+        </div>
+    );
+}
+
 export default function Show({ league_id, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams }: ShowProps) {
     const { errors } = usePage().props as any;
     const isTimeTrial = stage.type_value === 'time_trial' || stage.type_value === 'team_time_trial';
@@ -340,17 +350,6 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
     };
 
     const myStagePoints = stage_classification.find((e) => e.user_id === (usePage().props as any).auth?.user?.id)?.total_points ?? 0;
-    const predictionCount = Object.keys(predictions).length;
-
-    const statCards = [
-        { label: 'Tipo', value: stage.type, iconType: stage.type_value, color: 'bg-brand-600' },
-        { label: 'Distancia', value: stage.distance ?? '-', color: 'bg-accent-500' },
-        { label: 'Fecha', value: stage.date, color: 'bg-blue-500' },
-        { label: 'Salida', value: stage.scheduled_start ? new Date(stage.scheduled_start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC' : '-', color: 'bg-indigo-500' },
-        { label: 'Desnivel', value: stage.elevation_gain ? `${stage.elevation_gain.toLocaleString()} m` : '-', color: 'bg-green-600' },
-        { label: 'Recorrido', value: `${stage.origin} → ${stage.destination}`, color: 'bg-purple-500' },
-        ...(stage.difficulty ? [{ label: 'Dificultad', value: '★'.repeat(stage.difficulty), color: 'bg-yellow-500' }] : []),
-    ];
 
     return (
         <AppLayout>
@@ -390,30 +389,27 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
                     </div>
                 </div>
 
-                {stage.profile_image && (
-                    <div className="overflow-hidden rounded-xl border">
-                        <img
-                            src={stage.profile_image}
-                            alt={`Perfil de la etapa ${stage.number}`}
-                            className="w-full object-cover"
-                        />
-                    </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:flex lg:flex-wrap">
-                    {statCards.map((stat) => (
-                        <Card key={stat.label} className="lg:flex-1 lg:min-w-0">
-                            <div className={`h-1 rounded-t-xl ${stat.color}`} />
-                            <CardContent className="flex flex-col items-center justify-center p-3 text-center sm:p-4">
-                                <span className="text-xs text-muted-foreground">{stat.label}</span>
-                                <span className="mt-1 text-sm font-medium sm:text-base">{stat.value}</span>
-                                {'iconType' in stat && (
-                                    <StageTypeIcon type={stat.iconType as string} className="mt-1 h-5 w-5 text-muted-foreground/70" />
-                                )}
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                <Card className="overflow-hidden border">
+                    {stage.profile_image && (
+                        <div className="aspect-[3/1] overflow-hidden">
+                            <img
+                                src={stage.profile_image}
+                                alt={`Perfil de la etapa ${stage.number}`}
+                                className="h-full w-full object-cover"
+                            />
+                        </div>
+                    )}
+                    <CardContent className="space-y-5 p-5 sm:p-6">
+                        <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+                            <Stat icon={<StageTypeIcon type={stage.type_value} className="h-5 w-5 text-muted-foreground" />} label="Tipo" value={stage.type} />
+                            <Stat icon={<Route className="h-5 w-5 text-muted-foreground" />} label="Distancia" value={stage.distance ?? '-'} />
+                            <Stat icon={<Mountain className="h-5 w-5 text-muted-foreground" />} label="Desnivel" value={stage.elevation_gain ? `${stage.elevation_gain.toLocaleString()}m` : '-'} />
+                            <Stat icon={<Star className="h-5 w-5 text-muted-foreground" />} label="Dificultad" value={stage.difficulty ? '★'.repeat(stage.difficulty) : '-'} />
+                            <Stat icon={<Clock className="h-5 w-5 text-muted-foreground" />} label="Salida" value={stage.scheduled_start ? new Date(stage.scheduled_start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC' : '-'} />
+                            <Stat icon={<MapPin className="h-5 w-5 text-muted-foreground" />} label="Recorrido" value={`${stage.origin} → ${stage.destination}`} />
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {is_finished && stage_results.length > 0 && (
                     <StageResultsCard results={stage_results} />
