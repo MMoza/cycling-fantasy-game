@@ -7,7 +7,9 @@ namespace App\Application\UseCases\Prediction;
 use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
+use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class ShowPreRaceFormUseCase
 {
@@ -38,6 +40,22 @@ class ShowPreRaceFormUseCase
                 'locked_at' => $p->locked_at?->toIso8601String(),
             ]);
 
+        $availableRiders = DB::table('competition_participants')
+            ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
+            ->where('competition_participants.competition_id', $edition->competition_id)
+            ->where('competition_participants.edition_id', $edition->id)
+            ->select('riders.id', 'riders.last_name', 'riders.first_name')
+            ->distinct()
+            ->orderBy('riders.last_name')
+            ->orderBy('riders.first_name')
+            ->get()
+            ->map(fn ($r) => ['value' => $r->id, 'label' => trim("{$r->last_name} {$r->first_name}")]);
+
+        $availableTeams = TeamModel::whereHas('rosters', fn ($q) => $q->where('year', $edition->year))
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($t) => ['value' => $t->id, 'label' => $t->name]);
+
         return [
             'leagueId' => $league->id,
             'leagueName' => $league->name,
@@ -45,6 +63,8 @@ class ShowPreRaceFormUseCase
             'competitionYear' => $edition->year,
             'isLocked' => $isLocked,
             'predictions' => $predictions,
+            'availableRiders' => $availableRiders,
+            'availableTeams' => $availableTeams,
         ];
     }
 }

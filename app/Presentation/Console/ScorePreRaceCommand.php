@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Console;
 
 use App\Domain\Entities\Prediction;
+use App\Domain\Entities\ScoreEvent;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
 use App\Domain\Services\ScoringEngine;
@@ -20,7 +21,8 @@ use Illuminate\Support\Facades\DB;
 
 class ScorePreRaceCommand extends Command
 {
-    protected $signature = 'race:score-pre-race {edition_id? : The edition UUID to score (omit for all finished editions)}';
+    protected $signature = 'race:score-pre-race {edition_id? : The edition UUID to score (omit for all finished editions)}
+        {--force : Re-score even if already scored}';
 
     protected $description = 'Calculate scores for all pre-race predictions of an edition';
 
@@ -67,6 +69,26 @@ class ScorePreRaceCommand extends Command
                 ->get();
 
             foreach ($leagues as $league) {
+                $alreadyScored = DB::table('score_events')
+                    ->where('league_id', $league->id)
+                    ->whereNull('stage_id')
+                    ->exists();
+
+                if ($alreadyScored) {
+                    if ($this->option('force')) {
+                        DB::table('score_events')
+                            ->where('league_id', $league->id)
+                            ->whereNull('stage_id')
+                            ->delete();
+
+                        $this->warn("Cleared existing pre-race score events for league {$league->id}");
+                    } else {
+                        $this->warn("League {$league->id} already scored. Use --force to re-score.");
+
+                        continue;
+                    }
+                }
+
                 $scoringSystemModel = ScoringSystemModel::with('rules')
                     ->find($league->scoring_system_id);
 
@@ -101,19 +123,7 @@ class ScorePreRaceCommand extends Command
 
                     foreach ($events as $event) {
                         if ($event->points > 0) {
-                            DB::table('score_events')->insert([
-                                'id' => $event->id,
-                                'user_id' => $event->userId,
-                                'league_id' => $event->leagueId,
-                                'scoring_rule_id' => $event->scoringRuleId,
-                                'points' => $event->points,
-                                'description' => $event->description,
-                                'context' => $event->context,
-                                'stage_id' => $event->stageId,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-
+                            $this->persistScoreEvent($event);
                             $totalScored++;
                         }
                     }
@@ -124,6 +134,22 @@ class ScorePreRaceCommand extends Command
         $this->info("Pre-race scoring complete. Total score events created: {$totalScored}");
 
         return self::SUCCESS;
+    }
+
+    private function persistScoreEvent(ScoreEvent $event): void
+    {
+        DB::table('score_events')->insert([
+            'id' => $event->id,
+            'user_id' => $event->userId,
+            'league_id' => $event->leagueId,
+            'scoring_rule_id' => $event->scoringRuleId,
+            'points' => $event->points,
+            'description' => $event->description,
+            'context' => $event->context,
+            'stage_id' => $event->stageId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     private function buildPositionMap(Collection $items): array

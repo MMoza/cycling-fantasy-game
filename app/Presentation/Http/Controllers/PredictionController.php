@@ -71,6 +71,8 @@ class PredictionController extends Controller
             ],
             'is_locked' => $data['isLocked'],
             'predictions' => $data['predictions'],
+            'availableRiders' => $data['availableRiders'],
+            'availableTeams' => $data['availableTeams'],
         ]);
     }
 

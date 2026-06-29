@@ -29,12 +29,26 @@ class StorePreRacePredictionUseCase
         }
 
         foreach ($predictions as $prediction) {
-            $value = $prediction['value'];
+            $rawValue = $prediction['value'] ?? '';
+            $value = $rawValue;
 
-            if ($prediction['category'] === 'gc_top_5' && is_string($value)) {
-                $value = array_map('trim', explode(',', $value));
-            } elseif (is_string($value)) {
-                $value = ['rider_id' => $value];
+            $multiValueCategories = ['gc_top_5', 'points_winner', 'mountains_winner', 'youth_winner'];
+
+            if (in_array($prediction['category'], $multiValueCategories, true) && is_string($rawValue)) {
+                $value = array_values(array_filter(array_map('trim', explode(',', $rawValue)), fn ($v) => $v !== ''));
+                if (empty($value)) {
+                    continue;
+                }
+            } elseif ($prediction['category'] === 'teams_winner' && is_string($rawValue)) {
+                if ($rawValue === '') {
+                    continue;
+                }
+                $value = ['team_id' => $rawValue];
+            } elseif (is_string($rawValue)) {
+                if ($rawValue === '') {
+                    continue;
+                }
+                $value = ['rider_id' => $rawValue];
             }
 
             PredictionModel::updateOrCreate(

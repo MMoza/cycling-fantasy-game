@@ -208,6 +208,10 @@ class ScoringEngine
             return $riders[$position];
         }
 
+        if ($position === 0 && is_array($riders) && isset($riders['rider_id'])) {
+            return $riders['rider_id'];
+        }
+
         return null;
     }
 
