@@ -1,23 +1,33 @@
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
 import { LogOut, LayoutDashboard, Users, Route, Trophy, Shield } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-    const { auth, currentLeague } = usePage().props as any;
+    const page = usePage();
+    const { auth, currentLeague } = page.props as any;
+    const url = page.url;
 
     const navItems = [
-        { href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
+        { route: 'dashboard', href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
         ...(currentLeague
             ? [
-                  { href: route('stages.index', currentLeague.id), label: 'Etapa', icon: Route },
-                  { href: route('classification.index', currentLeague.id), label: 'Clasificación', icon: Trophy },
+                  { route: 'stages.index', href: route('stages.index', currentLeague.id), label: 'Etapa', icon: Route },
+                  { route: 'classification.index', href: route('classification.index', currentLeague.id), label: 'Clasificación', icon: Trophy },
               ]
             : []),
-        { href: route('leagues.index'), label: 'Ligas', icon: Users },
+        { route: 'leagues.index', href: route('leagues.index'), label: 'Ligas', icon: Users },
         ...(auth.user?.is_admin
-            ? [{ href: '/admin', label: 'Admin', icon: Shield }]
+            ? [{ route: 'admin', href: '/admin', label: 'Admin', icon: Shield }]
             : []),
     ];
+
+    function isActive(item: typeof navItems[number]): boolean {
+        if (item.route === 'admin') {
+            return url.startsWith('/admin');
+        }
+        return route().current(item.route);
+    }
 
     return (
         <div className="min-h-screen bg-background pb-16 md:pb-0">
@@ -37,9 +47,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                    className={cn(
+                                        'flex items-center gap-2 text-sm transition-colors',
+                                        isActive(item)
+                                            ? 'text-accent-500 font-semibold'
+                                            : 'text-muted-foreground hover:text-foreground',
+                                    )}
                                 >
-                                    <item.icon className="h-4 w-4" />
+                                    <item.icon className={cn('h-4 w-4', isActive(item) && 'text-accent-500')} />
                                     {item.label}
                                 </Link>
                             ))}
@@ -85,7 +100,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Link
                         key={item.href}
                         href={item.href}
-                        className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground hover:text-foreground active:text-foreground"
+                        className={cn(
+                            'flex flex-1 flex-col items-center justify-center gap-1 py-2 transition-colors',
+                            isActive(item)
+                                ? 'text-accent-500'
+                                : 'text-muted-foreground hover:text-foreground active:text-foreground',
+                        )}
                     >
                         <item.icon className="h-5 w-5" />
                         <span className="text-[10px] font-medium">{item.label}</span>
