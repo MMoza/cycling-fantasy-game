@@ -72,40 +72,40 @@ export default function Login({
                     <InputError message={errors.password} className="mt-2" />
                 </div>
 
-                <label className="flex items-center gap-2">
-                    <Checkbox
-                        name="remember"
-                        checked={data.remember}
-                        onChange={(e) =>
-                            setData(
-                                'remember',
-                                (e.target.checked || false) as false,
-                            )
-                        }
-                    />
-                    <span className="text-sm text-muted-foreground">
-                        Recordarme
-                    </span>
-                </label>
-
-                <div className="space-y-3">
-                    <button
-                        type="submit"
-                        disabled={processing}
-                        className="inline-flex w-full items-center justify-center rounded-md bg-accent-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
-                    >
-                        {processing ? 'Entrando...' : 'Entrar'}
-                    </button>
+                <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2">
+                        <Checkbox
+                            name="remember"
+                            checked={data.remember}
+                            onChange={(e) =>
+                                setData(
+                                    'remember',
+                                    (e.target.checked || false) as false,
+                                )
+                            }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                            Recordarme
+                        </span>
+                    </label>
 
                     {canResetPassword && (
                         <Link
                             href={route('password.request')}
-                            className="block text-center text-sm text-muted-foreground underline hover:text-foreground transition-colors"
+                            className="text-sm text-muted-foreground underline hover:text-foreground transition-colors"
                         >
                             ¿Olvidaste tu contraseña?
                         </Link>
                     )}
                 </div>
+
+                <button
+                    type="submit"
+                    disabled={processing}
+                    className="inline-flex w-full items-center justify-center rounded-md bg-accent-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30 disabled:opacity-50 disabled:shadow-none"
+                >
+                    {processing ? 'Entrando...' : 'Entrar'}
+                </button>
             </form>
 
             <div className="relative">
