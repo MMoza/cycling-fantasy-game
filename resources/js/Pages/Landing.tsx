@@ -46,10 +46,22 @@ const steps = [
     },
 ];
 
+function MountainIcon({ fill }: { fill: string }) {
+    return (
+        <svg viewBox="0 0 24 16" className="h-6 w-9" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+                d="M0 16L8 2L12 8L16 0L24 16H0Z"
+                fill={fill}
+                className="drop-shadow-sm"
+            />
+        </svg>
+    );
+}
+
 const grandTours = [
-    { name: 'Tour de Francia', color: 'bg-yellow-400', textColor: 'text-yellow-600' },
-    { name: 'Giro de Italia', color: 'bg-rose-500', textColor: 'text-rose-600' },
-    { name: 'La Vuelta', color: 'bg-red-500', textColor: 'text-red-600' },
+    { name: 'Tour de Francia', textColor: 'text-yellow-600', fill: '#FACC15' },
+    { name: 'Giro de Italia', textColor: 'text-rose-600', fill: '#F43F5E' },
+    { name: 'La Vuelta', textColor: 'text-red-600', fill: '#EF4444' },
 ];
 
 export default function Landing() {
@@ -96,7 +108,7 @@ export default function Landing() {
                 <div className="marquee-track flex w-max items-center gap-16">
                     {[...grandTours, ...grandTours].map((tour, i) => (
                         <div key={`${tour.name}-${i}`} className="flex items-center gap-3 px-8">
-                            <div className={`h-5 w-5 rounded-full ${tour.color} shadow-sm`} />
+                            <MountainIcon fill={tour.fill} />
                             <span className={`text-xl font-bold tracking-wide ${tour.textColor}`}>
                                 {tour.name}
                             </span>
