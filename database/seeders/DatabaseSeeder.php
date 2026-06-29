@@ -26,5 +26,9 @@ class DatabaseSeeder extends Seeder
                 'password' => bcrypt('password'),
             ]);
         }
+
+        if (app()->environment('local', 'testing')) {
+            $this->call(TestCompetitionSeeder::class);
+        }
     }
 }
