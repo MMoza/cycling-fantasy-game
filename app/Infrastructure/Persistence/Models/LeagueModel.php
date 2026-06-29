@@ -55,4 +55,9 @@ class LeagueModel extends Model
     {
         return $this->hasMany(StageModel::class, 'edition_id', 'edition_id');
     }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLogModel::class, 'league_id', 'id');
+    }
 }

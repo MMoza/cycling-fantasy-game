@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Presentation\Console;
 
+use App\Application\Services\ActivityLogService;
 use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoreEvent;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
 use App\Domain\Entities\StageResult;
 use App\Domain\Services\ScoringEngine;
+use App\Domain\ValueObjects\ActivityLogType;
 use App\Domain\ValueObjects\PredictionType;
+use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -23,11 +26,11 @@ class ScoreStageCommand extends Command
 
     protected $description = 'Calculate scores for all predictions of a stage';
 
-    public function handle(): int
+    public function handle(ActivityLogService $activityLog): int
     {
         $stageId = $this->argument('stage_id');
 
-        $stage = StageModel::with('edition.leagues')->find($stageId);
+        $stage = StageModel::with('edition.leagues', 'edition.competition')->find($stageId);
 
         if (! $stage) {
             $this->error("Stage not found: {$stageId}");
@@ -111,6 +114,26 @@ class ScoreStageCommand extends Command
                         $this->persistScoreEvent($scoreEvent);
                         $scored++;
                     }
+                }
+            }
+
+            $league = $stage->edition->leagues->firstWhere('id', $leagueId);
+            if ($league && ! $activityLog->hasStageEndForLeague($league, $stageId)) {
+                $activityLog->logStageEnd($league, $stage);
+                $this->info("Logged stage_end for league {$leagueId}");
+            }
+        }
+
+        $allStagesFinished = StageModel::where('edition_id', $stage->edition_id)
+            ->where('type', '!=', 'rest')
+            ->where('status', '!=', StageStatus::Finished)
+            ->doesntExist();
+
+        if ($allStagesFinished) {
+            foreach ($stage->edition->leagues as $league) {
+                if (! $activityLog->hasTypeForLeague($league, ActivityLogType::CompetitionEnd)) {
+                    $activityLog->logCompetitionEnd($league);
+                    $this->info("Logged competition_end for league {$league->id}");
                 }
             }
         }

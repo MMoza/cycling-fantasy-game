@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Admin\Stage;
 
 use App\Application\Exceptions\ApplicationException;
+use App\Application\Services\ActivityLogService;
 use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
 use App\Domain\Entities\StageResult as StageResultEntity;
 use App\Domain\Services\ScoringEngine;
+use App\Domain\ValueObjects\ActivityLogType;
 use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
 use App\Domain\ValueObjects\StageType;
+use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -21,6 +24,10 @@ use Illuminate\Support\Str;
 
 class StoreStageResultUseCase
 {
+    public function __construct(
+        private readonly ActivityLogService $activityLog,
+    ) {}
+
     public function execute(string $editionId, string $id, array $results): void
     {
         $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
@@ -90,7 +97,7 @@ class StoreStageResultUseCase
 
         $stageResults = $resultsData->map(fn ($row) => StageResultEntity::fromRow($row));
 
-        $leagues = DB::table('leagues')
+        $leagues = LeagueModel::with('edition.competition')
             ->where('edition_id', $stage->edition_id)
             ->get();
 
@@ -129,6 +136,23 @@ class StoreStageResultUseCase
                             'updated_at' => now(),
                         ]);
                     }
+                }
+            }
+
+            if (! $this->activityLog->hasStageEndForLeague($league, $stage->id)) {
+                $this->activityLog->logStageEnd($league, $stage);
+            }
+        }
+
+        $allStagesFinished = StageModel::where('edition_id', $stage->edition_id)
+            ->where('type', '!=', 'rest')
+            ->where('status', '!=', StageStatus::Finished)
+            ->doesntExist();
+
+        if ($allStagesFinished) {
+            foreach ($leagues as $league) {
+                if (! $this->activityLog->hasTypeForLeague($league, ActivityLogType::CompetitionEnd)) {
+                    $this->activityLog->logCompetitionEnd($league);
                 }
             }
         }

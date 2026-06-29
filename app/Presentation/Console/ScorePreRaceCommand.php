@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace App\Presentation\Console;
 
+use App\Application\Services\ActivityLogService;
 use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoreEvent;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
 use App\Domain\Services\ScoringEngine;
+use App\Domain\ValueObjects\ActivityLogType;
 use App\Domain\ValueObjects\PredictionCategory;
 use App\Domain\ValueObjects\ScoringRuleType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\FinalClassificationModel;
+use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use Illuminate\Console\Command;
@@ -26,7 +29,7 @@ class ScorePreRaceCommand extends Command
 
     protected $description = 'Calculate scores for all pre-race predictions of an edition';
 
-    public function handle(): int
+    public function handle(ActivityLogService $activityLog): int
     {
         $editionId = $this->argument('edition_id');
 
@@ -64,7 +67,7 @@ class ScorePreRaceCommand extends Command
 
             $this->info("Scoring pre-race predictions for edition: {$edition->year}");
 
-            $leagues = DB::table('leagues')
+            $leagues = LeagueModel::with('edition.competition')
                 ->where('edition_id', $edition->id)
                 ->get();
 
@@ -127,6 +130,11 @@ class ScorePreRaceCommand extends Command
                             $totalScored++;
                         }
                     }
+                }
+
+                if (! $activityLog->hasTypeForLeague($league, ActivityLogType::CompetitionStart)) {
+                    $activityLog->logCompetitionStart($league);
+                    $this->info("Logged competition_start for league {$league->id}");
                 }
             }
         }

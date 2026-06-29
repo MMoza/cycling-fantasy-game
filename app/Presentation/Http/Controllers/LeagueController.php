@@ -110,6 +110,15 @@ class LeagueController extends Controller
 
         $userEntry = $leaderboard->firstWhere('is_current_user', true);
 
+        $activityLogs = $leagueModel->activityLogs->map(fn ($log) => [
+            'id' => $log->id,
+            'type' => $log->type->value,
+            'title' => $log->title,
+            'description' => $log->description,
+            'data' => $log->data,
+            'created_at' => $log->created_at->diffForHumans(),
+        ]);
+
         return Inertia::render('Leagues/Show', [
             'league' => [
                 'id' => $leagueModel->id,
@@ -175,6 +184,7 @@ class LeagueController extends Controller
                     'status' => $s->status->value,
                 ]),
             'leaderboard' => $leaderboard->values(),
+            'activity_logs' => $activityLogs,
         ]);
     }
 

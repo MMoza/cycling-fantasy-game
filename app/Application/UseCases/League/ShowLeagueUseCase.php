@@ -12,8 +12,13 @@ class ShowLeagueUseCase
 {
     public function execute(User $user, string $leagueId): LeagueModel
     {
-        $league = LeagueModel::with(['edition.competition', 'scoringSystem.rules', 'stages', 'users'])
-            ->find($leagueId);
+        $league = LeagueModel::with([
+            'edition.competition',
+            'scoringSystem.rules',
+            'stages',
+            'users',
+            'activityLogs' => fn ($q) => $q->orderBy('created_at', 'desc')->limit(20),
+        ])->find($leagueId);
 
         if (! $league || ! $user->leagues()->where('leagues.id', $leagueId)->exists()) {
             throw new ModelNotFoundException('League not found');

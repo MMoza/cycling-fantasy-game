@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Console;
 
+use App\Application\Services\ActivityLogService;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -15,7 +16,7 @@ class LockPredictionsCommand extends Command
 
     protected $description = 'Lock predictions for stages that have started and update their status to ongoing';
 
-    public function handle(): int
+    public function handle(ActivityLogService $activityLog): int
     {
         $stageId = $this->argument('stage_id');
 
@@ -36,6 +37,8 @@ class LockPredictionsCommand extends Command
         $locked = 0;
 
         foreach ($stages as $stage) {
+            $stage->load('edition.leagues');
+
             $predictions = PredictionModel::where('stage_id', $stage->id)
                 ->whereNull('locked_at')
                 ->get();
@@ -54,6 +57,14 @@ class LockPredictionsCommand extends Command
 
             if ($stage->status === StageStatus::Upcoming) {
                 $stage->update(['status' => StageStatus::Ongoing]);
+
+                foreach ($stage->edition->leagues as $league) {
+                    if (! $activityLog->hasStageStartForLeague($league, $stage->id)) {
+                        $activityLog->logStageStart($league, $stage);
+                        $this->info("Logged stage_start for league {$league->id}");
+                    }
+                }
+
                 $this->info("Stage status updated to ongoing: {$stage->name}");
             }
         }
