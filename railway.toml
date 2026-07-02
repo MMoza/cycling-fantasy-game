@@ -8,7 +8,3 @@ healthcheckPath = "/up"
 healthcheckTimeout = 60
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-
-[cron.schedule-run]
-schedule = "every minute"
-command = "php artisan schedule:run"
