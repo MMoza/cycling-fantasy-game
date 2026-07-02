@@ -1,58 +1,180 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PseudoFantasy Cycling
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> **Predicciones ciclistas con DDD, Laravel 13 e Inertia.js** — un sistema completo de porras para Grandes Vueltas, preparado para escalar a clásicas y vueltas de una semana.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Capa | Tecnología |
+| --- | --- |
+| Backend | **Laravel 13**, PHP 8.4+, MySQL |
+| Frontend | **React 19**, TypeScript, TailwindCSS, shadcn/ui |
+| Puente | **Inertia.js** (SPA sin API boilerplate) |
+| Auth | **Laravel Sanctum** + cookies |
+| Infra | **Docker**, **Railway** (PaaS), **S3-compatible** (imágenes) |
+| Testing | **Pest** (backend), **Vitest** (frontend), **PHPStan** max level |
+| CI/CD | **GitHub Actions** en cada PR |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Arquitectura
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+┌───────────────────────────────────────────────────┐
+│                   Presentation                     │
+│    Inertia Controllers · API Controllers · CLI     │
+├───────────────────────────────────────────────────┤
+│                   Application                      │
+│       Use Cases · DTOs · Application Services      │
+├───────────────────────────────────────────────────┤
+│                  Infrastructure                    │
+│    Eloquent Models · API Clients · Repositories    │
+├───────────────────────────────────────────────────┤
+│                     Domain                         │
+│    Entities · Value Objects · Domain Services      │
+└───────────────────────────────────────────────────┘
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Domain-Driven Design
 
-## Contributing
+El núcleo de dominio no depende de Laravel. Cada capa tiene responsabilidades claras:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **Domain** — Entidades puras, Value Objects inmutables, reglas de negocio. Sin frameworks.
+- **Application** — Casos de uso orquestando el dominio. DTOs inmutables.
+- **Infrastructure** — Eloquent, clientes HTTP externos, implementaciones concretas de interfaces de dominio.
+- **Presentation** — Controladores Inertia y API, comandos de consola. Sin lógica de negocio.
 
-## Code of Conduct
+### Principios
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- Mobile First
+- Sin lógica de negocio en Controllers ni componentes React
+- UUIDs en todas las entidades (nunca auto-incremental)
+- Score Events: nunca guardar totales, cada evento de puntuación se persiste individualmente
+- Sistema de puntuación configurable por reglas (`ScoringSystem → RuleSet → ScoringRule`)
 
-## Security Vulnerabilities
+---
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Infraestructura
 
-## License
+```
+Cliente (Browser)
+     │
+     ▼
+Railway CDN ───► Nginx (Docker) ───► PHP-FPM
+     │                                      │
+     ▼                                      ▼
+S3 (images)                          Railway MySQL
+     │
+cron: php artisan schedule:run (c/5 min)
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- **Docker multi-etapa** con Nginx + PHP-FPM + start.sh
+- **Railway** como PaaS con despliegue automático desde GitHub
+- **S3 compatible** (storageapi.dev) para avatares de usuario con `temporaryUrl` + fallback chain
+- **Cada 5 minutos**: `php artisan schedule:run` ejecuta `LockPredictionsCommand`, que bloquea apuestas 5 min antes de cada etapa
+- **Zero-downtime**: Railway gestiona health checks y rollbacks
+
+---
+
+## Modelo de dominio
+
+```
+Competition ──► Edition ──► Stage
+                   │
+              League ──► User (N:M)
+                   │
+              ScoringSystem ──► RuleSet ──► ScoringRule
+                   │
+              Prediction
+                   │
+              ScoreEvent (auditoría)
+```
+
+### Entidades principales
+
+| Entidad | Descripción |
+| --- | --- |
+| `Competition` | Competición raíz (Tour, Giro, Vuelta) |
+| `Edition` | Edición concreta (Tour 2026, Giro 2027) |
+| `Stage` | Etapa individual con fecha, perfil, resultados |
+| `League` | Liga de usuarios con su propio sistema de puntuación |
+| `Prediction` | Pronóstico: pre-race (6 categorías) o por etapa (5 markets) |
+| `ScoreEvent` | Evento de puntuación atómico: `usuario + regla + puntos + contexto` |
+| `ScoringSystem` | Sistema de puntuación elegido al crear la liga (no modificable) |
+
+---
+
+## Funcionalidades
+
+### Para usuarios
+
+- Crear y unirse a ligas
+- Pronósticos híbridos: 6 categorías pre-race + 5 markets por etapa
+- Apuestas visibles solo para el usuario hasta el cierre, luego se revelan
+- Clasificación con dos vistas:
+  - **General**: desglose por categoría con resultado real, predicción de cada usuario y puntos
+  - **Etapas**: leaderboard por etapa seleccionable con chips de navegación
+- Perfil con avatar (upload a S3)
+- Búsqueda global de ligas, usuarios, etapas
+
+### Para administradores
+
+- Crear competiciones, ediciones, importar etapas
+- Importar resultados reales (final classifications por categoría)
+- Recalcular puntuaciones
+- Acceso a todas las ligas
+
+### Automatizado
+
+- Bloqueo de apuestas 5 min antes del inicio de cada etapa (`LockPredictionsCommand`)
+- Escalado de puntuación por etapas basado en reglas configurables (Standard / Aggressive / Conservative)
+
+---
+
+## Roadmap
+
+| Versión | Contenido |
+| --- | --- |
+| **v1** | ✅ Tour de Francia, ligas, pronósticos híbridos, resultados desde API externa |
+| **v2** | 🔄 Giro y Vuelta, portal SuperAdmin, creación de ligas desde admin |
+| **v3** | ⏳ Clásicas, vueltas de una semana, histórico y estadísticas |
+
+---
+
+## Desarrollo local
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate:fresh --seed
+npm run dev
+```
+
+El seeder crea:
+- Usuario admin (`admin@cyclingfantasy.com` / `password`)
+- Competición "Tour de Francia 2026" con 21 etapas, 23 equipos, 184 riders
+- Liga de prueba "Amigos del Tour" con predicciones variadas y puntuaciones
+
+### Testing
+
+```bash
+# Backend (Pest)
+php artisan test
+
+# Frontend (Vitest)
+npx vitest run
+
+# Static analysis
+vendor/bin/phpstan analyse --level max
+```
+
+Actualmente: **134 tests** backend, todos pasando, TypeScript compila sin errores.
+
+---
+
+## Licencia
+
+MIT
