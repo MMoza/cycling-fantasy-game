@@ -58,22 +58,45 @@ El núcleo de dominio no depende de Laravel. Cada capa tiene responsabilidades c
 ## Infraestructura
 
 ```
-Cliente (Browser)
-     │
-     ▼
-Railway CDN ───► Nginx (Docker) ───► PHP-FPM
-     │                                      │
-     ▼                                      ▼
-S3 (images)                          Railway MySQL
-     │
-cron: php artisan schedule:run (c/5 min)
+                           Cliente (Browser)
+                                │
+                                ▼
+                         Railway CDN
+                            │    │
+                            ▼    ▼
+                    ┌────────────┐
+                    │   APP      │  Nginx + PHP-FPM (Docker)
+                    │            │
+                    └──┬──────┬──┘
+                       │      │
+                       ▼      ▼
+                    MySQL   S3 Bucket
+                    (Rwy)   (images)
+                       ▲
+                       │
+               ┌───────┴───────┐
+               │ block-stages  │
+               │ -scheduler    │  Cron service (c/5 min)
+               └───────────────┘
 ```
 
-- **Docker multi-etapa** con Nginx + PHP-FPM + start.sh
-- **Railway** como PaaS con despliegue automático desde GitHub
-- **S3 compatible** (storageapi.dev) para avatares de usuario con `temporaryUrl` + fallback chain
-- **Cada 5 minutos**: `php artisan schedule:run` ejecuta `LockPredictionsCommand`, que bloquea apuestas 5 min antes de cada etapa
-- **Zero-downtime**: Railway gestiona health checks y rollbacks
+### APP (web service)
+
+Servidor Docker multi-etapa con **Nginx + PHP-FPM**. Contiene toda la lógica de la aplicación:
+
+- Sirve el frontend React via Inertia.js
+- Expone endpoints API para búsqueda y carga de imágenes
+- Conecta con **MySQL** (Railway) para lectura/escritura de datos
+- Conecta con **S3 compatible** (storageapi.dev) para avatares de usuario con `temporaryUrl` + fallback chain
+
+### block-stages-scheduler (cron service)
+
+Microservicio independiente en Railway que ejecuta exclusivamente `php artisan schedule:run` cada 5 minutos:
+
+- Comparte la misma **MySQL** que la APP
+- Su único trabajo es ejecutar **`LockPredictionsCommand`**, que bloquea apuestas 5 min antes del inicio de cada etapa
+- Railway gestiona health checks y restart on failure
+- Sin exposición a internet, sin CDN, sin frontend
 
 ---
 
