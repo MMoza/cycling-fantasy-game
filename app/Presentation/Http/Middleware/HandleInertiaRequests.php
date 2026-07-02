@@ -81,7 +81,7 @@ class HandleInertiaRequests extends Middleware
         $bucket = config('filesystems.disks.s3.bucket', '');
 
         if ($endpoint && $bucket) {
-            return "{$endpoint}/{$bucket}/" . ltrim($path, '/');
+            return "{$endpoint}/{$bucket}/".ltrim($path, '/');
         }
 
         return '';
