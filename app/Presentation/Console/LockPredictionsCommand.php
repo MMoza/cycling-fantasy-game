@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Presentation\Console;
 
 use App\Application\Services\ActivityLogService;
+use App\Domain\ValueObjects\EditionStatus;
+use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -37,7 +39,7 @@ class LockPredictionsCommand extends Command
         $locked = 0;
 
         foreach ($stages as $stage) {
-            $stage->load('edition.leagues');
+            $stage->load('edition.leagues', 'edition.competition');
 
             $predictions = PredictionModel::where('stage_id', $stage->id)
                 ->whereNull('locked_at')
@@ -66,11 +68,57 @@ class LockPredictionsCommand extends Command
                 }
 
                 $this->info("Stage status updated to ongoing: {$stage->name}");
+
+                $this->startEditionIfFirstStage($stage, $activityLog);
             }
         }
 
         $this->info("Total locked: {$locked} predictions");
 
         return self::SUCCESS;
+    }
+
+    private function startEditionIfFirstStage(StageModel $stage, ActivityLogService $activityLog): void
+    {
+        $hasPreviousOngoing = StageModel::where('edition_id', $stage->edition_id)
+            ->where('status', StageStatus::Ongoing)
+            ->where('id', '!=', $stage->id)
+            ->exists();
+
+        if ($hasPreviousOngoing) {
+            return;
+        }
+
+        $edition = $stage->edition;
+
+        if ($edition->status !== EditionStatus::Upcoming) {
+            return;
+        }
+
+        $edition->update(['status' => EditionStatus::Ongoing]);
+        $this->info("Edition {$edition->id} started");
+
+        $leagues = $edition->leagues;
+        $leagueIds = $leagues->pluck('id');
+
+        $preRacePredictions = PredictionModel::whereIn('league_id', $leagueIds)
+            ->where('type', PredictionType::PreRace->value)
+            ->whereNull('locked_at')
+            ->get();
+
+        $preRaceLocked = 0;
+        foreach ($preRacePredictions as $prediction) {
+            $prediction->update(['locked_at' => now()]);
+            $preRaceLocked++;
+        }
+
+        if ($preRaceLocked > 0) {
+            $this->info("Locked {$preRaceLocked} pre-race predictions across {$leagueIds->count()} leagues");
+        }
+
+        foreach ($leagues as $league) {
+            $activityLog->logCompetitionStart($league);
+            $this->info("Logged competition_start for league {$league->id}");
+        }
     }
 }
