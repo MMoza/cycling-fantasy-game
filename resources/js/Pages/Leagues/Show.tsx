@@ -71,6 +71,7 @@ interface ActivityLog {
 interface ShowProps {
     league: League;
     next_stage: {
+        id: string;
         number: number;
         name: string;
         date: string;
@@ -448,25 +449,27 @@ export default function Show({ league, next_stage, user_position, stages, leader
                 )}
 
                 <div className="grid gap-4 md:grid-cols-3">
-                    <Card>
-                        <div className="h-1 rounded-t-xl bg-brand-600" />
-                        <CardContent className="flex flex-col items-center justify-center p-6">
-                            <Route className="mb-2 h-5 w-5 text-brand-600" />
-                            <div className="text-2xl font-bold">
-                                {league.progress.current_stage}/{league.progress.total_stages}
-                            </div>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {league.competition.name} {league.competition.year}
-                            </p>
-                        </CardContent>
-                    </Card>
+                    <Link href={route('stages.index', league.id)} className="block">
+                        <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+                            <div className="h-1 rounded-t-xl bg-brand-600" />
+                            <CardContent className="flex flex-col items-center justify-center p-6">
+                                <Route className="mb-2 h-5 w-5 text-brand-600" />
+                                <div className="text-2xl font-bold">
+                                    {league.progress.current_stage}/{league.progress.total_stages}
+                                </div>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {league.competition.name} {league.competition.year}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
-                    <Card>
-                        <div className="h-1 rounded-t-xl bg-accent-500" />
-                        <CardContent className="flex flex-col items-center justify-center p-6">
-                            <Calendar className="mb-2 h-5 w-5 text-accent-500" />
-                            {next_stage ? (
-                                <>
+                    {next_stage ? (
+                        <Link href={route('stages.show', [league.id, next_stage.id])} className="block">
+                            <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+                                <div className="h-1 rounded-t-xl bg-accent-500" />
+                                <CardContent className="flex flex-col items-center justify-center p-6">
+                                    <Calendar className="mb-2 h-5 w-5 text-accent-500" />
                                     <div className="text-lg font-bold">
                                         Etapa {next_stage.number}
                                     </div>
@@ -476,30 +479,36 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                     <p className="text-xs text-muted-foreground">
                                         {next_stage.date}
                                     </p>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-lg font-bold">-</div>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        No hay etapas pendientes
-                                    </p>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    ) : (
+                        <Card>
+                            <div className="h-1 rounded-t-xl bg-accent-500" />
+                            <CardContent className="flex flex-col items-center justify-center p-6">
+                                <Calendar className="mb-2 h-5 w-5 text-accent-500" />
+                                <div className="text-lg font-bold">-</div>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    No hay etapas pendientes
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    <Card>
-                        <div className="h-1 rounded-t-xl bg-green-600" />
-                        <CardContent className="flex flex-col items-center justify-center p-6">
-                            <Trophy className="mb-2 h-5 w-5 text-green-600" />
-                            <div className="text-2xl font-bold">
-                                {user_position.rank}º
-                            </div>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                {user_position.points} pts · {user_position.behind_leader}
-                            </p>
-                        </CardContent>
-                    </Card>
+                    <Link href={route('classification.index', league.id)} className="block">
+                        <Card className="cursor-pointer transition-colors hover:bg-muted/50">
+                            <div className="h-1 rounded-t-xl bg-green-600" />
+                            <CardContent className="flex flex-col items-center justify-center p-6">
+                                <Trophy className="mb-2 h-5 w-5 text-green-600" />
+                                <div className="text-2xl font-bold">
+                                    {user_position.rank}º
+                                </div>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    {user_position.points} pts · {user_position.behind_leader}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
 
                 <Link href={route('predictions.pre-race', league.id)} className="block">

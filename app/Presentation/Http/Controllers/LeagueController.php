@@ -153,6 +153,7 @@ class LeagueController extends Controller
                 ],
             ],
             'next_stage' => $nextStage ? [
+                'id' => $nextStage->id,
                 'number' => $nextStage->number,
                 'name' => $nextStage->name,
                 'date' => $nextStage->date->format('d M'),
