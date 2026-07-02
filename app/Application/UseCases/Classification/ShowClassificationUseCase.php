@@ -11,6 +11,7 @@ use App\Infrastructure\Persistence\Models\RiderModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ShowClassificationUseCase
@@ -202,7 +203,7 @@ class ShowClassificationUseCase
         return $riderNames[$riderId] ?? '—';
     }
 
-    private function buildLeaderboard($members, $scores, string $currentUserId): \Illuminate\Support\Collection
+    private function buildLeaderboard($members, $scores, string $currentUserId): Collection
     {
         $scoresPerUser = $scores->pluck('total_points', 'user_id');
 
