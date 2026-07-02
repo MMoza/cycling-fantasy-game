@@ -16,6 +16,7 @@ use App\Presentation\Http\Controllers\LandingController;
 use App\Presentation\Http\Controllers\LeagueController;
 use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
+use App\Presentation\Http\Controllers\SearchController;
 use App\Presentation\Http\Controllers\StageController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +48,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/leagues/{league}/predictions/pre-race', [PredictionController::class, 'storePreRace'])->name('predictions.pre-race.store');
 
     Route::get('/leagues/{league}/classification', [ClassificationController::class, 'index'])->name('classification.index');
+
+    Route::get('/search', [SearchController::class, '__invoke'])->name('search');
 });
 
 Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->group(function () {

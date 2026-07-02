@@ -35,7 +35,7 @@ class HandleInertiaRequests extends Middleware
         if ($user) {
             $userData = $user->toArray();
             $userData['avatar'] = $user->avatar
-                ? Storage::disk('s3')->temporaryUrl($user->avatar, now()->addHours(24))
+                ? $this->resolveS3Url($user->avatar)
                 : null;
         }
 
@@ -59,5 +59,31 @@ class HandleInertiaRequests extends Middleware
             ],
             'currentLeague' => $currentLeague,
         ];
+    }
+
+    private function resolveS3Url(string $path): string
+    {
+        $disk = Storage::disk('s3');
+
+        try {
+            return $disk->temporaryUrl($path, now()->addHours(24));
+        } catch (\Exception) {
+            // fall through
+        }
+
+        try {
+            return $disk->url($path);
+        } catch (\Exception) {
+            // fall through
+        }
+
+        $endpoint = rtrim(config('filesystems.disks.s3.endpoint', ''), '/');
+        $bucket = config('filesystems.disks.s3.bucket', '');
+
+        if ($endpoint && $bucket) {
+            return "{$endpoint}/{$bucket}/" . ltrim($path, '/');
+        }
+
+        return '';
     }
 }

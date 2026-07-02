@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Users, Route, Trophy, Shield } from 'lucide-react';
+import { LayoutDashboard, Route, Trophy, Shield, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from '@/components/UserMenu';
+import SearchModal from '@/components/SearchModal';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const page = usePage();
     const { auth, currentLeague } = page.props as any;
     const url = page.url;
+    const [searchOpen, setSearchOpen] = useState(false);
 
     const navItems = [
         { route: 'dashboard', href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
@@ -17,7 +20,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   { route: 'classification.index', href: route('classification.index', currentLeague.id), label: 'Clasificación', icon: Trophy },
               ]
             : []),
-        { route: 'leagues.index', href: route('leagues.index'), label: 'Ligas', icon: Users },
         ...(auth.user?.is_admin
             ? [{ route: 'admin', href: '/admin', label: 'Admin', icon: Shield }]
             : []),
@@ -59,6 +61,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     {item.label}
                                 </Link>
                             ))}
+                            <button
+                                type="button"
+                                onClick={() => setSearchOpen(true)}
+                                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                                <Search className="h-4 w-4" />
+                                Buscar
+                            </button>
                         </nav>
                     </div>
                     <UserMenu user={auth.user} leagues={auth.user_leagues ?? []} />
@@ -96,11 +106,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <span className="text-[10px] font-medium">{item.label}</span>
                     </Link>
                 ))}
+                <button
+                    type="button"
+                    onClick={() => setSearchOpen(true)}
+                    className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors hover:text-foreground active:text-foreground"
+                >
+                    <Search className="h-5 w-5" />
+                    <span className="text-[10px] font-medium">Buscar</span>
+                </button>
             </nav>
 
             <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 {children}
             </main>
+
+            <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
         </div>
     );
 }
