@@ -250,3 +250,23 @@ Todos reutilizan Application Services.
 ## Regla de oro
 
 Dise�ar para el ciclismo profesional, no para el Tour 2026.
+
+## Seeder: Rider Data (TourDeFrance2026Seeder)
+
+### Source
+https://www.procyclingstats.com/race/tour-de-france/2026/startlist
+
+### Stats
+- 184 riders (23 teams x 8) — exact PCS startlist
+- Fields: `first_name`, `last_name`, `country_id` (ISO 3166-1 alpha-2)
+
+### Removed riders (not in 2026 startlist)
+Mikel Landa, Carlos Rodríguez, David Gaudu, Giulio Ciccone, Kaden Groves, Stefan Bissegger, Roger Adrià, Lorenzo Fortunato, Emanuel Buchmann, Søren Kragh Andersen
+
+### Naming notes
+- Compound surnames: "Braz Afonso", "García Pierna", "Van den Broek", "Van der Poel", "Del Toro", "Le Berre", "De Kleijn", "De Lie", "Van Eetvelt", "Van Gils", "Van Dijke", "Van Baarle", "Van Wilder", "Van Lerberghe", "Van Mechelen", "Van Asbroeck", "Van Moer", "Van den Berg"
+- Compound first names: "Tobias Halland Johannessen", "Anders Halland Johannessen", "Per Strand Hagenes", "José Félix Parra", "Xabier Mikel Azparren"
+- Special chars: "Pogačar", "Mohorič", "Grégoire", "Michał", "Skujiņš", "Wærenskjold", "Træen", "Märkl", "Großschartner", "Aurélien", "Clément", "Mattéo", "Thibault", "Kévin", "Márkl"
+
+### To update startlist
+Replace the `$ridersByTeam` array in `createRosters()` keeping format: `['first' => '...', 'last' => '...', 'country' => 'XX']`.
