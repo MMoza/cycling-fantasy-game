@@ -270,3 +270,18 @@ Mikel Landa, Carlos Rodríguez, David Gaudu, Giulio Ciccone, Kaden Groves, Stefa
 
 ### To update startlist
 Replace the `$ridersByTeam` array in `createRosters()` keeping format: `['first' => '...', 'last' => '...', 'country' => 'XX']`.
+
+## RiderSeeder
+
+Seeder independiente que solo añade riders a la tabla `riders`. Sin equipos, rosters, participantes ni etapas.
+
+### Uso (seguro en prod)
+```bash
+php artisan db:seed --class=RiderSeeder --force
+```
+
+### Comportamiento
+- `firstOrCreate` por `first_name` + `last_name`
+- Cero side effects: no borra ni modifica nada existente
+- Ignora riders que ya están en la DB
+- Añade los 184 riders del TDF 2026 como pool base
