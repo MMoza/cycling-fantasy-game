@@ -65,9 +65,9 @@ php artisan route:cache
 php artisan view:cache
 
 # Run the scheduler once and exit cleanly
-echo "$(date '+%Y-%m-%d %H:%M:%S') - Starting schedule:run"
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Starting schedule:run" | tee -a /tmp/scheduler.log
 START_TIME=$(date +%s)
-php artisan schedule:run --verbose
+php artisan schedule:run --verbose 2>&1 | tee -a /tmp/scheduler.log
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
-echo "$(date '+%Y-%m-%d %H:%M:%S') - Finished schedule:run (took ${DURATION}s)"
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Finished schedule:run (took ${DURATION}s)" | tee -a /tmp/scheduler.log
