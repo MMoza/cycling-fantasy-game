@@ -285,3 +285,34 @@ php artisan db:seed --class=RiderSeeder --force
 - Cero side effects: no borra ni modifica nada existente
 - Ignora riders que ya están en la DB
 - Añade los 184 riders del TDF 2026 como pool base
+
+## Clasificación
+
+### Página de clasificación (`/leagues/{id}/classification`)
+
+Dos pestañas:
+
+#### General
+- Desglose por categoría (Top 5 General, Maillot Verde, Montaña, Blanco, Equipos, Supercombativo)
+- Cada categoría muestra el resultado real + lo que pronosticó cada usuario + puntos obtenidos
+- Fuente: `FinalClassificationModel` (resultados reales), `PredictionModel` (predicciones), `ScoreEventModel` (puntos agrupados por `user_id + context`)
+
+#### Etapas
+- Chips de etapa (solo etapas con puntuaciones)
+- Por defecto selecciona la última etapa puntuada
+- Leaderboard por etapa basado en `ScoreEventModel` agrupado por `(user_id, stage_id)`
+
+### Backend: `ShowClassificationUseCase`
+
+Retorna:
+- `general_leaderboard`: suma de puntos sin `stage_id` (predicciones pre-race)
+- `stage_leaderboards[]`: leaderboard por etapa
+- `general_details[]`: array con `{category, label, actual[], users[]}` donde cada user tiene `{user_name, is_current_user, predicted, points}`
+- `stages[]`: lista de etapas con `has_scores`
+- `last_scored_stage_id`: última etapa con puntuaciones
+- `user_position`: rank/points/behind_leader del usuario actual
+
+### Test data
+- Liga de prueba con 5 usuarios, 3 etapas finalizadas, predicciones variadas
+- ScoreEvents: generales (context=category) y por etapa (stage_id not null)
+- Puntuaciones variadas (0-35 puntos por usuario, no todos empatados)
