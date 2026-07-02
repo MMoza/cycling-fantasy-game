@@ -8,3 +8,9 @@ healthcheckPath = "/up"
 healthcheckTimeout = 60
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+
+# block-stages-scheduler: cron service — runs schedule:run once per invocation.
+# In Railway, set this service's start command to /app/start-scheduler.sh
+# and configure the cron schedule to: */5 * * * *
+# [deploy.block-stages-scheduler]
+# startCommand = "/app/start-scheduler.sh"

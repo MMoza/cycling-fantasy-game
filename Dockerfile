@@ -51,8 +51,11 @@ RUN composer run-script post-autoload-dump || true
 RUN chmod -R 775 storage bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
-# Make startup script executable
-RUN chmod +x /app/start.sh
+# Make startup scripts executable
+RUN chmod +x /app/start.sh /app/start-scheduler.sh
+
+# Default script to run (can be overridden via startCommand in railway.toml)
+ARG START_SCRIPT=/app/start.sh
 
 EXPOSE 8000
 
