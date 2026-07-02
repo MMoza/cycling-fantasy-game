@@ -78,7 +78,7 @@ test('classification renders all members even when no scores', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('Classification/Index')
         ->where('league_name', 'Amigos del Tour')
-        ->has('leaderboard', 1)
+        ->has('general_leaderboard', 1)
         ->where('user_position.rank', 1)
         ->where('user_position.points', 0)
     );
@@ -114,16 +114,16 @@ test('classification shows scores when they exist', function () {
     $response = $this->actingAs($this->user)->get(route('classification.index', $this->league->id));
 
     $response->assertInertia(fn ($page) => $page
-        ->has('leaderboard', 2)
-        ->where('leaderboard.0.user_name', $otherUser->name)
-        ->where('leaderboard.0.points', 100)
-        ->where('leaderboard.0.rank', 1)
-        ->where('leaderboard.0.is_current_user', false)
-        ->where('leaderboard.1.user_name', $this->user->name)
-        ->where('leaderboard.1.points', 50)
-        ->where('leaderboard.1.rank', 2)
-        ->where('leaderboard.1.is_current_user', true)
-        ->where('leaderboard.1.behind_leader', 50)
+        ->has('general_leaderboard', 2)
+        ->where('general_leaderboard.0.user_name', $otherUser->name)
+        ->where('general_leaderboard.0.points', 100)
+        ->where('general_leaderboard.0.rank', 1)
+        ->where('general_leaderboard.0.is_current_user', false)
+        ->where('general_leaderboard.1.user_name', $this->user->name)
+        ->where('general_leaderboard.1.points', 50)
+        ->where('general_leaderboard.1.rank', 2)
+        ->where('general_leaderboard.1.is_current_user', true)
+        ->where('general_leaderboard.1.behind_leader', 50)
         ->where('user_position.rank', 2)
         ->where('user_position.points', 50)
     );
@@ -143,9 +143,9 @@ test('classification highlights current user', function () {
     $response = $this->actingAs($this->user)->get(route('classification.index', $this->league->id));
 
     $response->assertInertia(fn ($page) => $page
-        ->has('leaderboard', 1)
-        ->where('leaderboard.0.is_current_user', true)
-        ->where('leaderboard.0.rank', 1)
-        ->where('leaderboard.0.behind_leader', 0)
+        ->has('general_leaderboard', 1)
+        ->where('general_leaderboard.0.is_current_user', true)
+        ->where('general_leaderboard.0.rank', 1)
+        ->where('general_leaderboard.0.behind_leader', 0)
     );
 });

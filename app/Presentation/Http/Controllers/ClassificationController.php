@@ -21,8 +21,12 @@ class ClassificationController extends Controller
         return Inertia::render('Classification/Index', [
             'league_id' => $data['leagueId'],
             'league_name' => $data['leagueName'],
-            'leaderboard' => $data['leaderboard'],
-            'user_position' => $data['userPosition'],
+            'stages' => $data['stages'],
+            'general_leaderboard' => $data['general_leaderboard'],
+            'stage_leaderboards' => $data['stage_leaderboards'],
+            'last_scored_stage_id' => $data['last_scored_stage_id'],
+            'user_position' => $data['user_position'],
+            'general_details' => $data['general_details'],
         ]);
     }
 }
