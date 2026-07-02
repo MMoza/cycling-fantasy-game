@@ -26,7 +26,7 @@ class LockPredictionsCommand extends Command
             $stages = StageModel::where('id', $stageId)->get();
         } else {
             $stages = StageModel::where('status', StageStatus::Upcoming)
-                ->where('scheduled_start', '<=', now())
+                ->where('scheduled_start', '<=', now()->addMinutes(5))
                 ->get();
         }
 

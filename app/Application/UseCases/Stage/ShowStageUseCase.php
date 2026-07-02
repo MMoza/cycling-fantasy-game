@@ -44,7 +44,9 @@ class ShowStageUseCase
             ));
 
         $isLocked = $stage->status === StageStatus::Ongoing
-            || ($stage->scheduled_start && now()->greaterThanOrEqualTo($stage->scheduled_start));
+            || ($stage->scheduled_start && now()->greaterThanOrEqualTo(
+                $stage->scheduled_start->copy()->subMinutes(5)
+            ));
 
         $prevStage = StageModel::where('edition_id', $league->edition_id)
             ->where('number', '<', $stage->number)
