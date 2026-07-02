@@ -4,6 +4,7 @@ namespace App\Presentation\Http\Middleware;
 
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -29,10 +30,32 @@ class HandleInertiaRequests extends Middleware
             }
         }
 
+        $user = $request->user();
+        $userData = null;
+        if ($user) {
+            $userData = $user->toArray();
+            $userData['avatar'] = $user->avatar
+                ? Storage::disk('s3')->temporaryUrl($user->avatar, now()->addHours(24))
+                : null;
+        }
+
+        $userLeagues = [];
+        if ($user) {
+            $userLeagues = $user->leagues()
+                ->limit(5)
+                ->get()
+                ->map(fn ($league) => [
+                    'id' => $league->id,
+                    'name' => $league->name,
+                ])
+                ->toArray();
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $userData,
+                'user_leagues' => $userLeagues,
             ],
             'currentLeague' => $currentLeague,
         ];

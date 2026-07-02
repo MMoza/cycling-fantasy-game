@@ -1,7 +1,8 @@
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { LogOut, LayoutDashboard, Users, Route, Trophy, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Route, Trophy, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import UserMenu from '@/components/UserMenu';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const page = usePage();
@@ -60,18 +61,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             ))}
                         </nav>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">
-                            {auth.user?.name}
-                        </span>
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            className="text-sm text-muted-foreground hover:text-foreground"
-                        >
-                            <LogOut className="h-4 w-4" />
-                        </Link>
-                    </div>
+                    <UserMenu user={auth.user} leagues={auth.user_leagues ?? []} />
                 </div>
             </header>
 
@@ -85,12 +75,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </Link>
                 <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground">
-                        {auth.user?.name}
-                    </span>
-                    <Link href={route('logout')} method="post">
-                        <LogOut className="h-4 w-4 text-muted-foreground" />
-                    </Link>
+                    <UserMenu user={auth.user} leagues={auth.user_leagues ?? []} />
                 </div>
             </header>
 

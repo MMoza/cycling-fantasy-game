@@ -1,8 +1,15 @@
 export interface User {
-    id: number;
+    id: string;
     name: string;
     email: string;
     email_verified_at?: string;
+    avatar?: string | null;
+    is_admin?: boolean;
+}
+
+export interface League {
+    id: string;
+    name: string;
 }
 
 export type PageProps<
