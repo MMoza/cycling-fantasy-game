@@ -70,5 +70,9 @@ php artisan view:cache
 # Run migrations
 php artisan migrate --force
 
+if [ "${SCHEDULER_MODE:-false}" = "true" ]; then
+    exec php artisan schedule:run --no-interaction
+fi
+
 # Start PHP built-in server (or use php-fpm + nginx in production)
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
