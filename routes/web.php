@@ -65,6 +65,7 @@ Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->gro
     Route::post('/competitions', [CompetitionController::class, 'store'])->name('competitions.store');
     Route::get('/competitions/{id}/edit', [CompetitionController::class, 'edit'])->name('competitions.edit');
     Route::patch('/competitions/{id}', [CompetitionController::class, 'update'])->name('competitions.update');
+    Route::delete('/competitions/{id}', [CompetitionController::class, 'destroy'])->name('competitions.destroy');
 
     // Editions
     Route::get('/competitions/{competitionId}/editions', [EditionController::class, 'index'])->name('competitions.editions.index');

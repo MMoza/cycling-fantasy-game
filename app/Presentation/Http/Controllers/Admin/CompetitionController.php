@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Http\Controllers\Admin;
 
 use App\Application\DTOs\Admin\CompetitionDTO;
+use App\Application\UseCases\Admin\Competition\DeleteCompetitionUseCase;
 use App\Application\UseCases\Admin\Competition\GetCompetitionFormDataUseCase;
 use App\Application\UseCases\Admin\Competition\ListCompetitionsUseCase;
 use App\Application\UseCases\Admin\Competition\StoreCompetitionUseCase;
@@ -30,6 +31,7 @@ class CompetitionController extends Controller
         private readonly GetCompetitionFormDataUseCase $getCompetitionFormDataUseCase,
         private readonly StoreCompetitionUseCase $storeCompetitionUseCase,
         private readonly UpdateCompetitionUseCase $updateCompetitionUseCase,
+        private readonly DeleteCompetitionUseCase $deleteCompetitionUseCase,
     ) {}
 
     public function index(): Response
@@ -133,6 +135,13 @@ class CompetitionController extends Controller
         }
 
         $this->updateCompetitionUseCase->execute($id, $data);
+
+        return redirect()->route('admin.competitions.index');
+    }
+
+    public function destroy(string $id): RedirectResponse
+    {
+        $this->deleteCompetitionUseCase->execute($id);
 
         return redirect()->route('admin.competitions.index');
     }

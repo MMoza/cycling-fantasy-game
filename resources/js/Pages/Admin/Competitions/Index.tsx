@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, ImageIcon } from 'lucide-react';
+import { Plus, Edit, ImageIcon, Trash2 } from 'lucide-react';
 import { FlagIcon } from '@/components/ui/flag-icon';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Competition {
     id: string;
@@ -33,7 +35,19 @@ const typeBadgeVariant: Record<string, 'default' | 'secondary' | 'outline' | 'de
 };
 
 export default function Index({ competitions, countries }: { competitions: Competition[]; countries: CountryOption[] }) {
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
     const countryLabel = (id: string | null) => countries.find((c) => c.value === id)?.label ?? id ?? '—';
+
+    const confirmDelete = () => {
+        if (deleteId) {
+            router.delete(route('admin.competitions.destroy', deleteId), {
+                onSuccess: () => setDeleteId(null),
+            });
+        }
+    };
+
+    const deletionTarget = deleteId ? competitions.find((c) => c.id === deleteId) : null;
 
     return (
         <AdminLayout>
@@ -97,6 +111,9 @@ export default function Index({ competitions, countries }: { competitions: Compe
                                                     <Edit className="h-4 w-4" />
                                                 </Link>
                                             </Button>
+                                            <Button variant="ghost" size="sm" onClick={() => setDeleteId(competition.id)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
                                             <Button variant="outline" size="sm" asChild>
                                                 <Link href={route('admin.competitions.editions.index', competition.id)}>
                                                     Ediciones
@@ -110,6 +127,27 @@ export default function Index({ competitions, countries }: { competitions: Compe
                     </CardContent>
                 </Card>
             </div>
+
+            <Dialog open={deleteId !== null} onOpenChange={(open: boolean) => !open && setDeleteId(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Eliminar competición</DialogTitle>
+                        <DialogDescription>
+                            ¿Estás seguro de eliminar <strong>{deletionTarget?.name}</strong>?
+                            Se eliminarán también todas sus ediciones, etapas, participantes y ligas asociadas.
+                            Esta acción no se puede deshacer.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeleteId(null)}>
+                            Cancelar
+                        </Button>
+                        <Button variant="destructive" onClick={confirmDelete}>
+                            Eliminar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AdminLayout>
     );
 }
