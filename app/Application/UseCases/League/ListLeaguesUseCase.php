@@ -26,7 +26,7 @@ class ListLeaguesUseCase
                 ownerId: $league->owner_id,
                 inviteCode: $league->invite_code,
                 memberCount: $league->users()->count(),
-                maxPlayers: $league->max_players,
+                isOfficial: $league->is_official,
                 isPublic: $league->is_public,
             ));
     }

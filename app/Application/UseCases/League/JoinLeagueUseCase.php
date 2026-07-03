@@ -5,18 +5,27 @@ declare(strict_types=1);
 namespace App\Application\UseCases\League;
 
 use App\Application\Exceptions\ApplicationException;
+use App\Domain\ValueObjects\UserPlan;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Models\User;
 use Illuminate\Support\Str;
 
 class JoinLeagueUseCase
 {
+    private const MAX_PLAYERS_NON_OFFICIAL = 20;
+
     public function execute(User $user, string $inviteCode): LeagueModel
     {
         $league = LeagueModel::where('invite_code', $inviteCode)->firstOrFail();
 
         if (! $user->leagues()->where('leagues.id', $league->id)->exists()) {
             $plan = $user->plan;
+
+            if ($plan === UserPlan::Free && ! $league->is_official) {
+                throw new ApplicationException(
+                    'Necesitas una suscripción para unirte a ligas que no son oficiales.'
+                );
+            }
 
             $leagueCount = $user->leagues()->count();
             if ($leagueCount >= $plan->maxLeagues()) {
@@ -25,9 +34,11 @@ class JoinLeagueUseCase
                 );
             }
 
-            $memberCount = $league->users()->count();
-            if ($memberCount >= $league->max_players) {
-                throw new ApplicationException('La liga ha alcanzado el máximo de participantes.');
+            if (! $league->is_official) {
+                $memberCount = $league->users()->count();
+                if ($memberCount >= self::MAX_PLAYERS_NON_OFFICIAL) {
+                    throw new ApplicationException('La liga ha alcanzado el máximo de 20 participantes.');
+                }
             }
 
             $league->users()->attach($user->id, [

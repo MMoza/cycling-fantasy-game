@@ -1,11 +1,11 @@
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Lock, Globe2 } from 'lucide-react';
+import { ArrowLeft, Lock, Globe2, ShieldCheck } from 'lucide-react';
 
 interface Edition {
     id: string;
@@ -27,12 +27,15 @@ interface CreateProps {
 }
 
 export default function Create({ editions, scoringSystems }: CreateProps) {
+    const { auth } = usePage().props as { auth: { user: { is_admin: boolean } } };
+    const isAdmin = auth.user.is_admin ?? false;
+
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         edition_id: '',
         scoring_system_id: '',
-        max_players: 20,
         is_public: false,
+        is_official: false,
     });
 
     const submit = (e: React.FormEvent) => {
@@ -112,53 +115,92 @@ export default function Create({ editions, scoringSystems }: CreateProps) {
                                 </p>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="scoring_system">Sistema de puntuación</Label>
-                                <Select
-                                    value={data.scoring_system_id}
-                                    onValueChange={(value: string | null) => { if (value) setData('scoring_system_id', value); }}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue
-                                            placeholder="Selecciona un sistema"
-                                            format={(value: unknown) => {
-                                                const system = scoringSystems.find(s => s.id === value);
-                                                return system ? `${system.name} - ${system.description}` : String(value);
-                                            }}
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {scoringSystems.map((system) => (
-                                            <SelectItem key={system.id} value={system.id}>
-                                                {system.name} - {system.description}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.scoring_system_id && (
-                                    <p className="text-sm text-destructive">{errors.scoring_system_id}</p>
-                                )}
-                                <p className="text-xs text-muted-foreground">
-                                    Más adelante podrás gestionar estos sistemas desde SuperAdmin.
-                                </p>
-                            </div>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            {(!isAdmin || !data.is_official) && (
                                 <div className="space-y-2">
-                                    <Label htmlFor="max_players">Máximo de jugadores</Label>
-                                    <Input
-                                        id="max_players"
-                                        type="number"
-                                        min={2}
-                                        max={200}
-                                        value={data.max_players}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData('max_players', Number(e.target.value))}
-                                    />
-                                    {errors.max_players && (
-                                        <p className="text-sm text-destructive">{errors.max_players}</p>
+                                    <Label htmlFor="scoring_system">Sistema de puntuación</Label>
+                                    <Select
+                                        value={data.scoring_system_id}
+                                        onValueChange={(value: string | null) => { if (value) setData('scoring_system_id', value); }}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue
+                                                placeholder="Selecciona un sistema"
+                                                format={(value: unknown) => {
+                                                    const system = scoringSystems.find(s => s.id === value);
+                                                    return system ? `${system.name} - ${system.description}` : String(value);
+                                                }}
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {scoringSystems.map((system) => (
+                                                <SelectItem key={system.id} value={system.id}>
+                                                    {system.name} - {system.description}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.scoring_system_id && (
+                                        <p className="text-sm text-destructive">{errors.scoring_system_id}</p>
+                                    )}
+                                    <p className="text-xs text-muted-foreground">
+                                        Más adelante podrás gestionar estos sistemas desde SuperAdmin.
+                                    </p>
+                                </div>
+                            )}
+
+                            {isAdmin && data.is_official && (
+                                <div className="rounded-lg border bg-muted/50 p-4">
+                                    <p className="text-sm font-medium">Sistema de puntuación: Conservador</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Las ligas oficiales usan el sistema de puntuación Conservador.
+                                    </p>
+                                </div>
+                            )}
+
+                            {isAdmin && (
+                                <div className="space-y-2">
+                                    <Label>Liga oficial</Label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setData('is_official', false);
+                                                setData('is_public', data.is_public);
+                                            }}
+                                            className={`flex h-10 items-center justify-center gap-2 rounded-lg border text-sm transition-colors ${
+                                                !data.is_official
+                                                    ? 'border-foreground bg-foreground text-background'
+                                                    : 'border-input hover:bg-muted'
+                                            }`}
+                                        >
+                                            <Lock className="h-4 w-4" />
+                                            Privada / Amigos
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setData('is_official', true);
+                                                setData('is_public', true);
+                                            }}
+                                            className={`flex h-10 items-center justify-center gap-2 rounded-lg border text-sm transition-colors ${
+                                                data.is_official
+                                                    ? 'border-foreground bg-foreground text-background'
+                                                    : 'border-input hover:bg-muted'
+                                            }`}
+                                        >
+                                            <ShieldCheck className="h-4 w-4" />
+                                            Oficial
+                                        </button>
+                                    </div>
+                                    {data.is_official && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Las ligas oficiales son públicas y usan puntuación Conservador.
+                                        </p>
                                     )}
                                 </div>
+                            )}
 
+                            {(!isAdmin || !data.is_official) && (
                                 <div className="space-y-2">
                                     <Label>Visibilidad</Label>
                                     <div className="grid grid-cols-2 gap-2">
@@ -191,7 +233,7 @@ export default function Create({ editions, scoringSystems }: CreateProps) {
                                         <p className="text-sm text-destructive">{errors.is_public}</p>
                                     )}
                                 </div>
-                            </div>
+                            )}
                         </CardContent>
                         <CardFooter className="flex justify-end gap-2 px-6 py-4">
                             <Button variant="outline" type="button" onClick={() => window.history.back()}>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Users, Trophy, Copy, Search, Plus, Eye, Globe, Sparkles } from 'lucide-react';
+import { Users, Trophy, Copy, Search, Plus, Eye, Globe, Sparkles, ShieldCheck } from 'lucide-react';
 
 interface League {
     id: string;
@@ -24,6 +24,7 @@ interface League {
     invite_code?: string;
     owner_name?: string;
     is_joined?: boolean;
+    is_official?: boolean;
 }
 
 interface PaginatedData {
@@ -53,7 +54,15 @@ function LeagueCard({ league, showJoin }: { league: League; showJoin?: boolean }
         <Card>
             <CardHeader>
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{league.name}</CardTitle>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <CardTitle className="text-lg truncate">{league.name}</CardTitle>
+                        {league.is_official && (
+                            <Badge variant="default" className="shrink-0 gap-1 bg-brand-600 hover:bg-brand-600 text-[10px] px-1.5 py-0">
+                                <ShieldCheck className="h-2.5 w-2.5" />
+                                Oficial
+                            </Badge>
+                        )}
+                    </div>
                     <Badge variant="secondary">{league.edition.year}</Badge>
                 </div>
                 <CardDescription>

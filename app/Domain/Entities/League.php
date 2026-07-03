@@ -15,6 +15,7 @@ readonly class League
         public string $scoringSystemId,
         public string $ownerId,
         public string $inviteCode,
+        public bool $isOfficial = false,
     ) {}
 
     public static function create(
@@ -22,6 +23,7 @@ readonly class League
         string $editionId,
         string $scoringSystemId,
         string $ownerId,
+        bool $isOfficial = false,
     ): self {
         return new self(
             id: Str::uuid()->toString(),
@@ -30,6 +32,7 @@ readonly class League
             scoringSystemId: $scoringSystemId,
             ownerId: $ownerId,
             inviteCode: Str::random(8),
+            isOfficial: $isOfficial,
         );
     }
 
@@ -42,6 +45,7 @@ readonly class League
             scoringSystemId: $this->scoringSystemId,
             ownerId: $this->ownerId,
             inviteCode: Str::random(8),
+            isOfficial: $this->isOfficial,
         );
     }
 }

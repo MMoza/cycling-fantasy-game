@@ -342,3 +342,28 @@ Seeder completo que genera datos de prueba realistas llamando al motor de puntua
 ## RebuildScoresCommand
 
 **stage_id faltante** — No persistía `stage_id` al insertar score events de etapa. Añadido `'stage_id' => $scoreEvent->stageId`.
+
+## Ligas Oficiales y Restricciones por Plan (v1)
+
+### Reglas de negocio
+
+| ¿Quién? | ¿Puede crear? | ¿Oficial? | Scoring | Max jugadores |
+|----------|--------------|-----------|---------|--------------|
+| Admin (`is_admin=true`) | Sí | Sí (toggle) | Conservador (forzado) | Sin límite |
+| Admin creando NO oficial | Sí | No | La que elija | 20 |
+| Free (`plan=free`) | **No** | — | — | — |
+| Premium (`plan=premium`) | Sí | No | La que elija | 20 |
+
+### Join restrictions
+- Free users: solo pueden unirse a ligas oficiales
+- Cualquier usuario: puede unirse a ligas oficiales sin límite
+- Ligas no oficiales: máximo 20 participantes
+
+### Columnas BD
+- `leagues.is_official` (boolean, default false) — añadido en `2026_07_03_000001_add_is_official_to_leagues_table.php`
+- `max_players` se mantiene en la tabla pero ya no es configurable desde la UI
+
+### UI
+- **Create**: admin ve toggle "Oficial" / "Privada / Amigos". Si oficial → oculta selector scoring (forzado Conservador), oculta visibilidad (forzado público), siempre `is_public=true`
+- **Show**: badge "Oficial" junto al nombre, settings sin max_players
+- **Index**: badge "Oficial" en las cards

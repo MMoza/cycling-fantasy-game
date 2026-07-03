@@ -10,7 +10,7 @@ readonly class CreateLeagueDTO
         public string $name,
         public string $editionId,
         public string $scoringSystemId,
-        public int $maxPlayers,
         public bool $isPublic,
+        public bool $isOfficial = false,
     ) {}
 }

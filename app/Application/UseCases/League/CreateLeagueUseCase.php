@@ -7,7 +7,10 @@ namespace App\Application\UseCases\League;
 use App\Application\DTOs\CreateLeagueDTO;
 use App\Application\Exceptions\ApplicationException;
 use App\Domain\Entities\League;
+use App\Domain\ValueObjects\ScoringSystemType;
+use App\Domain\ValueObjects\UserPlan;
 use App\Infrastructure\Persistence\Models\LeagueModel;
+use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -15,26 +18,31 @@ class CreateLeagueUseCase
 {
     public function execute(User $user, CreateLeagueDTO $dto): LeagueModel
     {
-        $plan = $user->plan;
-
-        $leagueCount = $user->leagues()->count();
-        if ($leagueCount >= $plan->maxLeagues()) {
-            throw new ApplicationException(
-                "Has alcanzado el límite de {$plan->maxLeagues()} ligas de tu plan {$plan->label()}."
-            );
+        if ($user->plan === UserPlan::Free && ! $user->is_admin) {
+            throw new ApplicationException('Necesitas una suscripción para crear ligas.');
         }
 
-        if ($dto->maxPlayers > $plan->maxPlayersPerLeague()) {
-            throw new ApplicationException(
-                "Tu plan {$plan->label()} permite máximo {$plan->maxPlayersPerLeague()} jugadores por liga."
-            );
+        $scoringSystemId = $dto->scoringSystemId;
+        $isOfficial = false;
+        $isPublic = $dto->isPublic;
+
+        if ($user->is_admin && $dto->isOfficial) {
+            $isOfficial = true;
+            $isPublic = true;
+
+            $conservative = ScoringSystemModel::where('type', ScoringSystemType::Conservative)->first();
+            if ($conservative === null) {
+                throw new ApplicationException('No se encontró el sistema de puntuación Conservador.');
+            }
+            $scoringSystemId = $conservative->id;
         }
 
         $league = League::create(
             name: $dto->name,
             editionId: $dto->editionId,
-            scoringSystemId: $dto->scoringSystemId,
+            scoringSystemId: $scoringSystemId,
             ownerId: $user->id,
+            isOfficial: $isOfficial,
         );
 
         $leagueModel = LeagueModel::create([
@@ -44,8 +52,8 @@ class CreateLeagueUseCase
             'scoring_system_id' => $league->scoringSystemId,
             'owner_id' => $league->ownerId,
             'invite_code' => $league->inviteCode,
-            'max_players' => $dto->maxPlayers,
-            'is_public' => $dto->isPublic,
+            'is_official' => $league->isOfficial,
+            'is_public' => $isPublic,
         ]);
 
         $leagueModel->users()->attach($user->id, [

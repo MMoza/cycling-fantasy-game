@@ -17,7 +17,7 @@ readonly class LeagueDTO
         public string $ownerId,
         public string $inviteCode,
         public int $memberCount,
-        public int $maxPlayers,
+        public bool $isOfficial,
         public bool $isPublic,
     ) {}
 }

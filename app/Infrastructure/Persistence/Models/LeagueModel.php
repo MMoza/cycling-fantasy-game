@@ -27,11 +27,13 @@ class LeagueModel extends Model
         'invite_code',
         'max_players',
         'is_public',
+        'is_official',
     ];
 
     protected $casts = [
         'max_players' => 'integer',
         'is_public' => 'boolean',
+        'is_official' => 'boolean',
     ];
 
     public function owner(): BelongsTo

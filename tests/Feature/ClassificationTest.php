@@ -50,7 +50,6 @@ beforeEach(function () {
         'scoring_system_id' => $scoringSystem->id,
         'owner_id' => $this->user->id,
         'invite_code' => Str::random(8),
-        'max_players' => 20,
         'is_public' => false,
     ]);
 

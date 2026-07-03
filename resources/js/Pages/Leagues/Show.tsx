@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Calendar, Route, ChevronRight, Users, Target, Mountain, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity } from 'lucide-react';
+import { Trophy, Calendar, Route, ChevronRight, Users, Target, Mountain, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, ShieldCheck } from 'lucide-react';
 
 interface League {
     id: string;
@@ -31,6 +31,7 @@ interface League {
         }[];
     };
     is_public: boolean;
+    is_official: boolean;
     max_players: number;
     member_count: number;
     is_owner: boolean;
@@ -94,7 +95,6 @@ export default function Show({ league, next_stage, user_position, stages, leader
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [scoringInfoOpen, setScoringInfoOpen] = useState(false);
     const [formName, setFormName] = useState(league.name);
-    const [formMaxPlayers, setFormMaxPlayers] = useState(league.max_players);
     const [formIsPublic, setFormIsPublic] = useState(league.is_public);
     const [saving, setSaving] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -125,7 +125,6 @@ export default function Show({ league, next_stage, user_position, stages, leader
             route('leagues.update', league.id),
             {
                 name: formName,
-                max_players: formMaxPlayers,
                 is_public: formIsPublic,
             },
             {
@@ -143,7 +142,15 @@ export default function Show({ league, next_stage, user_position, stages, leader
             <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-0">
                 <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                        <h1 className="text-2xl font-semibold tracking-tight truncate">{league.name}</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-semibold tracking-tight truncate">{league.name}</h1>
+                            {league.is_official && (
+                                <Badge variant="default" className="gap-1 bg-brand-600 hover:bg-brand-600">
+                                    <ShieldCheck className="h-3 w-3" />
+                                    Oficial
+                                </Badge>
+                            )}
+                        </div>
                         <p className="text-sm text-muted-foreground">
                             {league.competition.name} {league.competition.year} · {league.scoring_system.name}
                         </p>
@@ -227,32 +234,22 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                             />
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <Label htmlFor="settings-max" className="text-base font-medium">Máximo de participantes</Label>
-                                            <Input
-                                                id="settings-max"
-                                                type="number"
-                                                min={2}
-                                                max={200}
-                                                value={formMaxPlayers}
-                                                onChange={(e) => setFormMaxPlayers(Number(e.target.value))}
-                                            />
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <Label className="text-base font-medium">Liga pública</Label>
-                                                <p className="text-sm text-muted-foreground">Cualquier usuario puede encontrar y unirse</p>
+                                        {!league.is_official && (
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <Label className="text-base font-medium">Liga pública</Label>
+                                                    <p className="text-sm text-muted-foreground">Cualquier usuario puede encontrar y unirse</p>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant={formIsPublic ? 'default' : 'secondary'}
+                                                    size="sm"
+                                                    onClick={() => setFormIsPublic(!formIsPublic)}
+                                                >
+                                                    {formIsPublic ? 'Pública' : 'Privada'}
+                                                </Button>
                                             </div>
-                                            <Button
-                                                type="button"
-                                                variant={formIsPublic ? 'default' : 'secondary'}
-                                                size="sm"
-                                                onClick={() => setFormIsPublic(!formIsPublic)}
-                                            >
-                                                {formIsPublic ? 'Pública' : 'Privada'}
-                                            </Button>
-                                        </div>
+                                        )}
 
                                         <div className="flex justify-end gap-3 pt-2">
                                             <Button variant="outline" onClick={() => setSettingsOpen(false)}>
@@ -271,17 +268,15 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                             <p className="mt-1 text-sm">{league.name}</p>
                                         </div>
                                         <div>
-                                            <Label className="text-base font-medium">Máximo de participantes</Label>
-                                            <p className="mt-1 text-sm">{league.max_players}</p>
+                                            <Label className="text-base font-medium">Participantes</Label>
+                                            <p className="mt-1 text-sm">
+                                                {league.member_count}
+                                                {league.is_official ? '' : ' / 20 máx'}
+                                            </p>
                                         </div>
                                         <div>
                                             <Label className="text-base font-medium">Tipo</Label>
-                                            <p className="mt-1 text-sm">
-                                                {league.is_public ? 'Pública' : 'Privada'}
-                                                <span className="ml-2 text-xs text-muted-foreground">
-                                                    ({league.member_count}/{league.max_players} miembros)
-                                                </span>
-                                            </p>
+                                            <p className="mt-1 text-sm">{league.is_public ? 'Pública' : 'Privada'}</p>
                                         </div>
                                     </div>
                                 )}

@@ -62,6 +62,7 @@ class LeagueController extends Controller
                     'member_count' => $league->users_count,
                     'owner_name' => $league->owner->name,
                     'is_joined' => $user->leagues()->where('leagues.id', $league->id)->exists(),
+                    'is_official' => $league->is_official,
                 ]);
         }
 
@@ -79,7 +80,7 @@ class LeagueController extends Controller
                 'member_count' => $dto->memberCount,
                 'owner_id' => $dto->ownerId,
                 'invite_code' => $dto->inviteCode,
-                'max_players' => $dto->maxPlayers,
+                'is_official' => $dto->isOfficial,
                 'is_public' => $dto->isPublic,
             ]),
             'public_leagues' => $publicLeagues,
@@ -177,6 +178,7 @@ class LeagueController extends Controller
                         'position' => $rule->position,
                     ])->values(),
                 ],
+                'is_official' => $leagueModel->is_official,
                 'is_public' => $leagueModel->is_public,
                 'max_players' => $leagueModel->max_players,
                 'invite_code' => $leagueModel->invite_code,
@@ -230,16 +232,16 @@ class LeagueController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'edition_id' => ['required', 'uuid', 'exists:editions,id'],
             'scoring_system_id' => ['required', 'uuid', 'exists:scoring_systems,id'],
-            'max_players' => ['required', 'integer', 'min:2', 'max:200'],
             'is_public' => ['required', 'boolean'],
+            'is_official' => ['sometimes', 'boolean'],
         ]);
 
         $dto = new CreateLeagueDTO(
             name: $validated['name'],
             editionId: $validated['edition_id'],
             scoringSystemId: $validated['scoring_system_id'],
-            maxPlayers: $validated['max_players'],
             isPublic: $validated['is_public'],
+            isOfficial: $validated['is_official'] ?? false,
         );
 
         try {
@@ -270,7 +272,6 @@ class LeagueController extends Controller
     {
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'max_players' => ['sometimes', 'integer', 'min:2', 'max:200'],
             'is_public' => ['sometimes', 'boolean'],
         ]);
 
