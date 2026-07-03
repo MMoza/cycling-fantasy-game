@@ -11,15 +11,15 @@ interface CompetitionCard {
     name: string;
     type: string;
     typeLabel: string;
-    country_id: string | null;
-    country_name: string | null;
-    cover_image_url: string | null;
-    logo_image_url: string | null;
-    official_league_id: string | null;
-    official_league_name: string | null;
-    edition_id: string;
+    countryId: string | null;
+    countryName: string | null;
+    coverImageUrl: string | null;
+    logoImageUrl: string | null;
+    officialLeagueId: string | null;
+    officialLeagueName: string | null;
+    editionId: string;
     year: number;
-    edition_status: string;
+    editionStatus: string;
 }
 
 interface CompetitionGroup {
@@ -112,69 +112,76 @@ export default function Index({ yearGroups, years, currentYear }: CompProps) {
                                 </span>
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                {group.competitions.map((comp) => (
-                                    <Card key={comp.edition_id} className="overflow-hidden">
-                                        <div className="relative flex h-36 items-end bg-muted">
-                                            {comp.cover_image_url ? (
-                                                <img
-                                                    src={comp.cover_image_url}
-                                                    alt=""
-                                                    className="absolute inset-0 h-full w-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <ImageIcon className="h-10 w-10 text-muted-foreground/40" />
-                                                </div>
-                                            )}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-                                            <div className="relative z-10 flex w-full items-end justify-between p-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/60 bg-background">
-                                                        {comp.logo_image_url ? (
-                                                            <img
-                                                                src={comp.logo_image_url}
-                                                                alt=""
-                                                                className="h-full w-full object-cover"
-                                                            />
-                                                        ) : (
-                                                            <span className="text-lg">{typeIcons[group.type] ?? '🚴'}</span>
-                                                        )}
+                            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-pl-4 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-3">
+                                {group.competitions.map((comp, idx) => (
+                                    <Link
+                                        key={comp.editionId}
+                                        href={route('competitions.show', comp.editionId)}
+                                        className="block w-[80vw] shrink-0 snap-start sm:w-auto"
+                                    >
+                                        <Card className="overflow-hidden transition-colors hover:bg-muted/50 h-full">
+                                            <div className="relative flex h-36 items-end bg-muted">
+                                                {comp.coverImageUrl ? (
+                                                    <img
+                                                        src={comp.coverImageUrl}
+                                                        alt=""
+                                                        className="absolute inset-0 h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <ImageIcon className="h-10 w-10 text-muted-foreground/40" />
                                                     </div>
-                                                    <div className="text-white">
-                                                        <p className="font-semibold leading-tight">{comp.name}</p>
-                                                        <div className="flex items-center gap-1.5 text-xs text-white/80">
-                                                            {comp.country_id && (
-                                                                <FlagIcon code={comp.country_id} className="inline-block h-3 w-4 rounded-sm" />
+                                                )}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+
+                                                <div className="relative z-10 flex w-full items-end justify-between p-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/60 bg-background">
+                                                            {comp.logoImageUrl ? (
+                                                                <img
+                                                                    src={comp.logoImageUrl}
+                                                                    alt=""
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-lg">{typeIcons[group.type] ?? '🚴'}</span>
                                                             )}
-                                                            {comp.country_name ?? comp.country_id ?? ''}
+                                                        </div>
+                                                        <div className="text-white">
+                                                            <p className="font-semibold leading-tight">{comp.name}</p>
+                                                            <div className="flex items-center gap-1.5 text-xs text-white/80">
+                                                                {comp.countryId && (
+                                                                    <FlagIcon code={comp.countryId} className="inline-block h-3 w-4 rounded-sm" />
+                                                                )}
+                                                                {comp.countryName ?? comp.countryId ?? ''}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <CardContent className="flex items-center justify-between gap-2 p-4">
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="secondary" className="text-xs">{comp.typeLabel}</Badge>
-                                                <span className="text-xs text-muted-foreground">{comp.year}</span>
-                                            </div>
+                                            <CardContent className="flex items-center justify-between gap-2 p-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="secondary" className="text-xs">{comp.typeLabel}</Badge>
+                                                    <span className="text-xs text-muted-foreground">{comp.year}</span>
+                                                </div>
 
-                                            {comp.official_league_id ? (
-                                                <Button size="sm" asChild>
-                                                    <Link href={route('leagues.show', comp.official_league_id)}>
+                                                {comp.officialLeagueId && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="default"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            router.visit(route('leagues.show', comp.officialLeagueId!));
+                                                        }}
+                                                    >
                                                         <Users className="mr-1 h-3 w-3" />
-                                                        {comp.official_league_name ?? 'Liga oficial'}
-                                                    </Link>
-                                                </Button>
-                                            ) : (
-                                                <Button size="sm" variant="outline" disabled>
-                                                    Sin liga oficial
-                                                </Button>
-                                            )}
-                                        </CardContent>
-                                    </Card>
+                                                        Liga oficial
+                                                    </Button>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
                                 ))}
                             </div>
                         </section>

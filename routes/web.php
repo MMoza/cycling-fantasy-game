@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/competitions', [UserCompetitionController::class, 'index'])->name('competitions.index');
     Route::get('/competitions/{year?}', [UserCompetitionController::class, 'index'])->name('competitions.year');
+    Route::get('/competitions/e/{edition}', [UserCompetitionController::class, 'show'])->name('competitions.show');
 });
 
 Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->group(function () {
