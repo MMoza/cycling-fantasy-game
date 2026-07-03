@@ -315,4 +315,30 @@ Retorna:
 ### Test data
 - Liga de prueba con 5 usuarios, 3 etapas finalizadas, predicciones variadas
 - ScoreEvents: generales (context=category) y por etapa (stage_id not null)
-- Puntuaciones variadas (0-35 puntos por usuario, no todos empatados)
+- Puntuaciones variadas por usuario (645, 165, 140, 70 pts — no empatados)
+
+### TestCompetitionSeeder
+Seeder completo que genera datos de prueba realistas llamando al motor de puntuación:
+
+1. Crea competición, edición, 3 etapas (TT, montaña, alta montaña)
+2. Crea 4 usuarios + liga + sistema de puntuación Standard
+3. Pre-race predictions: 6 categorías, riders variados por usuario
+4. Stage results: top 3 por etapa con `is_gc_leader` e `is_combativo`
+5. Stage predictions: cada usuario con patrones distintos:
+   - User 0: acierta ganador/líder siempre → high scorer
+   - User 1: acierta líder, falla ganador → medium scorer
+   - Users 2-3: fallan todo → low/zero scorer
+6. FinalClassifications para pre-race
+7. Llama a `race:rebuild-scores` para generar ScoreEvents reales
+
+## ScoringEngine
+
+### Bugs corregidos
+
+**Posición off-by-one** — `buildPositionMap` devuelve arrays 0-indexed pero las reglas en BD usan posiciones 1-indexed. `calculateGcTop5Score` y `calculateJerseyScore` ahora convierten con `$dbPosition = $position + 1`.
+
+**getPredictedRiderAtPosition** — No leía la clave `rider_ids` del `prediction_value`. Ahora extrae `$riders['rider_ids'] ?? $riders`.
+
+## RebuildScoresCommand
+
+**stage_id faltante** — No persistía `stage_id` al insertar score events de etapa. Añadido `'stage_id' => $scoreEvent->stageId`.
