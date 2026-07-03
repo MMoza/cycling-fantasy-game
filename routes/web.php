@@ -11,6 +11,7 @@ use App\Presentation\Http\Controllers\Admin\TeamController;
 use App\Presentation\Http\Controllers\Admin\UserController;
 use App\Presentation\Http\Controllers\Auth\SocialiteController;
 use App\Presentation\Http\Controllers\ClassificationController;
+use App\Presentation\Http\Controllers\CompetitionController as UserCompetitionController;
 use App\Presentation\Http\Controllers\DashboardController;
 use App\Presentation\Http\Controllers\LandingController;
 use App\Presentation\Http\Controllers\LeagueController;
@@ -50,6 +51,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/leagues/{league}/classification', [ClassificationController::class, 'index'])->name('classification.index');
 
     Route::get('/search', [SearchController::class, '__invoke'])->name('search');
+
+    Route::get('/competitions', [UserCompetitionController::class, 'index'])->name('competitions.index');
+    Route::get('/competitions/{year?}', [UserCompetitionController::class, 'index'])->name('competitions.year');
 });
 
 Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->group(function () {

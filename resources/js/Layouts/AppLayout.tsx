@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Route, Trophy, Shield, Search } from 'lucide-react';
+import { LayoutDashboard, Route, Trophy, Shield, Search, Bike } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from '@/components/UserMenu';
 import SearchModal from '@/components/SearchModal';
@@ -14,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const navItems = [
         { route: 'dashboard', href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
+        { route: 'competitions.index', href: route('competitions.index'), label: 'Competiciones', icon: Bike },
         ...(currentLeague
             ? [
                   { route: 'stages.index', href: route('stages.index', currentLeague.id), label: 'Etapa', icon: Route },
