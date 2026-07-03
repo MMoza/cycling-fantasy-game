@@ -88,12 +88,13 @@ export default function Create({ editions, scoringSystems }: CreateProps) {
                                     onValueChange={(value: string | null) => { if (value) setData('edition_id', value); }}
                                 >
                                     <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Selecciona una competición">
-                                            {(value: string) => {
+                                        <SelectValue
+                                            placeholder="Selecciona una competición"
+                                            format={(value: unknown) => {
                                                 const edition = editions.find(e => e.id === value);
-                                                return edition ? `${edition.competition.name} ${edition.year}` : value;
+                                                return edition ? `${edition.competition.name} ${edition.year}` : String(value);
                                             }}
-                                        </SelectValue>
+                                        />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {editions.map((edition) => (
@@ -118,12 +119,13 @@ export default function Create({ editions, scoringSystems }: CreateProps) {
                                     onValueChange={(value: string | null) => { if (value) setData('scoring_system_id', value); }}
                                 >
                                     <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Selecciona un sistema">
-                                            {(value: string) => {
+                                        <SelectValue
+                                            placeholder="Selecciona un sistema"
+                                            format={(value: unknown) => {
                                                 const system = scoringSystems.find(s => s.id === value);
-                                                return system ? `${system.name} - ${system.description}` : value;
+                                                return system ? `${system.name} - ${system.description}` : String(value);
                                             }}
-                                        </SelectValue>
+                                        />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {scoringSystems.map((system) => (
@@ -196,9 +198,14 @@ export default function Create({ editions, scoringSystems }: CreateProps) {
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={processing}>
-                                Crear liga
+                                {processing ? 'Creando...' : 'Crear liga'}
                             </Button>
                         </CardFooter>
+                        {errors && 'plan' in errors && (
+                            <div className="px-6 pb-4">
+                                <p className="text-sm text-destructive">{(errors as Record<string, string>).plan}</p>
+                            </div>
+                        )}
                     </Card>
                 </form>
             </div>
