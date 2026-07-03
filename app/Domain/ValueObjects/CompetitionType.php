@@ -6,16 +6,20 @@ namespace App\Domain\ValueObjects;
 
 enum CompetitionType: string
 {
-    case GrandTour = 'grand_tour';
-    case WeekTour = 'week_tour';
+    case GC = 'gc';
+    case Major = 'major';
+    case Monument = 'monument';
     case Classic = 'classic';
+    case Championship = 'championship';
 
     public function label(): string
     {
         return match ($this) {
-            self::GrandTour => 'Gran Vuelta',
-            self::WeekTour => 'Vuelta de una semana',
+            self::GC => 'Gran Vuelta',
+            self::Major => 'Carrera importante',
+            self::Monument => 'Monumento',
             self::Classic => 'Clásica',
+            self::Championship => 'Campeonato',
         };
     }
 }

@@ -13,6 +13,10 @@ readonly class CompetitionDTO
         public ?string $countryId,
         public bool $active,
         public int $editionsCount,
+        public ?string $coverImage = null,
+        public ?string $logoImage = null,
+        public ?string $coverImageUrl = null,
+        public ?string $logoImageUrl = null,
     ) {}
 }
 

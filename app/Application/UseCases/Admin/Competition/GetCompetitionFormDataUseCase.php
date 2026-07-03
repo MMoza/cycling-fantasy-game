@@ -25,6 +25,8 @@ class GetCompetitionFormDataUseCase
                 'type' => $model->type->value,
                 'country_id' => $model->country_id,
                 'active' => $model->active,
+                'cover_image' => $model->cover_image,
+                'logo_image' => $model->logo_image,
             ];
         }
 

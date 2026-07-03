@@ -14,6 +14,8 @@ class StoreCompetitionUseCase
             'name' => $data['name'],
             'type' => $data['type'],
             'country_id' => $data['country_id'],
+            'cover_image' => $data['cover_image'] ?? null,
+            'logo_image' => $data['logo_image'] ?? null,
         ]);
     }
 }

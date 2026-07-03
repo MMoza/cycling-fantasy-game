@@ -8,13 +8,13 @@ use App\Domain\ValueObjects\CompetitionType;
 test('creates competition with factory method', function () {
     $competition = Competition::create(
         name: 'Tour de Francia',
-        type: CompetitionType::GrandTour,
+        type: CompetitionType::GC,
         country: 'Francia',
     );
 
     expect($competition->id)->toBeUuid();
     expect($competition->name)->toBe('Tour de Francia');
-    expect($competition->type)->toBe(CompetitionType::GrandTour);
+    expect($competition->type)->toBe(CompetitionType::GC);
     expect($competition->country)->toBe('Francia');
     expect($competition->active)->toBeTrue();
 });
@@ -22,7 +22,7 @@ test('creates competition with factory method', function () {
 test('deactivates competition', function () {
     $competition = Competition::create(
         name: 'Tour de Francia',
-        type: CompetitionType::GrandTour,
+        type: CompetitionType::GC,
         country: 'Francia',
     );
 
@@ -35,7 +35,7 @@ test('deactivates competition', function () {
 test('activates competition', function () {
     $competition = Competition::create(
         name: 'Tour de Francia',
-        type: CompetitionType::GrandTour,
+        type: CompetitionType::GC,
         country: 'Francia',
     );
 

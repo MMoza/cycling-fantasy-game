@@ -26,7 +26,7 @@ beforeEach(function () {
     $competition = CompetitionModel::create([
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
-        'type' => CompetitionType::GrandTour,
+        'type' => CompetitionType::GC,
         'country_id' => createCountry(),
         'active' => true,
     ]);

@@ -24,6 +24,8 @@ class CompetitionModel extends Model
         'type',
         'country_id',
         'active',
+        'cover_image',
+        'logo_image',
     ];
 
     public function country(): BelongsTo

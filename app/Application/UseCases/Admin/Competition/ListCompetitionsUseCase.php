@@ -23,6 +23,8 @@ class ListCompetitionsUseCase
                 countryId: $c->country_id,
                 active: $c->active,
                 editionsCount: $c->editions_count,
+                coverImage: $c->cover_image,
+                logoImage: $c->logo_image,
             ));
 
         $countries = CountryModel::orderBy('name')

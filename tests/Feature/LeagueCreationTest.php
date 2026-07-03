@@ -19,7 +19,7 @@ test('authenticated user can access league creation page', function () {
     $competition = CompetitionModel::create([
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
-        'type' => CompetitionType::GrandTour,
+        'type' => CompetitionType::GC,
         'country_id' => createCountry(),
         'active' => true,
     ]);
@@ -56,7 +56,7 @@ test('authenticated user can create a league', function () {
     $competition = CompetitionModel::create([
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
-        'type' => CompetitionType::GrandTour,
+        'type' => CompetitionType::GC,
         'country_id' => createCountry(),
         'active' => true,
     ]);
@@ -115,7 +115,7 @@ test('free user cannot create a league', function () {
     $competition = CompetitionModel::create([
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
-        'type' => CompetitionType::GrandTour,
+        'type' => CompetitionType::GC,
         'country_id' => createCountry(),
         'active' => true,
     ]);
@@ -153,7 +153,7 @@ test('admin can create official league with conservative scoring', function () {
     $competition = CompetitionModel::create([
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
-        'type' => CompetitionType::GrandTour,
+        'type' => CompetitionType::GC,
         'country_id' => createCountry(),
         'active' => true,
     ]);
@@ -204,7 +204,7 @@ test('free user cannot join non-official league', function () {
     $competition = CompetitionModel::create([
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
-        'type' => CompetitionType::GrandTour,
+        'type' => CompetitionType::GC,
         'country_id' => createCountry(),
         'active' => true,
     ]);
@@ -252,7 +252,7 @@ test('free user can join official league', function () {
     $competition = CompetitionModel::create([
         'id' => Str::uuid()->toString(),
         'name' => 'Tour de Francia',
-        'type' => CompetitionType::GrandTour,
+        'type' => CompetitionType::GC,
         'country_id' => createCountry(),
         'active' => true,
     ]);

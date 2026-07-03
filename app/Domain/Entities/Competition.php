@@ -15,12 +15,16 @@ readonly class Competition
         public CompetitionType $type,
         public string $country,
         public bool $active,
+        public ?string $coverImage = null,
+        public ?string $logoImage = null,
     ) {}
 
     public static function create(
         string $name,
         CompetitionType $type,
         string $country,
+        ?string $coverImage = null,
+        ?string $logoImage = null,
     ): self {
         return new self(
             id: Str::uuid()->toString(),
@@ -28,6 +32,8 @@ readonly class Competition
             type: $type,
             country: $country,
             active: true,
+            coverImage: $coverImage,
+            logoImage: $logoImage,
         );
     }
 
@@ -39,6 +45,8 @@ readonly class Competition
             type: $this->type,
             country: $this->country,
             active: false,
+            coverImage: $this->coverImage,
+            logoImage: $this->logoImage,
         );
     }
 
@@ -50,6 +58,34 @@ readonly class Competition
             type: $this->type,
             country: $this->country,
             active: true,
+            coverImage: $this->coverImage,
+            logoImage: $this->logoImage,
+        );
+    }
+
+    public function withCoverImage(string $path): self
+    {
+        return new self(
+            id: $this->id,
+            name: $this->name,
+            type: $this->type,
+            country: $this->country,
+            active: $this->active,
+            coverImage: $path,
+            logoImage: $this->logoImage,
+        );
+    }
+
+    public function withLogoImage(string $path): self
+    {
+        return new self(
+            id: $this->id,
+            name: $this->name,
+            type: $this->type,
+            country: $this->country,
+            active: $this->active,
+            coverImage: $this->coverImage,
+            logoImage: $path,
         );
     }
 }

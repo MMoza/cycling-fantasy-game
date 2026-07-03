@@ -46,7 +46,7 @@ class CompetitionSeeder extends Seeder
             'name' => $name,
         ], [
             'id' => Str::uuid()->toString(),
-            'type' => CompetitionType::GrandTour,
+            'type' => CompetitionType::GC,
             'country_id' => $countryId,
             'active' => true,
         ]);

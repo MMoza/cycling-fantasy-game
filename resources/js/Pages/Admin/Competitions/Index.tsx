@@ -1,9 +1,9 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit, ImageIcon } from 'lucide-react';
 import { FlagIcon } from '@/components/ui/flag-icon';
 
 interface Competition {
@@ -13,12 +13,24 @@ interface Competition {
     country_id: string | null;
     active: boolean;
     editions_count: number;
+    cover_image: string | null;
+    logo_image: string | null;
+    coverImageUrl: string | null;
+    logoImageUrl: string | null;
 }
 
 interface CountryOption {
     value: string;
     label: string;
 }
+
+const typeBadgeVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+    'Gran Vuelta': 'default',
+    'Carrera importante': 'secondary',
+    Monumento: 'outline',
+    Clásica: 'secondary',
+    Campeonato: 'outline',
+};
 
 export default function Index({ competitions, countries }: { competitions: Competition[]; countries: CountryOption[] }) {
     const countryLabel = (id: string | null) => countries.find((c) => c.value === id)?.label ?? id ?? '—';
@@ -52,11 +64,28 @@ export default function Index({ competitions, countries }: { competitions: Compe
                                 {competitions.map((competition) => (
                                     <div key={competition.id} className="flex items-center justify-between p-4">
                                         <div className="flex items-center gap-3">
-                                            <div>
-                                                <p className="font-medium">{competition.name}</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {competition.type} · {competition.country_id && <FlagIcon code={competition.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}{countryLabel(competition.country_id)} · {competition.editions_count} ediciones
-                                                </p>
+                                            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
+                                                {competition.coverImageUrl ? (
+                                                    <img src={competition.coverImageUrl} alt="" className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-medium">{competition.name}</p>
+                                                    {competition.logoImageUrl && (
+                                                        <img src={competition.logoImageUrl} alt="Logo" className="h-5 w-5 rounded-full object-cover" />
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant={typeBadgeVariant[competition.type] ?? 'secondary'}>
+                                                        {competition.type}
+                                                    </Badge>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {competition.country_id && <FlagIcon code={competition.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}{countryLabel(competition.country_id)} · {competition.editions_count} ediciones
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">

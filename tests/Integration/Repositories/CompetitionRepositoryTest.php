@@ -16,7 +16,7 @@ beforeEach(function () {
 test('saves and finds competition', function () {
     $competition = Competition::create(
         name: 'Tour de Francia',
-        type: CompetitionType::GrandTour,
+        type: CompetitionType::GC,
         country: 'Francia',
     );
 
@@ -26,7 +26,7 @@ test('saves and finds competition', function () {
 
     expect($found)->not->toBeNull();
     expect($found->name)->toBe('Tour de Francia');
-    expect($found->type)->toBe(CompetitionType::GrandTour);
+    expect($found->type)->toBe(CompetitionType::GC);
 });
 
 test('returns null for non-existent competition', function () {
@@ -44,11 +44,11 @@ test('finds all competitions', function () {
 });
 
 test('finds competitions by type', function () {
-    Competition::factory()->create(['type' => CompetitionType::GrandTour]);
+    Competition::factory()->create(['type' => CompetitionType::GC]);
     Competition::factory()->create(['type' => CompetitionType::Classic]);
-    Competition::factory()->create(['type' => CompetitionType::GrandTour]);
+    Competition::factory()->create(['type' => CompetitionType::GC]);
 
-    $grandTours = $this->repository->findByType(CompetitionType::GrandTour->value);
+    $grandTours = $this->repository->findByType(CompetitionType::GC->value);
 
     expect($grandTours)->toHaveCount(2);
 });

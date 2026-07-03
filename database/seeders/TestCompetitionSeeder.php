@@ -35,7 +35,7 @@ class TestCompetitionSeeder extends Seeder
             ['name' => 'Vuelta de Prueba 2026'],
             [
                 'id' => Str::uuid()->toString(),
-                'type' => CompetitionType::GrandTour,
+                'type' => CompetitionType::GC,
                 'country_id' => $countryId,
                 'active' => true,
             ],
