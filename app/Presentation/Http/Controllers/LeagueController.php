@@ -12,6 +12,7 @@ use App\Application\UseCases\League\JoinLeagueUseCase;
 use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\ShowLeagueUseCase;
 use App\Application\UseCases\League\UpdateLeagueUseCase;
+use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,10 +31,42 @@ class LeagueController extends Controller
 
     public function index(Request $request)
     {
-        $leagues = $this->listLeaguesUseCase->execute($request->user());
+        $user = $request->user();
+
+        $myLeagues = $this->listLeaguesUseCase->execute($user);
+
+        $search = $request->query('q');
+        $publicLeagues = collect();
+
+        if ($search || $request->has('page')) {
+            $query = LeagueModel::withCount('users')
+                ->with(['edition.competition', 'scoringSystem', 'owner'])
+                ->where('is_public', true);
+
+            if ($search) {
+                $query->where('name', 'like', "%{$search}%");
+            }
+
+            $publicLeagues = $query->orderBy('name')
+                ->paginate(20)
+                ->through(fn ($league) => [
+                    'id' => $league->id,
+                    'name' => $league->name,
+                    'edition' => [
+                        'name' => $league->edition->competition->name,
+                        'year' => $league->edition->year,
+                    ],
+                    'scoring_system' => [
+                        'name' => $league->scoringSystem->name,
+                    ],
+                    'member_count' => $league->users_count,
+                    'owner_name' => $league->owner->name,
+                    'is_joined' => $user->leagues()->where('leagues.id', $league->id)->exists(),
+                ]);
+        }
 
         return Inertia::render('Leagues/Index', [
-            'leagues' => $leagues->map(fn ($dto) => [
+            'my_leagues' => $myLeagues->map(fn ($dto) => [
                 'id' => $dto->id,
                 'name' => $dto->name,
                 'edition' => [
@@ -49,6 +82,8 @@ class LeagueController extends Controller
                 'max_players' => $dto->maxPlayers,
                 'is_public' => $dto->isPublic,
             ]),
+            'public_leagues' => $publicLeagues,
+            'search_query' => $search ?? '',
         ]);
     }
 

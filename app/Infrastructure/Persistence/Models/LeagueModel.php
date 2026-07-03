@@ -34,6 +34,11 @@ class LeagueModel extends Model
         'is_public' => 'boolean',
     ];
 
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_id', 'id');
+    }
+
     public function edition(): BelongsTo
     {
         return $this->belongsTo(EditionModel::class, 'edition_id', 'id');

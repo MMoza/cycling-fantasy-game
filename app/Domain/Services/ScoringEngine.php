@@ -183,17 +183,17 @@ class ScoringEngine
     private function getRuleTypeFromCategory(PredictionCategory $category): ScoringRuleType
     {
         return match ($category) {
-            PredictionCategory::GcTop5          => ScoringRuleType::GcTop5,
-            PredictionCategory::PointsWinner    => ScoringRuleType::PointsWinner,
+            PredictionCategory::GcTop5 => ScoringRuleType::GcTop5,
+            PredictionCategory::PointsWinner => ScoringRuleType::PointsWinner,
             PredictionCategory::MountainsWinner => ScoringRuleType::MountainsWinner,
-            PredictionCategory::YouthWinner     => ScoringRuleType::YouthWinner,
-            PredictionCategory::TeamsWinner     => ScoringRuleType::TeamsWinner,
-            PredictionCategory::SuperCombativo  => ScoringRuleType::SuperCombativo,
-            PredictionCategory::StageWinner     => ScoringRuleType::StageWinner,
-            PredictionCategory::StageSecond     => ScoringRuleType::StageSecond,
-            PredictionCategory::StageThird      => ScoringRuleType::StageThird,
-            PredictionCategory::StageLeader     => ScoringRuleType::StageLeader,
-            PredictionCategory::StageCombativo  => ScoringRuleType::StageCombativo,
+            PredictionCategory::YouthWinner => ScoringRuleType::YouthWinner,
+            PredictionCategory::TeamsWinner => ScoringRuleType::TeamsWinner,
+            PredictionCategory::SuperCombativo => ScoringRuleType::SuperCombativo,
+            PredictionCategory::StageWinner => ScoringRuleType::StageWinner,
+            PredictionCategory::StageSecond => ScoringRuleType::StageSecond,
+            PredictionCategory::StageThird => ScoringRuleType::StageThird,
+            PredictionCategory::StageLeader => ScoringRuleType::StageLeader,
+            PredictionCategory::StageCombativo => ScoringRuleType::StageCombativo,
         };
     }
 
