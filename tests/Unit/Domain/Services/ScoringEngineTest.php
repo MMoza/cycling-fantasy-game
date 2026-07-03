@@ -95,21 +95,21 @@ test('calculates gc top 5 exact match', function () {
         leagueId: 'league-uuid',
         type: PredictionType::PreRace,
         category: PredictionCategory::GcTop5,
-        predictionValue: [
-            '1' => 'rider-1',
-            '2' => 'rider-2',
-            '3' => 'rider-3',
-            '4' => 'rider-4',
-            '5' => 'rider-5',
-        ],
+        predictionValue: ['rider_ids' => [
+            0 => 'rider-1',
+            1 => 'rider-2',
+            2 => 'rider-3',
+            3 => 'rider-4',
+            4 => 'rider-5',
+        ]],
     );
 
     $events = $engine->calculateGcTop5Score($prediction, [
-        1 => 'rider-1',
-        2 => 'rider-2',
-        3 => 'rider-3',
-        4 => 'rider-4',
-        5 => 'rider-5',
+        0 => 'rider-1',
+        1 => 'rider-2',
+        2 => 'rider-3',
+        3 => 'rider-4',
+        4 => 'rider-5',
     ]);
 
     expect($events)->toHaveCount(5);
@@ -137,21 +137,21 @@ test('calculates gc top 5 partial match', function () {
         leagueId: 'league-uuid',
         type: PredictionType::PreRace,
         category: PredictionCategory::GcTop5,
-        predictionValue: [
-            '1' => 'rider-a',
-            '2' => 'rider-b',
-            '3' => 'rider-c',
-            '4' => 'rider-d',
-            '5' => 'rider-e',
-        ],
+        predictionValue: ['rider_ids' => [
+            0 => 'rider-a',
+            1 => 'rider-b',
+            2 => 'rider-c',
+            3 => 'rider-d',
+            4 => 'rider-e',
+        ]],
     );
 
     $events = $engine->calculateGcTop5Score($prediction, [
-        1 => 'rider-1',
-        2 => 'rider-2',
-        3 => 'rider-a',
-        4 => 'rider-4',
-        5 => 'rider-e',
+        0 => 'rider-1',
+        1 => 'rider-2',
+        2 => 'rider-a',
+        3 => 'rider-4',
+        4 => 'rider-e',
     ]);
 
     expect($events)->toHaveCount(2);

@@ -69,7 +69,8 @@ class ScoringEngine
             $isExact = $predictedRiderId === $actualRiderId;
 
             $ruleType = $isExact ? ScoringRuleType::GcTop5 : ScoringRuleType::GcTop5Partial;
-            $rule = $this->findRule($ruleType, position: $isExact ? $position : null);
+            $dbPosition = $position + 1;
+            $rule = $this->findRule($ruleType, position: $isExact ? $dbPosition : null);
 
             if (! $rule) {
                 continue;
@@ -89,9 +90,9 @@ class ScoringEngine
                 description: sprintf(
                     '%s: Top 5 General (Posición %d)',
                     $isExact ? 'Acierto exacto' : 'Acierto parcial',
-                    $position,
+                    $dbPosition,
                 ),
-                context: "gc_top_5_pos_{$position}",
+                context: "gc_top_5_pos_{$dbPosition}",
             );
         }
 
@@ -111,7 +112,8 @@ class ScoringEngine
             $isExact = $predictedRiderId === $actualRiderId;
 
             $ruleType = $isExact ? $exactType : $partialType;
-            $rule = $this->findRule($ruleType, position: $isExact ? $position : null);
+            $dbPosition = $position + 1;
+            $rule = $this->findRule($ruleType, position: $isExact ? $dbPosition : null);
 
             if (! $rule) {
                 continue;
@@ -132,9 +134,9 @@ class ScoringEngine
                     '%s: %s (Posición %d)',
                     $isExact ? 'Acierto exacto' : 'Acierto parcial',
                     $prediction->category->label(),
-                    $position,
+                    $dbPosition,
                 ),
-                context: "{$prediction->category->value}_pos_{$position}",
+                context: "{$prediction->category->value}_pos_{$dbPosition}",
             );
         }
 
@@ -181,17 +183,17 @@ class ScoringEngine
     private function getRuleTypeFromCategory(PredictionCategory $category): ScoringRuleType
     {
         return match ($category) {
-            PredictionCategory::GcTop5 => ScoringRuleType::GcTop5,
-            PredictionCategory::PointsWinner => ScoringRuleType::PointsWinner,
+            PredictionCategory::GcTop5          => ScoringRuleType::GcTop5,
+            PredictionCategory::PointsWinner    => ScoringRuleType::PointsWinner,
             PredictionCategory::MountainsWinner => ScoringRuleType::MountainsWinner,
-            PredictionCategory::YouthWinner => ScoringRuleType::YouthWinner,
-            PredictionCategory::TeamsWinner => ScoringRuleType::TeamsWinner,
-            PredictionCategory::SuperCombativo => ScoringRuleType::SuperCombativo,
-            PredictionCategory::StageWinner => ScoringRuleType::StageWinner,
-            PredictionCategory::StageSecond => ScoringRuleType::StageSecond,
-            PredictionCategory::StageThird => ScoringRuleType::StageThird,
-            PredictionCategory::StageLeader => ScoringRuleType::StageLeader,
-            PredictionCategory::StageCombativo => ScoringRuleType::StageCombativo,
+            PredictionCategory::YouthWinner     => ScoringRuleType::YouthWinner,
+            PredictionCategory::TeamsWinner     => ScoringRuleType::TeamsWinner,
+            PredictionCategory::SuperCombativo  => ScoringRuleType::SuperCombativo,
+            PredictionCategory::StageWinner     => ScoringRuleType::StageWinner,
+            PredictionCategory::StageSecond     => ScoringRuleType::StageSecond,
+            PredictionCategory::StageThird      => ScoringRuleType::StageThird,
+            PredictionCategory::StageLeader     => ScoringRuleType::StageLeader,
+            PredictionCategory::StageCombativo  => ScoringRuleType::StageCombativo,
         };
     }
 
@@ -204,12 +206,11 @@ class ScoringEngine
     {
         $riders = $prediction->predictionValue;
 
-        if (is_array($riders) && isset($riders[$position])) {
-            return $riders[$position];
-        }
-
-        if ($position === 0 && is_array($riders) && isset($riders['rider_id'])) {
-            return $riders['rider_id'];
+        if (is_array($riders)) {
+            $list = $riders['rider_ids'] ?? $riders;
+            if (isset($list[$position])) {
+                return $list[$position];
+            }
         }
 
         return null;

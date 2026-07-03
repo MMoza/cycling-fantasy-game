@@ -106,6 +106,7 @@ class RebuildScoresCommand extends Command
                                 'id' => $scoreEvent->id,
                                 'user_id' => $scoreEvent->userId,
                                 'league_id' => $scoreEvent->leagueId,
+                                'stage_id' => $scoreEvent->stageId,
                                 'scoring_rule_id' => $scoreEvent->scoringRuleId,
                                 'points' => $scoreEvent->points,
                                 'description' => $scoreEvent->description,
