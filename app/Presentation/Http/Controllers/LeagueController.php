@@ -105,6 +105,7 @@ class LeagueController extends Controller
         $nextStage = $leagueModel->stages()
             ->whereIn('status', ['upcoming', 'ongoing'])
             ->orderByRaw("CASE WHEN status = 'ongoing' THEN 0 ELSE 1 END")
+            ->orderBy('date')
             ->orderBy('scheduled_start')
             ->first();
 
