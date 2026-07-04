@@ -51,6 +51,11 @@ class ShowAdminStageUseCase
             ->orderBy('position')
             ->get();
 
+        $riderToTeam = $isTTT ? DB::table('competition_participants')
+            ->where('edition_id', $editionId)
+            ->pluck('team_id', 'rider_id')
+            ->toArray() : [];
+
         return [
             'edition' => [
                 'id' => $edition->id,
@@ -77,7 +82,7 @@ class ShowAdminStageUseCase
             'is_ttt' => $isTTT,
             'results' => $results->map(fn ($r) => [
                 'id' => $r->id,
-                'rider_id' => $r->rider_id,
+                'rider_id' => $isTTT ? ($riderToTeam[$r->rider_id] ?? $r->rider_id) : $r->rider_id,
                 'position' => $r->position,
                 'time' => $r->time,
                 'gap' => $r->gap,
