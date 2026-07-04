@@ -63,8 +63,6 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
     );
 
     const [tttGcLeader, setTttGcLeader] = useState('');
-    const [tttCombativo, setTttCombativo] = useState('');
-
     const addRow = () => {
         setResultEntries([...resultEntries, { id: '', rider_id: '', position: resultEntries.length + 1, time: '', gap: '' }]);
     };
@@ -97,17 +95,6 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
                 gap: null,
                 is_gc_leader: true,
                 is_combativo: false,
-            });
-        }
-
-        if (is_ttt && tttCombativo) {
-            data.push({
-                rider_id: tttCombativo,
-                position: data.length + 1,
-                time: null,
-                gap: null,
-                is_gc_leader: false,
-                is_combativo: true,
             });
         }
 
@@ -293,20 +280,7 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="flex-1 space-y-1">
-                                        <Label className="flex items-center gap-1.5 text-xs font-medium">
-                                            <Flame className="h-3.5 w-3.5 text-red-500" />
-                                            Combativo
-                                        </Label>
-                                        <Select value={tttCombativo} onValueChange={(v) => v && setTttCombativo(v)}>
-                                            <SelectTrigger><SelectValue placeholder="Seleccionar corredor..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {availableRiders.map((r) => (
-                                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                    <div className="flex-1" />
                                 </div>
                             </div>
                         )}
