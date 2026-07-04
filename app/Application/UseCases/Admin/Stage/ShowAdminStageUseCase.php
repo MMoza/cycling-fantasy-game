@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\Stage;
 
+use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use Illuminate\Support\Facades\DB;
@@ -15,21 +16,24 @@ class ShowAdminStageUseCase
         $edition = EditionModel::with('competition')->findOrFail($editionId);
         $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
 
-        $participantRiders = DB::table('competition_participants')
+        $isTTT = $stage->type === StageType::TeamTimeTrial;
+
+        $ridersQuery = DB::table('competition_participants')
             ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
+            ->join('teams', 'competition_participants.team_id', '=', 'teams.id')
             ->where('competition_participants.competition_id', $edition->competition_id)
             ->where('competition_participants.edition_id', $editionId)
             ->where('competition_participants.team_id', '!=', '')
-            ->select('riders.id', 'riders.first_name', 'riders.last_name', 'riders.country_id')
+            ->select('riders.id', 'riders.first_name', 'riders.last_name', 'riders.country_id', 'teams.name as team_name')
             ->distinct()
             ->orderBy('riders.last_name')
-            ->orderBy('riders.first_name')
-            ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'name' => trim("{$r->last_name} {$r->first_name}"),
-                'country_id' => $r->country_id,
-            ]);
+            ->orderBy('riders.first_name');
+
+        $participantRiders = $ridersQuery->get()->map(fn ($r) => [
+            'id' => $r->id,
+            'name' => $isTTT ? trim("{$r->last_name} {$r->first_name} ({$r->team_name})") : trim("{$r->last_name} {$r->first_name}"),
+            'country_id' => $r->country_id,
+        ]);
 
         $results = DB::table('stage_results')
             ->where('stage_id', $id)
@@ -58,6 +62,7 @@ class ShowAdminStageUseCase
                 'status_label' => $stage->status->label(),
             ],
             'availableRiders' => $participantRiders,
+            'is_ttt' => $isTTT,
             'results' => $results->map(fn ($r) => [
                 'id' => $r->id,
                 'rider_id' => $r->rider_id,

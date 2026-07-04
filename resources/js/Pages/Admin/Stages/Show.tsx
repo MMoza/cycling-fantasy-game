@@ -43,11 +43,12 @@ interface Stage {
     status_label: string;
 }
 
-export default function Show({ edition, stage, availableRiders, results }: {
+export default function Show({ edition, stage, availableRiders, results, is_ttt }: {
     edition: { id: string; year: number; competition: string };
     stage: Stage;
     availableRiders: Rider[];
     results: Result[];
+    is_ttt?: boolean;
 }) {
     const [resultEntries, setResultEntries] = useState<Result[]>(
         results.length > 0
@@ -175,7 +176,7 @@ export default function Show({ edition, stage, availableRiders, results }: {
                                         <Label className="text-xs text-muted-foreground">#{index + 1}</Label>
                                     </div>
                                     <div className="flex-1 space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Corredor</Label>
+                                        <Label className="text-xs text-muted-foreground">{is_ttt ? 'Corredor (equipo)' : 'Corredor'}</Label>
                                         <Select
                                             value={entry.rider_id}
                                             onValueChange={(v) => v && updateRow(index, 'rider_id', v)}
