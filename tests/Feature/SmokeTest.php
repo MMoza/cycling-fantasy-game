@@ -33,7 +33,7 @@ test('authenticated user can access dashboard', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Dashboard')
+        ->component('Dashboard/Index')
     );
 });
 
