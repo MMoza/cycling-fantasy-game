@@ -97,6 +97,11 @@ class StoreStageResultUseCase
 
         $stageResults = $resultsData->map(fn ($row) => StageResultEntity::fromRow($row));
 
+        $riderTeamMap = DB::table('competition_participants')
+            ->where('edition_id', $stage->edition_id)
+            ->pluck('team_id', 'rider_id')
+            ->toArray();
+
         $leagues = LeagueModel::with('edition.competition')
             ->where('edition_id', $stage->edition_id)
             ->get();
@@ -109,7 +114,7 @@ class StoreStageResultUseCase
             }
 
             $system = $this->buildScoringSystem($scoringSystemModel);
-            $engine = new ScoringEngine($system);
+            $engine = new ScoringEngine($system, $riderTeamMap);
 
             $predictions = PredictionModel::where('league_id', $league->id)
                 ->where('stage_id', $stage->id)

@@ -55,6 +55,11 @@ class ScoreStageCommand extends Command
 
         $stageResults = $resultsData->map(fn ($row) => StageResult::fromRow($row));
 
+        $riderTeamMap = DB::table('competition_participants')
+            ->where('edition_id', $stage->edition_id)
+            ->pluck('team_id', 'rider_id')
+            ->toArray();
+
         $predictions = PredictionModel::with('league.scoringSystem.rules')
             ->where('stage_id', $stageId)
             ->where('type', PredictionType::PreStage)
@@ -102,7 +107,7 @@ class ScoreStageCommand extends Command
 
             $scoringSystem = $this->buildScoringSystem($scoringSystemModel);
 
-            $engine = new ScoringEngine($scoringSystem);
+            $engine = new ScoringEngine($scoringSystem, $riderTeamMap);
 
             foreach ($leaguePredictions as $predictionModel) {
                 $prediction = Prediction::fromModel($predictionModel);

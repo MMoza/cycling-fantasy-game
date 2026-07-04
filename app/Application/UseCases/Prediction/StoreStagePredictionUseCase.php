@@ -6,6 +6,7 @@ namespace App\Application\UseCases\Prediction;
 
 use App\Application\Exceptions\ApplicationException;
 use App\Domain\ValueObjects\PredictionType;
+use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -29,7 +30,11 @@ class StoreStagePredictionUseCase
             throw new ApplicationException('La etapa ya ha comenzado');
         }
 
+        $isTTT = $stage->type === StageType::TeamTimeTrial;
+
         foreach ($predictions as $prediction) {
+            $isTeamPick = $isTTT && $prediction['category'] !== 'stage_leader';
+
             PredictionModel::updateOrCreate(
                 [
                     'user_id' => $user->id,
@@ -40,9 +45,11 @@ class StoreStagePredictionUseCase
                 ],
                 [
                     'id' => Str::uuid()->toString(),
-                    'prediction_value' => ['rider_id' => $prediction['value']],
+                    'prediction_value' => [$isTeamPick ? 'team_id' : 'rider_id' => $prediction['value']],
                 ]
             );
         }
+
+        $user->update(['last_visited_league_id' => $leagueId]);
     }
 }

@@ -17,6 +17,7 @@ class ScoringEngine
 {
     public function __construct(
         private readonly ScoringSystem $scoringSystem,
+        private readonly array $riderTeamMap = [],
     ) {}
 
     public function calculateStageScore(
@@ -27,15 +28,11 @@ class ScoringEngine
     ): ScoreEvent {
         $ruleType = $this->getRuleTypeFromCategory($prediction->category);
         $predictedRider = $this->getPredictedRiderId($prediction);
+        $predictedTeam = $this->getPredictedTeamId($prediction);
 
-        $isCorrect = match ($prediction->category) {
-            PredictionCategory::StageWinner => $actualResult->position === 1 && $predictedRider === $actualResult->riderId,
-            PredictionCategory::StageSecond => $actualResult->position === 2 && $predictedRider === $actualResult->riderId,
-            PredictionCategory::StageThird => $actualResult->position === 3 && $predictedRider === $actualResult->riderId,
-            PredictionCategory::StageLeader => $predictedRider === $actualResult->riderId && $actualResult->isGcLeader,
-            PredictionCategory::StageCombativo => $predictedRider === $actualResult->riderId && $actualResult->isCombativo,
-            default => $predictedRider === $actualResult->riderId,
-        };
+        $isCorrect = $predictedTeam !== null
+            ? $this->matchTeamPrediction($prediction, $actualResult, $predictedTeam)
+            : $this->matchRiderPrediction($prediction, $actualResult, $predictedRider);
 
         $rule = $this->findRule($ruleType, $stageDifficulty);
         $finalPoints = $isCorrect && $rule ? $rule->points : 0;
@@ -197,9 +194,51 @@ class ScoringEngine
         };
     }
 
+    private function matchRiderPrediction(Prediction $prediction, StageResult $actualResult, ?string $predictedRider): bool
+    {
+        if ($predictedRider === null) {
+            return false;
+        }
+
+        return match ($prediction->category) {
+            PredictionCategory::StageWinner => $actualResult->position === 1 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StageSecond => $actualResult->position === 2 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StageThird => $actualResult->position === 3 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StageLeader => $predictedRider === $actualResult->riderId && $actualResult->isGcLeader,
+            PredictionCategory::StageCombativo => $predictedRider === $actualResult->riderId && $actualResult->isCombativo,
+            default => $predictedRider === $actualResult->riderId,
+        };
+    }
+
+    private function matchTeamPrediction(Prediction $prediction, StageResult $actualResult, string $predictedTeam): bool
+    {
+        $actualTeam = $this->getTeamForRider($actualResult->riderId);
+
+        if ($actualTeam === null) {
+            return false;
+        }
+
+        return match ($prediction->category) {
+            PredictionCategory::StageWinner => $actualResult->position === 1 && $predictedTeam === $actualTeam,
+            PredictionCategory::StageSecond => $actualResult->position === 2 && $predictedTeam === $actualTeam,
+            PredictionCategory::StageThird => $actualResult->position === 3 && $predictedTeam === $actualTeam,
+            default => false,
+        };
+    }
+
     private function getPredictedRiderId(Prediction $prediction): ?string
     {
         return $prediction->predictionValue['rider_id'] ?? null;
+    }
+
+    private function getPredictedTeamId(Prediction $prediction): ?string
+    {
+        return $prediction->predictionValue['team_id'] ?? null;
+    }
+
+    private function getTeamForRider(string $riderId): ?string
+    {
+        return $this->riderTeamMap[$riderId] ?? null;
     }
 
     private function getPredictedRiderAtPosition(Prediction $prediction, int $position): ?string

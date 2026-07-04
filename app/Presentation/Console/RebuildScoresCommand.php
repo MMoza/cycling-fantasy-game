@@ -63,7 +63,7 @@ class RebuildScoresCommand extends Command
             }
 
             $scoringSystem = $this->buildScoringSystem($scoringSystemModel);
-            $engine = new ScoringEngine($scoringSystem);
+            $riderTeamMap = [];
 
             $finishedStages = StageModel::where('edition_id', $league->edition_id)
                 ->where('status', StageStatus::Finished)
@@ -89,6 +89,13 @@ class RebuildScoresCommand extends Command
                 }
 
                 $stageResults = $resultsData->map(fn ($row) => StageResult::fromRow($row));
+
+                $riderTeamMap = DB::table('competition_participants')
+                    ->where('edition_id', $stage->edition_id)
+                    ->pluck('team_id', 'rider_id')
+                    ->toArray();
+
+                $engine = new ScoringEngine($scoringSystem, $riderTeamMap);
 
                 $predictions = PredictionModel::where('league_id', $league->id)
                     ->where('stage_id', $stage->id)

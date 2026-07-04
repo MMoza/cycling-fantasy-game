@@ -44,12 +44,17 @@ class PredictionController extends Controller
             'predictions.*.value' => ['required'],
         ]);
 
+        $predictions = array_values(array_filter(
+            $validated['predictions'],
+            fn ($p) => ! empty($p['value']),
+        ));
+
         try {
             $this->storeStagePredictionUseCase->execute(
                 $request->user(),
                 $league,
                 $stage,
-                $validated['predictions'],
+                $predictions,
             );
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['stage' => $e->getMessage()]);
