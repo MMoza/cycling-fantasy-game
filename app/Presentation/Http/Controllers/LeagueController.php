@@ -156,6 +156,7 @@ class LeagueController extends Controller
         ]);
 
         return Inertia::render('Leagues/Show', [
+            'league_id' => $leagueModel->id,
             'league' => [
                 'id' => $leagueModel->id,
                 'name' => $leagueModel->name,

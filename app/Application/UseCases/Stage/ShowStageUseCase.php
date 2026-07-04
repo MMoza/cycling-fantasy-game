@@ -154,6 +154,7 @@ class ShowStageUseCase
 
         return [
             'leagueId' => $league->id,
+            'leagueName' => $league->name,
             'stage' => $stageDetail,
             'isFinished' => $isFinished,
             'isLocked' => $isLocked,

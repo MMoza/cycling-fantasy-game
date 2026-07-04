@@ -28,6 +28,8 @@ class StorePreRacePredictionUseCase
             throw new ApplicationException('La competición ya ha comenzado');
         }
 
+        $user->update(['last_visited_league_id' => $leagueId]);
+
         foreach ($predictions as $prediction) {
             $rawValue = $prediction['value'] ?? '';
             $value = $rawValue;

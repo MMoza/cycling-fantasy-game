@@ -61,6 +61,7 @@ class StageController extends Controller
             'predictions' => $data['predictions'],
             'stage_results' => $data['stageResults'],
             'stage_classification' => $data['stageClassification'],
+            'league_name' => $data['leagueName'],
             'navigation' => $data['navigation'],
             'all_stages' => $data['allStages'],
             'availableRiders' => $data['availableRiders'],

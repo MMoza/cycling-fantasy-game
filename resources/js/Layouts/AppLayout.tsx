@@ -9,16 +9,21 @@ import SearchModal from '@/components/SearchModal';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const page = usePage();
     const { auth, currentLeague } = page.props as any;
+    const pageProps = page.props as Record<string, any>;
     const url = page.url;
+
+    const activeLeagueId = pageProps.league_id ?? pageProps.leagueId ?? currentLeague?.id;
+    const activeLeague = activeLeagueId ? { id: activeLeagueId } : currentLeague;
+
     const [searchOpen, setSearchOpen] = useState(false);
 
     const navItems = [
         { route: 'dashboard', href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
         { route: 'competitions.index', href: route('competitions.index'), label: 'Competiciones', icon: Bike },
-        ...(currentLeague
+        ...(activeLeague
             ? [
-                  { route: 'stages.index', href: route('stages.index', currentLeague.id), label: 'Etapa', icon: Route },
-                  { route: 'classification.index', href: route('classification.index', currentLeague.id), label: 'Clasificación', icon: Trophy },
+                  { route: 'stages.index', href: route('stages.index', activeLeague.id), label: 'Etapa', icon: Route },
+                  { route: 'classification.index', href: route('classification.index', activeLeague.id), label: 'Clasificación', icon: Trophy },
               ]
             : []),
         ...(auth.user?.is_admin

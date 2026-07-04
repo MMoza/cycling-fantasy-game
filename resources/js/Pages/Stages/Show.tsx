@@ -62,6 +62,7 @@ interface Option {
 
 interface ShowProps {
     league_id: string;
+    league_name: string;
     stage: Stage;
     is_finished: boolean;
     is_locked: boolean;
@@ -237,7 +238,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
     );
 }
 
-export default function Show({ league_id, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams }: ShowProps) {
+export default function Show({ league_id, league_name, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams }: ShowProps) {
     const { errors } = usePage().props as any;
     const isTimeTrial = stage.type_value === 'time_trial' || stage.type_value === 'team_time_trial';
     const isTTT = stage.type_value === 'team_time_trial';
@@ -252,20 +253,28 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
         return map;
     }, [availableRiders]);
 
+    const teamMap = useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const t of availableTeams) {
+            map[t.value] = t.label;
+        }
+        return map;
+    }, [availableTeams]);
+
     const resolvePredictionValue = (value: string | string[] | Record<string, string>): string => {
         if (Array.isArray(value)) {
-            return value.map((id) => riderMap[id] ?? id).join(', ');
+            return value.map((id) => riderMap[id] ?? teamMap[id] ?? id).join(', ');
         }
         if (typeof value === 'object' && value !== null) {
-            const id = value.rider_id ?? Object.values(value)[0];
-            return riderMap[id] ?? id;
+            const id = value.team_id ?? value.rider_id ?? Object.values(value)[0];
+            return teamMap[id] ?? riderMap[id] ?? id;
         }
-        return riderMap[value] ?? value;
+        return riderMap[value] ?? teamMap[value] ?? value;
     };
 
     const extractPredictionId = (value: string | string[] | Record<string, string>): string => {
         if (Array.isArray(value)) return value.join(', ');
-        if (typeof value === 'object' && value !== null) return value.rider_id ?? String(Object.values(value)[0] ?? '');
+        if (typeof value === 'object' && value !== null) return value.team_id ?? value.rider_id ?? String(Object.values(value)[0] ?? '');
         return value;
     };
 
@@ -307,10 +316,12 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
         e.preventDefault();
         setSaving(true);
 
-        const predictionsData = categories.map(({ key }) => ({
-            category: key,
-            value: formData[key],
-        }));
+        const predictionsData = categories
+            .filter(({ key }) => formData[key])
+            .map(({ key }) => ({
+                category: key,
+                value: formData[key],
+            }));
 
         router.post(
             route('predictions.store', [league_id, stage.id]),
@@ -368,14 +379,15 @@ export default function Show({ league_id, stage, is_finished, is_locked, predict
                         ) : (
                             <div className="h-8 w-8" />
                         )}
-                        <div className="text-center">
-                            <h1 className="text-xl font-semibold tracking-tight">
-                                Etapa {stage.number}
-                            </h1>
-                            {stage.name && (
-                                <p className="text-sm text-muted-foreground">{stage.name}</p>
-                            )}
-                        </div>
+                            <div className="text-center">
+                                <p className="text-xs text-muted-foreground">{league_name}</p>
+                                <h1 className="text-xl font-semibold tracking-tight">
+                                    Etapa {stage.number}
+                                </h1>
+                                {stage.name && (
+                                    <p className="text-sm text-muted-foreground">{stage.name}</p>
+                                )}
+                            </div>
                         {navigation.next ? (
                             <Link
                                 href={route('stages.show', [league_id, navigation.next.id])}
