@@ -103,8 +103,9 @@ class LeagueController extends Controller
         $leagueModel = $this->showLeagueUseCase->execute($request->user(), $league);
 
         $nextStage = $leagueModel->stages()
-            ->where('status', 'upcoming')
-            ->orderBy('date')
+            ->whereIn('status', ['upcoming', 'ongoing'])
+            ->orderByRaw("CASE WHEN status = 'ongoing' THEN 0 ELSE 1 END")
+            ->orderBy('scheduled_start')
             ->first();
 
         $totalStages = $leagueModel->stages()->where('type', '!=', 'rest')->count();
@@ -196,9 +197,14 @@ class LeagueController extends Controller
                 'name' => $nextStage->name,
                 'date' => $nextStage->date->format('d M'),
                 'type' => $nextStage->type->label(),
+                'type_value' => $nextStage->type->value,
                 'distance' => $nextStage->distance ? "{$nextStage->distance} km" : null,
+                'distance_value' => $nextStage->distance,
                 'origin' => $nextStage->origin,
                 'destination' => $nextStage->destination,
+                'status' => $nextStage->status->value,
+                'scheduled_start' => $nextStage->scheduled_start?->toIso8601String(),
+                'difficulty' => $nextStage->difficulty,
             ] : null,
             'user_position' => $userEntry ? [
                 'rank' => (string) $userEntry['rank'],

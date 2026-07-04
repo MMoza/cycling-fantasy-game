@@ -16,18 +16,14 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
-        $data = $this->showDashboardUseCase->execute($request->user());
+        $user = $request->user();
 
-        if (! $data['league']) {
-            return Inertia::render('Dashboard/Index', [
-                'league' => null,
-                'stage' => null,
-            ]);
+        $leagueId = $this->showDashboardUseCase->execute($user);
+
+        if ($leagueId) {
+            return redirect()->route('leagues.show', $leagueId);
         }
 
-        return Inertia::render('Dashboard/Index', [
-            'league' => $data['league'],
-            'stage' => $data['stage'],
-        ]);
+        return Inertia::render('Dashboard');
     }
 }
