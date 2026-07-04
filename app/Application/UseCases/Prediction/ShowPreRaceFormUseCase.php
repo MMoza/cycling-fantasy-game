@@ -25,8 +25,15 @@ class ShowPreRaceFormUseCase
 
         $edition = $league->edition;
 
-        $isLocked = $edition->status->value !== 'upcoming'
-            || ($edition->start_date && now()->greaterThanOrEqualTo($edition->start_date));
+        $firstStage = $edition->relationLoaded('stages')
+            ? $edition->stages->first()
+            : $edition->stages()->orderBy('date')->orderBy('scheduled_start')->first();
+
+        $hasStarted = $firstStage
+            ? ($firstStage->scheduled_start && now()->greaterThanOrEqualTo($firstStage->scheduled_start))
+            : ($edition->start_date && now()->greaterThanOrEqualTo($edition->start_date));
+
+        $isLocked = $edition->status->value !== 'upcoming' || $hasStarted;
 
         $predictions = PredictionModel::where('league_id', $leagueId)
             ->where('user_id', $user->id)

@@ -23,8 +23,15 @@ class StorePreRacePredictionUseCase
 
         $edition = $league->edition;
 
-        if ($edition->status->value !== 'upcoming'
-            || ($edition->start_date && now()->greaterThanOrEqualTo($edition->start_date))) {
+        $firstStage = $edition->relationLoaded('stages')
+            ? $edition->stages->first()
+            : $edition->stages()->orderBy('date')->orderBy('scheduled_start')->first();
+
+        $hasStarted = $firstStage
+            ? ($firstStage->scheduled_start && now()->greaterThanOrEqualTo($firstStage->scheduled_start))
+            : ($edition->start_date && now()->greaterThanOrEqualTo($edition->start_date));
+
+        if ($edition->status->value !== 'upcoming' || $hasStarted) {
             throw new ApplicationException('La competición ya ha comenzado');
         }
 
