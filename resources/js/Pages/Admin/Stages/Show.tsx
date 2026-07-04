@@ -17,6 +17,11 @@ interface Rider {
     country_id: string | null;
 }
 
+interface Team {
+    id: string;
+    name: string;
+}
+
 interface Result {
     id: string;
     rider_id: string;
@@ -43,10 +48,11 @@ interface Stage {
     status_label: string;
 }
 
-export default function Show({ edition, stage, availableRiders, results, is_ttt }: {
+export default function Show({ edition, stage, availableRiders, availableTeams, results, is_ttt }: {
     edition: { id: string; year: number; competition: string };
     stage: Stage;
     availableRiders: Rider[];
+    availableTeams?: Team[];
     results: Result[];
     is_ttt?: boolean;
 }) {
@@ -176,17 +182,20 @@ export default function Show({ edition, stage, availableRiders, results, is_ttt 
                                         <Label className="text-xs text-muted-foreground">#{index + 1}</Label>
                                     </div>
                                     <div className="flex-1 space-y-1">
-                                        <Label className="text-xs text-muted-foreground">{is_ttt ? 'Corredor (equipo)' : 'Corredor'}</Label>
+                                        <Label className="text-xs text-muted-foreground">{is_ttt ? 'Equipo' : 'Corredor'}</Label>
                                         <Select
                                             value={entry.rider_id}
                                             onValueChange={(v) => v && updateRow(index, 'rider_id', v)}
                                         >
                                             <SelectTrigger><SelectValue placeholder="Seleccionar...">
-                                                {(value: string) => availableRiders.find(r => r.id === value)?.name ?? value}
+                                                {(value: string) => {
+                                                    if (is_ttt && availableTeams) return availableTeams.find(t => t.id === value)?.name ?? value;
+                                                    return availableRiders.find(r => r.id === value)?.name ?? value;
+                                                }}
                                             </SelectValue></SelectTrigger>
                                             <SelectContent>
-                                                {availableRiders.map((r) => (
-                                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                                {(is_ttt && availableTeams ? availableTeams : availableRiders).map((item) => (
+                                                    <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>

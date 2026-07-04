@@ -64,13 +64,27 @@ class StoreStageResultUseCase
             throw new ApplicationException(implode('. ', $errors));
         }
 
+        $isTTT = $stage->type === StageType::TeamTimeTrial;
+
+        $teamRiderMap = $isTTT ? DB::table('competition_participants')
+            ->where('edition_id', $editionId)
+            ->select('team_id', 'rider_id')
+            ->get()
+            ->groupBy('team_id')
+            ->map(fn ($rows) => $rows->first()->rider_id)
+            ->toArray() : [];
+
         DB::table('stage_results')->where('stage_id', $id)->delete();
 
         foreach ($results as $result) {
+            $riderId = $isTTT && isset($result['rider_id'])
+                ? ($teamRiderMap[$result['rider_id']] ?? $result['rider_id'])
+                : $result['rider_id'];
+
             DB::table('stage_results')->insert([
                 'id' => Str::uuid()->toString(),
                 'stage_id' => $id,
-                'rider_id' => $result['rider_id'],
+                'rider_id' => $riderId,
                 'position' => $result['position'],
                 'time' => $result['time'] ?? null,
                 'gap' => $result['gap'] ?? null,

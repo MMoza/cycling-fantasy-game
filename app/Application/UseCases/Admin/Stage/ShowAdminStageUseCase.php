@@ -31,9 +31,20 @@ class ShowAdminStageUseCase
 
         $participantRiders = $ridersQuery->get()->map(fn ($r) => [
             'id' => $r->id,
-            'name' => $isTTT ? trim("{$r->last_name} {$r->first_name} ({$r->team_name})") : trim("{$r->last_name} {$r->first_name}"),
+            'name' => trim("{$r->last_name} {$r->first_name}"),
             'country_id' => $r->country_id,
         ]);
+
+        $availableTeams = DB::table('competition_participants')
+            ->join('teams', 'competition_participants.team_id', '=', 'teams.id')
+            ->where('competition_participants.competition_id', $edition->competition_id)
+            ->where('competition_participants.edition_id', $editionId)
+            ->where('competition_participants.team_id', '!=', '')
+            ->select('teams.id', 'teams.name')
+            ->distinct()
+            ->orderBy('teams.name')
+            ->get()
+            ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]);
 
         $results = DB::table('stage_results')
             ->where('stage_id', $id)
@@ -62,6 +73,7 @@ class ShowAdminStageUseCase
                 'status_label' => $stage->status->label(),
             ],
             'availableRiders' => $participantRiders,
+            'availableTeams' => $availableTeams,
             'is_ttt' => $isTTT,
             'results' => $results->map(fn ($r) => [
                 'id' => $r->id,
