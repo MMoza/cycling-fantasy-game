@@ -57,7 +57,7 @@ function LeagueCard({ league, showJoin }: { league: League; showJoin?: boolean }
                     <div className="flex items-center gap-2 min-w-0">
                         <CardTitle className="text-lg truncate">{league.name}</CardTitle>
                         {league.is_official && (
-                            <Badge variant="default" className="shrink-0 gap-1 bg-brand-600 hover:bg-brand-600 text-[10px] px-1.5 py-0">
+                            <Badge variant="default" className="shrink-0 gap-1 rounded-full bg-brand-600 text-white hover:bg-brand-600 text-[10px] px-1.5 py-0">
                                 <ShieldCheck className="h-2.5 w-2.5" />
                                 Oficial
                             </Badge>

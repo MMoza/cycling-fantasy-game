@@ -177,7 +177,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                         <div className="flex items-center gap-2">
                             <h1 className="text-2xl font-semibold tracking-tight truncate">{league.name}</h1>
                             {league.is_official && (
-                                <Badge variant="default" className="gap-1 bg-brand-600 hover:bg-brand-600">
+                                <Badge variant="default" className="gap-1 rounded-full bg-brand-600 text-white hover:bg-brand-600">
                                     <ShieldCheck className="h-3 w-3" />
                                     Oficial
                                 </Badge>
