@@ -28,9 +28,26 @@ interface Stage {
     status: string;
 }
 
+function utcToLocalDatetime(isoString: string | null): string {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${day}T${h}:${min}`;
+}
+
+function localToUtcIso(localDatetime: string): string {
+    if (!localDatetime) return '';
+    return new Date(localDatetime).toISOString();
+}
+
 export default function Form({ edition, stage, stageTypes }: { edition: { id: string; year: number; competition: string; competition_id: string; competition_type: string }; stage: Stage | null; stageTypes: StageType[] }) {
     const isClassic = edition.competition_type === 'classic';
-    const { data, setData, post, patch, processing, errors } = useForm({
+    const { data, setData, post, patch, processing, errors, transform } = useForm({
         number: stage?.number ?? 1,
         name: stage?.name ?? '',
         date: stage?.date ?? '',
@@ -40,13 +57,18 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         difficulty: stage?.difficulty ?? '',
         origin: stage?.origin ?? '',
         destination: stage?.destination ?? '',
-        scheduled_start: stage?.scheduled_start ?? '',
+        scheduled_start: utcToLocalDatetime(stage?.scheduled_start ?? null),
         profile_image: stage?.profile_image ?? '',
         status: stage?.status ?? 'upcoming',
     });
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        transform((formData) => ({
+            ...formData,
+            scheduled_start: localToUtcIso(formData.scheduled_start),
+        }));
 
         const options = {
             onSuccess: () => {},
