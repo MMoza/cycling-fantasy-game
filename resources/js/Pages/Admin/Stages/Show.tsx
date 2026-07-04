@@ -62,6 +62,9 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
             : [{ id: '', rider_id: '', position: 1, time: '', gap: '' }]
     );
 
+    const [tttGcLeader, setTttGcLeader] = useState('');
+    const [tttCombativo, setTttCombativo] = useState('');
+
     const addRow = () => {
         setResultEntries([...resultEntries, { id: '', rider_id: '', position: resultEntries.length + 1, time: '', gap: '' }]);
     };
@@ -82,9 +85,31 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
             position: i + 1,
             time: r.time || null,
             gap: r.gap || null,
-            is_gc_leader: r.is_gc_leader ?? false,
-            is_combativo: r.is_combativo ?? false,
+            is_gc_leader: is_ttt ? false : (r.is_gc_leader ?? false),
+            is_combativo: is_ttt ? false : (r.is_combativo ?? false),
         }));
+
+        if (is_ttt && tttGcLeader) {
+            data.push({
+                rider_id: tttGcLeader,
+                position: data.length + 1,
+                time: null,
+                gap: null,
+                is_gc_leader: true,
+                is_combativo: false,
+            });
+        }
+
+        if (is_ttt && tttCombativo) {
+            data.push({
+                rider_id: tttCombativo,
+                position: data.length + 1,
+                time: null,
+                gap: null,
+                is_gc_leader: false,
+                is_combativo: true,
+            });
+        }
 
         router.post(route('admin.editions.stages.results', [edition.id, stage.id]), { results: data });
     };
@@ -216,31 +241,33 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
                                             placeholder="+0:00"
                                         />
                                     </div>
-                                    <div className="flex flex-col items-center gap-1 pt-5">
-                                        <button
-                                            type="button"
-                                            onClick={() => updateRow(index, 'is_gc_leader', !entry.is_gc_leader)}
-                                            className={cn(
-                                                'flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors',
-                                                entry.is_gc_leader ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-600' : 'border-border text-muted-foreground/50 hover:text-muted-foreground',
-                                            )}
-                                            title="Líder GC"
-                                        >
-                                            <Crown className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => updateRow(index, 'is_combativo', !entry.is_combativo)}
-                                            className={cn(
-                                                'flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors',
-                                                entry.is_combativo ? 'border-red-500/50 bg-red-500/10 text-red-600' : 'border-border text-muted-foreground/50 hover:text-muted-foreground',
-                                            )}
-                                            title="Supercombativo"
-                                        >
-                                            <Flame className="h-3.5 w-3.5" />
-                                        </button>
-                                    </div>
-                                    {resultEntries.length > 1 && (
+                                    {!is_ttt && (
+                                        <div className="flex flex-col items-center gap-1 pt-5">
+                                            <button
+                                                type="button"
+                                                onClick={() => updateRow(index, 'is_gc_leader', !entry.is_gc_leader)}
+                                                className={cn(
+                                                    'flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors',
+                                                    entry.is_gc_leader ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-600' : 'border-border text-muted-foreground/50 hover:text-muted-foreground',
+                                                )}
+                                                title="Líder GC"
+                                            >
+                                                <Crown className="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => updateRow(index, 'is_combativo', !entry.is_combativo)}
+                                                className={cn(
+                                                    'flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors',
+                                                    entry.is_combativo ? 'border-red-500/50 bg-red-500/10 text-red-600' : 'border-border text-muted-foreground/50 hover:text-muted-foreground',
+                                                )}
+                                                title="Supercombativo"
+                                            >
+                                                <Flame className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    )}
+                                    {!is_ttt && resultEntries.length > 1 && (
                                         <Button variant="ghost" size="icon" onClick={() => removeRow(index)}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
@@ -249,13 +276,50 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
                             ))}
                         </div>
 
+                        {is_ttt && (
+                            <div className="space-y-3 border-t pt-4">
+                                <div className="flex items-end gap-4">
+                                    <div className="flex-1 space-y-1">
+                                        <Label className="flex items-center gap-1.5 text-xs font-medium">
+                                            <Crown className="h-3.5 w-3.5 text-yellow-500" />
+                                            Líder de la general
+                                        </Label>
+                                        <Select value={tttGcLeader} onValueChange={(v) => v && setTttGcLeader(v)}>
+                                            <SelectTrigger><SelectValue placeholder="Seleccionar corredor..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {availableRiders.map((r) => (
+                                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex-1 space-y-1">
+                                        <Label className="flex items-center gap-1.5 text-xs font-medium">
+                                            <Flame className="h-3.5 w-3.5 text-red-500" />
+                                            Combativo
+                                        </Label>
+                                        <Select value={tttCombativo} onValueChange={(v) => v && setTttCombativo(v)}>
+                                            <SelectTrigger><SelectValue placeholder="Seleccionar corredor..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {availableRiders.map((r) => (
+                                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={addRow}>
-                                <Plus className="mr-1 h-3 w-3" />
-                                Añadir posición
-                            </Button>
+                            {!is_ttt && (
+                                <Button variant="outline" size="sm" onClick={addRow}>
+                                    <Plus className="mr-1 h-3 w-3" />
+                                    Añadir posición
+                                </Button>
+                            )}
                             <div className="flex-1" />
-                            <Button onClick={saveResults} disabled={resultEntries.some((r) => !r.rider_id)}>
+                            <Button onClick={saveResults} disabled={resultEntries.some((r) => !r.rider_id) || (is_ttt && !tttGcLeader)}>
                                 <Trophy className="mr-2 h-4 w-4" />
                                 {isFinished ? 'Actualizar resultados' : 'Guardar resultados y finalizar'}
                             </Button>
