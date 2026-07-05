@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Avatar from '@/components/Avatar';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
 import { Trophy, Calendar, Route, ChevronRight, Users, Target, Mountain, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, Gauge, ShieldCheck } from 'lucide-react';
 
@@ -56,6 +57,7 @@ interface LeaderboardEntry {
     rank: number;
     user_id: string;
     user_name: string;
+    avatar?: string | null;
     points: number;
     behind_leader: number;
     is_current_user: boolean;
@@ -104,6 +106,55 @@ function formatDiff(ms: number): string {
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function buildVisibleLeaderboard(
+    leaderboard: LeaderboardEntry[],
+    currentUserId: string,
+): ({ type: 'entry'; entry: LeaderboardEntry } | { type: 'ellipsis' } | { type: 'separator' })[] {
+    if (leaderboard.length === 0) return [];
+
+    const maxVisible = 10;
+    const currentIndex = leaderboard.findIndex((e) => e.user_id === currentUserId);
+
+    if (currentIndex === -1 || currentIndex < maxVisible) {
+        return leaderboard.slice(0, maxVisible).map((entry) => ({ type: 'entry' as const, entry }));
+    }
+
+    const windowSize = maxVisible - 1;
+    const halfBefore = Math.ceil(windowSize / 2);
+    const halfAfter = windowSize - halfBefore;
+
+    let start = currentIndex - halfBefore;
+    let end = currentIndex + halfAfter;
+
+    if (start < 1) {
+        start = 1;
+        end = start + windowSize - 1;
+    }
+    if (end >= leaderboard.length) {
+        end = leaderboard.length - 1;
+        start = Math.max(1, end - windowSize + 1);
+    }
+
+    const result: ({ type: 'entry'; entry: LeaderboardEntry } | { type: 'ellipsis' } | { type: 'separator' })[] = [];
+    result.push({ type: 'entry', entry: leaderboard[0] });
+
+    if (start > 1) {
+        result.push({ type: 'ellipsis' });
+    }
+
+    for (let i = start; i <= end; i++) {
+        if (i === currentIndex) {
+            result.push({ type: 'separator' });
+        }
+        result.push({ type: 'entry', entry: leaderboard[i] });
+        if (i === currentIndex) {
+            result.push({ type: 'separator' });
+        }
+    }
+
+    return result;
 }
 
 function Countdown({ scheduledStart }: { scheduledStart: string }) {
@@ -634,27 +685,43 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     <CardHeader className="pb-3 px-6 pt-6">
                         <CardTitle>Clasificación</CardTitle>
                     </CardHeader>
-                    <CardContent className="px-6 pb-6">
+                    <CardContent className="p-0">
                         {leaderboard.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="flex flex-col items-center justify-center py-12 text-center px-6">
                                 <Users className="h-12 w-12 text-muted-foreground" />
                                 <p className="mt-4 text-sm text-muted-foreground">
                                     Aún no hay participantes
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-2">
-                                {leaderboard.map((entry) => (
-                                    <div
-                                        key={entry.user_id}
-                                        className={`flex items-center justify-between rounded-lg p-3 ${
-                                            entry.is_current_user
-                                                ? 'bg-accent-100/50 dark:bg-accent-900/10 border border-accent-200 dark:border-accent-800'
-                                                : 'hover:bg-muted/50'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-8 w-8 items-center justify-center">
+                            <div>
+                                {buildVisibleLeaderboard(leaderboard, (usePage().props as any)?.auth?.user?.id).map((item, i) => {
+                                    if (item.type === 'ellipsis') {
+                                        return (
+                                            <div key={`ellipsis-${i}`} className="flex items-center justify-center py-2 text-muted-foreground">
+                                                <span className="text-sm tracking-widest">...</span>
+                                            </div>
+                                        );
+                                    }
+                                    if (item.type === 'separator') {
+                                        return (
+                                            <div key={`sep-${i}`} className="border-t border-muted-200 dark:border-muted-800" />
+                                        );
+                                    }
+                                    const entry = item.entry;
+                                    return (
+                                        <Link
+                                            key={entry.user_id}
+                                            href={route('leagues.members.show', [league.id, entry.user_id])}
+                                            className={`
+                                                flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50
+                                                ${entry.is_current_user
+                                                    ? 'bg-accent-100/50 dark:bg-accent-900/10 border-y border-accent-200 dark:border-accent-800'
+                                                    : 'border-b border-muted-100 dark:border-muted-800/50 last:border-b-0'
+                                                }
+                                            `}
+                                        >
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center">
                                                 {entry.rank === 1 ? (
                                                     <Trophy className="h-5 w-5 text-yellow-500" />
                                                 ) : entry.rank === 2 ? (
@@ -667,23 +734,21 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                                     </span>
                                                 )}
                                             </div>
-                                            <div>
-                                                <span className={`text-sm ${entry.is_current_user ? 'font-semibold' : ''}`}>
+                                            <Avatar user={{ name: entry.user_name, avatar: entry.avatar }} size="sm" />
+                                            <div className="flex min-w-0 flex-1 items-center gap-2">
+                                                <span className="truncate text-sm">
                                                     {entry.user_name}
-                                                    {entry.is_current_user && (
-                                                        <span className="ml-2 text-xs text-muted-foreground">(tú)</span>
-                                                    )}
                                                 </span>
-                                                {entry.behind_leader > 0 && (
-                                                    <span className="ml-3 text-xs text-muted-foreground">
-                                                        -{entry.behind_leader} pts
-                                                    </span>
+                                                {entry.is_current_user && (
+                                                    <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
                                                 )}
+                                                <span className="ml-auto shrink-0 text-sm font-medium tabular-nums">
+                                                    {entry.points}
+                                                </span>
                                             </div>
-                                        </div>
-                                        <span className="text-sm font-medium">{entry.points} pts</span>
-                                    </div>
-                                ))}
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         )}
                     </CardContent>

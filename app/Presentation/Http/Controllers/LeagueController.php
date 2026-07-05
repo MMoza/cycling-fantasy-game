@@ -16,6 +16,7 @@ use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class LeagueController extends Controller
@@ -122,13 +123,14 @@ class LeagueController extends Controller
         $members = DB::table('league_user')
             ->where('league_id', $leagueModel->id)
             ->join('users', 'users.id', '=', 'league_user.user_id')
-            ->select('users.id', 'users.name')
+            ->select('users.id', 'users.name', 'users.avatar')
             ->get();
 
         $leaderboard = $members
             ->map(fn ($member) => [
                 'user_id' => $member->id,
                 'user_name' => $member->name,
+                'avatar' => $this->resolveAvatarUrl($member->avatar),
                 'points' => (int) ($scoresPerUser[$member->id] ?? 0),
                 'is_current_user' => $member->id === $userId,
             ])
@@ -290,5 +292,28 @@ class LeagueController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    private function resolveAvatarUrl(?string $path): ?string
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http')) {
+            return $path;
+        }
+
+        $disk = Storage::disk('s3');
+
+        try {
+            return $disk->temporaryUrl($path, now()->addHours(24));
+        } catch (\Exception) {
+            try {
+                return $disk->url($path);
+            } catch (\Exception) {
+                return null;
+            }
+        }
     }
 }
