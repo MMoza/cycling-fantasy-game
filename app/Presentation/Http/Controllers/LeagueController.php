@@ -168,6 +168,8 @@ class LeagueController extends Controller
                 'competition' => [
                     'name' => $leagueModel->edition->competition->name,
                     'year' => $leagueModel->edition->year,
+                    'coverImageUrl' => $this->resolveAvatarUrl($leagueModel->edition->competition->cover_image),
+                    'logoImageUrl' => $this->resolveAvatarUrl($leagueModel->edition->competition->logo_image),
                 ],
                 'owner_id' => $leagueModel->owner_id,
                 'scoring_system' => [
