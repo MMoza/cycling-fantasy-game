@@ -600,14 +600,19 @@ export default function Show({ league, next_stage, user_position, stages, leader
 
                     <Link href={route('stages.show', [league.id, next_stage?.id ?? ''])} className="block">
                         <Card className={`cursor-pointer transition-colors hover:bg-muted/50 h-full ${
-                            next_stage?.status === 'ongoing' ? 'border-green-500' :
-                            next_stage && !next_stage.has_predictions ? 'border-amber-400' : ''
+                            next_stage?.status === 'ongoing'
+                                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-400'
+                                : next_stage?.has_predictions
+                                    ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-700'
+                                    : next_stage
+                                        ? 'animate-pulse border-amber-400'
+                                        : ''
                         }`}>
                             <CardContent className="flex flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6">
                                 {next_stage ? (
                                     <>
                                         {next_stage.status === 'ongoing' ? (
-                                            <Play className="mb-1 h-4 w-4 text-green-600" />
+                                            <Play className="mb-1 h-4 w-4 text-amber-600" />
                                         ) : next_stage.has_predictions ? (
                                             <CheckCircle2 className="mb-1 h-4 w-4 text-green-600" />
                                         ) : (
@@ -618,11 +623,11 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                                 Etapa {next_stage.number}
                                             </span>
                                             {next_stage.status === 'ongoing' && (
-                                                <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-green-600" />
+                                                <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-amber-600" />
                                             )}
                                         </div>
                                         {next_stage.status === 'ongoing' ? (
-                                            <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-green-600" />
+                                            <span className="text-[11px] text-amber-700 dark:text-amber-400">En curso</span>
                                         ) : next_stage.scheduled_start ? (
                                             <Countdown scheduledStart={next_stage.scheduled_start} />
                                         ) : (
