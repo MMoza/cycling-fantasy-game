@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Avatar from '@/components/Avatar';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
-import { Trophy, Calendar, Route, ChevronRight, Users, Target, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, ShieldCheck } from 'lucide-react';
+import { Trophy, Calendar, Route, ChevronRight, Users, Target, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface League {
     id: string;
@@ -90,6 +90,7 @@ interface ShowProps {
         status: string;
         scheduled_start: string | null;
         difficulty: number | null;
+        has_predictions: boolean;
     } | null;
     user_position: {
         rank: string;
@@ -599,15 +600,18 @@ export default function Show({ league, next_stage, user_position, stages, leader
 
                     <Link href={route('stages.show', [league.id, next_stage?.id ?? ''])} className="block">
                         <Card className={`cursor-pointer transition-colors hover:bg-muted/50 h-full ${
-                            next_stage?.status === 'ongoing' ? 'border-green-500' : ''
+                            next_stage?.status === 'ongoing' ? 'border-green-500' :
+                            next_stage && !next_stage.has_predictions ? 'border-amber-400' : ''
                         }`}>
                             <CardContent className="flex flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6">
                                 {next_stage ? (
                                     <>
                                         {next_stage.status === 'ongoing' ? (
                                             <Play className="mb-1 h-4 w-4 text-green-600" />
+                                        ) : next_stage.has_predictions ? (
+                                            <CheckCircle2 className="mb-1 h-4 w-4 text-green-600" />
                                         ) : (
-                                            <Calendar className="mb-1 h-4 w-4 text-accent-500" />
+                                            <AlertCircle className="mb-1 h-4 w-4 text-amber-500" />
                                         )}
                                         <div className="flex items-center gap-1">
                                             <span className="text-lg font-bold sm:text-xl">
@@ -618,8 +622,8 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                             )}
                                         </div>
                                         {next_stage.status === 'ongoing' ? (
-                                            <span className="text-[11px] font-medium text-green-600">En curso</span>
-                                        ) : next_stage.scheduled_start ? (
+                                            <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-green-600" />
+                                        ) : next_stage.has_predictions ? null : next_stage.scheduled_start ? (
                                             <Countdown scheduledStart={next_stage.scheduled_start} />
                                         ) : (
                                             <p className="text-[11px] text-muted-foreground">{next_stage.date}</p>

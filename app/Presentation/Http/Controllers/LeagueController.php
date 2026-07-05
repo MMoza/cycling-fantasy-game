@@ -12,7 +12,9 @@ use App\Application\UseCases\League\JoinLeagueUseCase;
 use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\ShowLeagueUseCase;
 use App\Application\UseCases\League\UpdateLeagueUseCase;
+use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
+use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -109,6 +111,14 @@ class LeagueController extends Controller
             ->orderBy('date')
             ->orderBy('scheduled_start')
             ->first();
+
+        $nextStageHasPredictions = $nextStage
+            ? PredictionModel::where('league_id', $leagueModel->id)
+                ->where('user_id', $userId)
+                ->where('stage_id', $nextStage->id)
+                ->where('type', PredictionType::PreStage)
+                ->exists()
+            : false;
 
         $totalStages = $leagueModel->stages()->where('type', '!=', 'rest')->count();
         $completedStages = $leagueModel->stages()->where('status', 'finished')->count();
@@ -210,6 +220,7 @@ class LeagueController extends Controller
                 'status' => $nextStage->status->value,
                 'scheduled_start' => $nextStage->scheduled_start?->toIso8601String(),
                 'difficulty' => $nextStage->difficulty,
+                'has_predictions' => $nextStageHasPredictions,
             ] : null,
             'user_position' => $userEntry ? [
                 'rank' => (string) $userEntry['rank'],
