@@ -240,7 +240,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                         <div className="relative z-10 flex w-full items-end gap-4 p-5">
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/60 bg-background">
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/60 bg-black/40">
                                 {league.competition.logoImageUrl ? (
                                     <img
                                         src={league.competition.logoImageUrl}
@@ -279,7 +279,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </div>
                     <CardContent className="p-5">
                         <p className="text-sm text-muted-foreground">
-                            {league.scoring_system.name} · {league.member_count} participantes{league.is_official ? '' : ` · ${league.max_players} máx`}
+                            {league.member_count} participantes{league.is_official ? '' : ` · ${league.max_players} máx`}
                         </p>
                     </CardContent>
                 </Card>
