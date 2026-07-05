@@ -184,6 +184,25 @@ export default function Show({ league, next_stage, user_position, stages, leader
     const [saving, setSaving] = useState(false);
     const [copied, setCopied] = useState(false);
     const [showAllLeaderboard, setShowAllLeaderboard] = useState(false);
+    const [sortKey, setSortKey] = useState<'rank' | 'user_name' | 'points'>('points');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+    const sortedLeaderboard = [...leaderboard].sort((a, b) => {
+        let cmp = 0;
+        if (sortKey === 'rank') cmp = a.rank - b.rank;
+        else if (sortKey === 'user_name') cmp = a.user_name.localeCompare(b.user_name);
+        else cmp = a.points - b.points;
+        return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+    const toggleSort = (key: typeof sortKey) => {
+        if (sortKey === key) {
+            setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortKey(key);
+            setSortDir(key === 'rank' ? 'asc' : 'desc');
+        }
+    };
 
     const activityIcons: Record<string, React.ReactNode> = {
         competition_start: <Flag className="h-4 w-4" />,
@@ -732,8 +751,23 @@ export default function Show({ league, next_stage, user_position, stages, leader
                             </div>
                         ) : (
                             <div>
+                                <div className="flex items-center gap-3 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-muted-200 dark:border-muted-800">
+                                    <button type="button" onClick={() => toggleSort('rank')} className="flex w-8 items-center justify-center gap-0.5 hover:text-foreground transition-colors">
+                                        Puesto
+                                        {sortKey === 'rank' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                                    </button>
+                                    <span className="w-8" />
+                                    <button type="button" onClick={() => toggleSort('user_name')} className="flex flex-1 items-center gap-0.5 hover:text-foreground transition-colors text-left">
+                                        Usuario
+                                        {sortKey === 'user_name' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                                    </button>
+                                    <button type="button" onClick={() => toggleSort('points')} className="flex shrink-0 items-center gap-0.5 hover:text-foreground transition-colors">
+                                        Puntos
+                                        {sortKey === 'points' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                                    </button>
+                                </div>
                                 {showAllLeaderboard ? (
-                                    leaderboard.map((entry) => (
+                                    sortedLeaderboard.map((entry) => (
                                         <Link
                                             key={entry.user_id}
                                             href={route('leagues.members.show', [league.id, entry.user_id])}
@@ -773,7 +807,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                         </Link>
                                     ))
                                 ) : (
-                                    buildVisibleLeaderboard(leaderboard, (usePage().props as any)?.auth?.user?.id).map((item, i) => {
+                                    buildVisibleLeaderboard(sortedLeaderboard, (usePage().props as any)?.auth?.user?.id).map((item, i) => {
                                         if (item.type === 'ellipsis') {
                                             return (
                                                 <div key={`ellipsis-${i}`} className="flex items-center justify-center py-2 text-muted-foreground">

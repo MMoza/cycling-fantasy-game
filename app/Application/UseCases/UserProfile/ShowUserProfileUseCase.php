@@ -158,16 +158,14 @@ class ShowUserProfileUseCase
 
     private function formatPrediction(array $value, string $category, $riderNames, $teamNames): string
     {
+        if (isset($value['team_id'])) {
+            return $teamNames[$value['team_id']] ?? '—';
+        }
+
         if ($category === 'gc_top_5' || str_contains($category, 'winner') || str_contains($category, 'youth') || str_contains($category, 'mountains')) {
             $ids = $value['rider_ids'] ?? $value;
 
             return collect($ids)->map(fn ($id) => $riderNames[$id] ?? '—')->implode(', ');
-        }
-
-        if ($category === 'teams_winner') {
-            $teamId = $value['team_id'] ?? null;
-
-            return $teamNames[$teamId] ?? '—';
         }
 
         $riderId = $value['rider_id'] ?? null;
