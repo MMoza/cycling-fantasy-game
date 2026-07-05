@@ -93,7 +93,7 @@ class ShowUserProfileUseCase
             ->selectRaw('stage_id, context, SUM(points) as total_points')
             ->groupBy('stage_id', 'context')
             ->get()
-            ->keyBy(fn ($e) => $e->stage_id . '|' . $e->context);
+            ->keyBy(fn ($e) => $e->stage_id.'|'.$e->context);
 
         $stagePredictions = PredictionModel::where('league_id', $leagueId)
             ->where('user_id', $targetUserId)
@@ -117,7 +117,7 @@ class ShowUserProfileUseCase
             $mappedPredictions = $predictions->map(fn ($p) => [
                 'category' => $p->category,
                 'value' => $this->formatPrediction($p->prediction_value, $p->category->value, $riderNames, $teamNames),
-                'points' => (int) ($stageCategoryPoints->get($stage->id . '|' . $p->category->value)?->total_points ?? 0),
+                'points' => (int) ($stageCategoryPoints->get($stage->id.'|'.$p->category->value)?->total_points ?? 0),
             ])->values();
 
             $totalPoints = $mappedPredictions->sum('points');

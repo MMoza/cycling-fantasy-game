@@ -19,6 +19,7 @@ use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
 use App\Presentation\Http\Controllers\SearchController;
 use App\Presentation\Http\Controllers\StageController;
+use App\Presentation\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('landing');
@@ -49,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/leagues/{league}/predictions/pre-race', [PredictionController::class, 'storePreRace'])->name('predictions.pre-race.store');
 
     Route::get('/leagues/{league}/classification', [ClassificationController::class, 'index'])->name('classification.index');
-    Route::get('/leagues/{league}/members/{member}', [App\Presentation\Http\Controllers\UserProfileController::class, 'show'])->name('leagues.members.show');
+    Route::get('/leagues/{league}/members/{member}', [UserProfileController::class, 'show'])->name('leagues.members.show');
 
     Route::get('/search', [SearchController::class, '__invoke'])->name('search');
 
