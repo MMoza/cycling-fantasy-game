@@ -183,6 +183,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
     const [formIsPublic, setFormIsPublic] = useState(league.is_public);
     const [saving, setSaving] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [showAllLeaderboard, setShowAllLeaderboard] = useState(false);
 
     const activityIcons: Record<string, React.ReactNode> = {
         competition_start: <Flag className="h-4 w-4" />,
@@ -731,21 +732,8 @@ export default function Show({ league, next_stage, user_position, stages, leader
                             </div>
                         ) : (
                             <div>
-                                {buildVisibleLeaderboard(leaderboard, (usePage().props as any)?.auth?.user?.id).map((item, i) => {
-                                    if (item.type === 'ellipsis') {
-                                        return (
-                                            <div key={`ellipsis-${i}`} className="flex items-center justify-center py-2 text-muted-foreground">
-                                                <span className="text-sm tracking-widest">...</span>
-                                            </div>
-                                        );
-                                    }
-                                    if (item.type === 'separator') {
-                                        return (
-                                            <div key={`sep-${i}`} className="border-t border-muted-200 dark:border-muted-800" />
-                                        );
-                                    }
-                                    const entry = item.entry;
-                                    return (
+                                {showAllLeaderboard ? (
+                                    leaderboard.map((entry) => (
                                         <Link
                                             key={entry.user_id}
                                             href={route('leagues.members.show', [league.id, entry.user_id])}
@@ -783,8 +771,74 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                                 </span>
                                             </div>
                                         </Link>
-                                    );
-                                })}
+                                    ))
+                                ) : (
+                                    buildVisibleLeaderboard(leaderboard, (usePage().props as any)?.auth?.user?.id).map((item, i) => {
+                                        if (item.type === 'ellipsis') {
+                                            return (
+                                                <div key={`ellipsis-${i}`} className="flex items-center justify-center py-2 text-muted-foreground">
+                                                    <span className="text-sm tracking-widest">...</span>
+                                                </div>
+                                            );
+                                        }
+                                        if (item.type === 'separator') {
+                                            return (
+                                                <div key={`sep-${i}`} className="border-t border-muted-200 dark:border-muted-800" />
+                                            );
+                                        }
+                                        const entry = item.entry;
+                                        return (
+                                            <Link
+                                                key={entry.user_id}
+                                                href={route('leagues.members.show', [league.id, entry.user_id])}
+                                                className={`
+                                                    flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50
+                                                    ${entry.is_current_user
+                                                        ? 'bg-accent-100/50 dark:bg-accent-900/10 border-y border-accent-200 dark:border-accent-800'
+                                                        : 'border-b border-muted-100 dark:border-muted-800/50 last:border-b-0'
+                                                    }
+                                                `}
+                                            >
+                                                <div className="flex h-8 w-8 shrink-0 items-center justify-center">
+                                                    {entry.rank === 1 ? (
+                                                        <Trophy className="h-5 w-5 text-yellow-500" />
+                                                    ) : entry.rank === 2 ? (
+                                                        <Trophy className="h-5 w-5 text-gray-400" />
+                                                    ) : entry.rank === 3 ? (
+                                                        <Trophy className="h-5 w-5 text-amber-700" />
+                                                    ) : (
+                                                        <span className="w-6 text-center text-sm font-medium text-muted-foreground">
+                                                            {entry.rank}º
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <Avatar user={{ name: entry.user_name, avatar: entry.avatar }} size="sm" />
+                                                <div className="flex min-w-0 flex-1 items-center gap-2">
+                                                    <span className="truncate text-sm">
+                                                        {entry.user_name}
+                                                    </span>
+                                                    {entry.is_current_user && (
+                                                        <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
+                                                    )}
+                                                    <span className="ml-auto shrink-0 text-sm font-medium tabular-nums">
+                                                        {entry.points}
+                                                    </span>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })
+                                )}
+                                {leaderboard.length > 10 && (
+                                    <div className="border-t border-muted-200 dark:border-muted-800 px-6 py-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAllLeaderboard(!showAllLeaderboard)}
+                                            className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            {showAllLeaderboard ? 'Mostrar menos' : `Ver todos (${leaderboard.length})`}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </CardContent>
