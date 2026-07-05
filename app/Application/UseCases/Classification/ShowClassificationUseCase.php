@@ -140,6 +140,7 @@ class ShowClassificationUseCase
                 $points = (int) ($scoreEventsByUserCategory->get($scoreKey)?->first()?->total_points ?? 0);
 
                 $users[] = [
+                    'user_id' => $member->id,
                     'user_name' => $member->name,
                     'is_current_user' => $member->id === $currentUserId,
                     'predicted' => $userPrediction

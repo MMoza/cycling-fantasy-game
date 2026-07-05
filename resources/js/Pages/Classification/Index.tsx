@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, Route, CheckCircle2, XCircle } from 'lucide-react';
@@ -27,6 +27,7 @@ interface StageLeaderboard {
 }
 
 interface GeneralDetailEntry {
+    user_id: string;
     user_name: string;
     is_current_user: boolean;
     predicted: string | null;
@@ -48,9 +49,10 @@ interface IndexProps {
     stage_leaderboards: StageLeaderboard[];
     last_scored_stage_id: string | null;
     general_details: GeneralDetail[];
+    user_position?: { rank: number | string; points: number; behind_leader: number };
 }
 
-function LeaderboardTable({ leaderboard, emptyMessage }: { leaderboard: LeaderboardEntry[]; emptyMessage: string }) {
+function LeaderboardTable({ league_id, leaderboard, emptyMessage }: { league_id: string; leaderboard: LeaderboardEntry[]; emptyMessage: string }) {
     if (leaderboard.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -85,19 +87,22 @@ function LeaderboardTable({ leaderboard, emptyMessage }: { leaderboard: Leaderbo
                                 </span>
                             )}
                         </div>
-                        <div>
-                            <span className={`text-sm ${entry.is_current_user ? 'font-semibold' : ''}`}>
-                                {entry.user_name}
-                                {entry.is_current_user && (
-                                    <span className="ml-2 text-xs text-muted-foreground">(tú)</span>
-                                )}
-                            </span>
-                            {entry.behind_leader > 0 && (
-                                <span className="ml-3 text-xs text-muted-foreground">
-                                    -{entry.behind_leader} pts
-                                </span>
+                    <Link
+                        href={route('leagues.members.show', [league_id, entry.user_id])}
+                        className="hover:underline"
+                    >
+                        <span className={`text-sm ${entry.is_current_user ? 'font-semibold' : ''}`}>
+                            {entry.user_name}
+                            {entry.is_current_user && (
+                                <span className="ml-2 text-xs text-muted-foreground">(tú)</span>
                             )}
-                        </div>
+                        </span>
+                        {entry.behind_leader > 0 && (
+                            <span className="ml-3 text-xs text-muted-foreground">
+                                -{entry.behind_leader} pts
+                            </span>
+                        )}
+                    </Link>
                     </div>
                     <span className="text-sm font-medium">{entry.points} pts</span>
                 </div>
@@ -107,6 +112,7 @@ function LeaderboardTable({ leaderboard, emptyMessage }: { leaderboard: Leaderbo
 }
 
 export default function Index({
+    league_id,
     league_name,
     stages,
     stage_leaderboards,
@@ -193,12 +199,15 @@ export default function Index({
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                    <span className={`truncate ${u.is_current_user ? 'font-semibold' : ''}`}>
+                                                    <Link
+                                                        href={route('leagues.members.show', [league_id, u.user_id])}
+                                                        className={`truncate hover:underline ${u.is_current_user ? 'font-semibold' : ''}`}
+                                                    >
                                                         {u.user_name}
                                                         {u.is_current_user && (
                                                             <span className="ml-1.5 text-xs text-muted-foreground">(tú)</span>
                                                         )}
-                                                    </span>
+                                                    </Link>
                                                     {u.predicted && (
                                                         <span className="hidden sm:block text-xs text-muted-foreground truncate max-w-[200px]">
                                                             → {u.predicted}
@@ -255,6 +264,7 @@ export default function Index({
                             </CardHeader>
                             <CardContent>
                                 <LeaderboardTable
+                                    league_id={league_id}
                                     leaderboard={selectedStageLeaderboard?.leaderboard ?? []}
                                     emptyMessage="Aún no hay puntuaciones para esta etapa"
                                 />
