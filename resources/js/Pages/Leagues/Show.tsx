@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Avatar from '@/components/Avatar';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
-import { Trophy, Calendar, Route, ChevronRight, Users, Target, Mountain, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, Gauge, ShieldCheck } from 'lucide-react';
+import { Trophy, Calendar, Route, ChevronRight, Users, Target, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, ShieldCheck } from 'lucide-react';
 
 interface League {
     id: string;
@@ -157,23 +157,6 @@ function buildVisibleLeaderboard(
     }
 
     return result;
-}
-
-function Countdown({ scheduledStart }: { scheduledStart: string }) {
-    const [diff, setDiff] = useState(0);
-
-    useEffect(() => {
-        const update = () => setDiff(new Date(scheduledStart).getTime() - Date.now());
-        update();
-        const id = setInterval(update, 1000);
-        return () => clearInterval(id);
-    }, [scheduledStart]);
-
-    return (
-        <span className="font-mono text-lg font-bold tabular-nums tracking-wider">
-            {formatDiff(diff)}
-        </span>
-    );
 }
 
 export default function Show({ league, next_stage, user_position, stages, leaderboard, activity_logs }: ShowProps) {
@@ -582,80 +565,65 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </div>
                 )}
 
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
                     <Link href={route('stages.index', league.id)} className="block">
                         <Card className="cursor-pointer transition-colors hover:bg-muted/50">
-                            <div className="h-1 rounded-t-xl bg-brand-600" />
-                            <CardContent className="flex flex-col items-center justify-center p-6">
-                                <Route className="mb-2 h-5 w-5 text-brand-600" />
-                                <div className="text-2xl font-bold">
+                            <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4">
+                                <Route className="mb-1 h-4 w-4 text-brand-600" />
+                                <div className="text-lg font-bold sm:text-xl">
                                     {league.progress.current_stage}/{league.progress.total_stages}
                                 </div>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    {league.competition.name} {league.competition.year}
+                                <p className="text-[11px] text-muted-foreground leading-tight text-center">
+                                    {league.competition.name}
                                 </p>
                             </CardContent>
                         </Card>
                     </Link>
 
-                    {next_stage ? (
-                        <Link href={route('stages.show', [league.id, next_stage.id])} className="block">
-                            <Card className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-                                next_stage.status === 'ongoing' ? 'border-green-500' : ''
-                            }`}>
-                                <div className={`h-1 rounded-t-xl ${
-                                    next_stage.status === 'ongoing' ? 'bg-green-500' : 'bg-accent-500'
-                                }`} />
-                                <CardContent className="flex flex-col items-center justify-center gap-1 p-6">
-                                    {next_stage.status === 'ongoing' ? (
-                                        <Play className="mb-1 h-5 w-5 text-green-600" />
-                                    ) : (
-                                        <Calendar className="mb-1 h-5 w-5 text-accent-500" />
-                                    )}
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="text-lg font-bold">
-                                            Etapa {next_stage.number}
-                                        </div>
-                                        {next_stage.status === 'ongoing' && (
-                                            <span className="flex h-2 w-2 animate-pulse rounded-full bg-green-600" />
+                    <Link href={route('stages.show', [league.id, next_stage?.id ?? ''])} className="block">
+                        <Card className={`cursor-pointer transition-colors hover:bg-muted/50 h-full ${
+                            next_stage?.status === 'ongoing' ? 'border-green-500' : ''
+                        }`}>
+                            <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4">
+                                {next_stage ? (
+                                    <>
+                                        {next_stage.status === 'ongoing' ? (
+                                            <Play className="mb-1 h-4 w-4 text-green-600" />
+                                        ) : (
+                                            <Calendar className="mb-1 h-4 w-4 text-accent-500" />
                                         )}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        {next_stage.type} · {next_stage.distance}
-                                    </p>
-                                    {next_stage.status === 'ongoing' ? (
-                                        <span className="text-xs font-medium text-green-600">En curso</span>
-                                    ) : next_stage.scheduled_start ? (
-                                        <Countdown scheduledStart={next_stage.scheduled_start} />
-                                    ) : (
-                                        <p className="text-xs text-muted-foreground">{next_stage.date}</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ) : (
-                        <Card>
-                            <div className="h-1 rounded-t-xl bg-accent-500" />
-                            <CardContent className="flex flex-col items-center justify-center p-6">
-                                <Calendar className="mb-2 h-5 w-5 text-accent-500" />
-                                <div className="text-lg font-bold">-</div>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    No hay etapas pendientes
-                                </p>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-lg font-bold sm:text-xl">
+                                                {next_stage.number}
+                                            </span>
+                                            {next_stage.status === 'ongoing' && (
+                                                <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-green-600" />
+                                            )}
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground leading-tight text-center">
+                                            {next_stage.status === 'ongoing' ? 'En curso' : next_stage.date}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Calendar className="mb-1 h-4 w-4 text-accent-500" />
+                                        <span className="text-lg font-bold sm:text-xl">-</span>
+                                        <p className="text-[11px] text-muted-foreground text-center">Sin etapa</p>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
-                    )}
+                    </Link>
 
                     <Link href={route('classification.index', league.id)} className="block">
-                        <Card className="cursor-pointer transition-colors hover:bg-muted/50">
-                            <div className="h-1 rounded-t-xl bg-green-600" />
-                            <CardContent className="flex flex-col items-center justify-center p-6">
-                                <Trophy className="mb-2 h-5 w-5 text-green-600" />
-                                <div className="text-2xl font-bold">
+                        <Card className="cursor-pointer transition-colors hover:bg-muted/50 h-full">
+                            <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4">
+                                <Trophy className="mb-1 h-4 w-4 text-green-600" />
+                                <div className="text-lg font-bold sm:text-xl">
                                     {user_position.rank}º
                                 </div>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    {user_position.points} pts · {user_position.behind_leader}
+                                <p className="text-[11px] text-muted-foreground leading-tight text-center">
+                                    {user_position.points} pts
                                 </p>
                             </CardContent>
                         </Card>
@@ -678,64 +646,6 @@ export default function Show({ league, next_stage, user_position, stages, leader
                         </CardContent>
                     </Card>
                 </Link>
-
-                {next_stage && (
-                    <Card>
-                        <CardHeader className="pb-3 px-6 pt-6">
-                            <CardTitle className="flex items-center gap-2">
-                                {next_stage.status === 'ongoing' ? (
-                                    <Play className="h-4 w-4 text-green-600" />
-                                ) : (
-                                    <Mountain className="h-4 w-4 text-brand-600" />
-                                )}
-                                {next_stage.status === 'ongoing' ? 'Etapa en curso' : 'Próxima etapa'}
-                                {next_stage.status === 'ongoing' && (
-                                    <span className="flex h-2 w-2 animate-pulse rounded-full bg-green-600" />
-                                )}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-6 pb-6">
-                            <Link
-                                href={route('stages.show', [league.id, stages.find(s => s.number === next_stage.number)?.id ?? ''])}
-                                className={`flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50 ${
-                                    next_stage.status === 'ongoing' ? 'border-green-500' : ''
-                                }`}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <Badge
-                                        variant="outline"
-                                        className={`flex h-8 w-8 items-center justify-center rounded-full p-0 ${
-                                            next_stage.status === 'ongoing' ? 'border-green-500 text-green-600' : ''
-                                        }`}
-                                    >
-                                        {next_stage.number}
-                                    </Badge>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <p className="font-medium">{next_stage.name}</p>
-                                            {next_stage.difficulty !== null && (
-                                                <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
-                                            )}
-                                        </div>
-                                        <p className="text-sm text-muted-foreground">
-                                            {next_stage.type} · {next_stage.distance}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {next_stage.status === 'ongoing' ? (
-                                        <span className="text-sm font-medium text-green-600">En curso</span>
-                                    ) : next_stage.scheduled_start ? (
-                                        <Countdown scheduledStart={next_stage.scheduled_start} />
-                                    ) : (
-                                        <span className="text-sm text-muted-foreground">{next_stage.date}</span>
-                                    )}
-                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                            </Link>
-                        </CardContent>
-                    </Card>
-                )}
 
                 <Card>
                     <CardHeader className="pb-3 px-6 pt-6">
