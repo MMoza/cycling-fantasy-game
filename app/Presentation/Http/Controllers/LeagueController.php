@@ -112,6 +112,11 @@ class LeagueController extends Controller
             ->orderBy('scheduled_start')
             ->first();
 
+        $totalStages = $leagueModel->stages()->where('type', '!=', 'rest')->count();
+        $completedStages = $leagueModel->stages()->where('status', 'finished')->count();
+
+        $userId = $request->user()->id;
+
         $nextStageHasPredictions = $nextStage
             ? PredictionModel::where('league_id', $leagueModel->id)
                 ->where('user_id', $userId)
@@ -119,11 +124,6 @@ class LeagueController extends Controller
                 ->where('type', PredictionType::PreStage)
                 ->exists()
             : false;
-
-        $totalStages = $leagueModel->stages()->where('type', '!=', 'rest')->count();
-        $completedStages = $leagueModel->stages()->where('status', 'finished')->count();
-
-        $userId = $request->user()->id;
 
         $scoresPerUser = ScoreEventModel::where('league_id', $leagueModel->id)
             ->selectRaw('user_id, SUM(points) as total_points')
