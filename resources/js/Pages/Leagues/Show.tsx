@@ -623,7 +623,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                         </div>
                                         {next_stage.status === 'ongoing' ? (
                                             <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-green-600" />
-                                        ) : next_stage.has_predictions ? null : next_stage.scheduled_start ? (
+                                        ) : next_stage.scheduled_start ? (
                                             <Countdown scheduledStart={next_stage.scheduled_start} />
                                         ) : (
                                             <p className="text-[11px] text-muted-foreground">{next_stage.date}</p>
