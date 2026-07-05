@@ -347,16 +347,13 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
             if (o.value === currentValue) return true;
 
             if (DUPLICABLE_KEYS.includes(key)) {
-                const otherDuplicableValue = Object.entries(formData)
-                    .filter(([k, v]) => DUPLICABLE_KEYS.includes(k) && k !== key && v)
-                    .map(([, v]) => v);
-                return !otherDuplicableValue.includes(o.value);
+                return true;
             }
 
-            const otherSelected = Object.entries(formData)
-                .filter(([k, v]) => k !== key && v)
+            const otherNonDuplicableSelected = Object.entries(formData)
+                .filter(([k, v]) => !DUPLICABLE_KEYS.includes(k) && k !== key && v)
                 .map(([, v]) => v);
-            return !otherSelected.includes(o.value);
+            return !otherNonDuplicableSelected.includes(o.value);
         });
     };
 
