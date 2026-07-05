@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,15 +101,6 @@ interface ShowProps {
     activity_logs: ActivityLog[];
 }
 
-function formatDiff(ms: number): string {
-    if (ms <= 0) return '00:00:00';
-    const totalSeconds = Math.floor(ms / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
 function buildVisibleLeaderboard(
     leaderboard: LeaderboardEntry[],
     currentUserId: string,
@@ -157,6 +148,32 @@ function buildVisibleLeaderboard(
     }
 
     return result;
+}
+
+function formatDiff(ms: number): string {
+    if (ms <= 0) return '00:00:00';
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function Countdown({ scheduledStart }: { scheduledStart: string }) {
+    const [diff, setDiff] = useState(0);
+
+    useEffect(() => {
+        const update = () => setDiff(new Date(scheduledStart).getTime() - Date.now());
+        update();
+        const id = setInterval(update, 1000);
+        return () => clearInterval(id);
+    }, [scheduledStart]);
+
+    return (
+        <span className="font-mono text-xs font-bold tabular-nums tracking-wider">
+            {formatDiff(diff)}
+        </span>
+    );
 }
 
 export default function Show({ league, next_stage, user_position, stages, leaderboard, activity_logs }: ShowProps) {
@@ -567,8 +584,8 @@ export default function Show({ league, next_stage, user_position, stages, leader
 
                 <div className="grid grid-cols-3 gap-2 sm:gap-4">
                     <Link href={route('stages.index', league.id)} className="block">
-                        <Card className="cursor-pointer transition-colors hover:bg-muted/50">
-                            <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4">
+                        <Card className="cursor-pointer transition-colors hover:bg-muted/50 h-full">
+                            <CardContent className="flex flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6">
                                 <Route className="mb-1 h-4 w-4 text-brand-600" />
                                 <div className="text-lg font-bold sm:text-xl">
                                     {league.progress.current_stage}/{league.progress.total_stages}
@@ -584,7 +601,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                         <Card className={`cursor-pointer transition-colors hover:bg-muted/50 h-full ${
                             next_stage?.status === 'ongoing' ? 'border-green-500' : ''
                         }`}>
-                            <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4">
+                            <CardContent className="flex flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6">
                                 {next_stage ? (
                                     <>
                                         {next_stage.status === 'ongoing' ? (
@@ -594,21 +611,25 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                         )}
                                         <div className="flex items-center gap-1">
                                             <span className="text-lg font-bold sm:text-xl">
-                                                {next_stage.number}
+                                                Etapa {next_stage.number}
                                             </span>
                                             {next_stage.status === 'ongoing' && (
                                                 <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-green-600" />
                                             )}
                                         </div>
-                                        <p className="text-[11px] text-muted-foreground leading-tight text-center">
-                                            {next_stage.status === 'ongoing' ? 'En curso' : next_stage.date}
-                                        </p>
+                                        {next_stage.status === 'ongoing' ? (
+                                            <span className="text-[11px] font-medium text-green-600">En curso</span>
+                                        ) : next_stage.scheduled_start ? (
+                                            <Countdown scheduledStart={next_stage.scheduled_start} />
+                                        ) : (
+                                            <p className="text-[11px] text-muted-foreground">{next_stage.date}</p>
+                                        )}
                                     </>
                                 ) : (
                                     <>
                                         <Calendar className="mb-1 h-4 w-4 text-accent-500" />
                                         <span className="text-lg font-bold sm:text-xl">-</span>
-                                        <p className="text-[11px] text-muted-foreground text-center">Sin etapa</p>
+                                        <p className="text-[11px] text-muted-foreground">Sin etapa</p>
                                     </>
                                 )}
                             </CardContent>
@@ -617,7 +638,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
 
                     <Link href={route('classification.index', league.id)} className="block">
                         <Card className="cursor-pointer transition-colors hover:bg-muted/50 h-full">
-                            <CardContent className="flex flex-col items-center justify-center p-3 sm:p-4">
+                            <CardContent className="flex flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6">
                                 <Trophy className="mb-1 h-4 w-4 text-green-600" />
                                 <div className="text-lg font-bold sm:text-xl">
                                     {user_position.rank}º
