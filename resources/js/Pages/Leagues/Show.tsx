@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Avatar from '@/components/Avatar';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
-import { Trophy, Calendar, Route, ChevronRight, Users, Target, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Trophy, Calendar, Route, ChevronRight, Users, Target, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, ShieldCheck } from 'lucide-react';
 
 interface League {
     id: string;
@@ -613,10 +613,8 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                     <>
                                         {next_stage.status === 'ongoing' ? (
                                             <Play className="mb-1 h-4 w-4 text-amber-600" />
-                                        ) : next_stage.has_predictions ? (
-                                            <CheckCircle2 className="mb-1 h-4 w-4 text-green-600" />
                                         ) : (
-                                            <AlertCircle className="mb-1 h-4 w-4 text-amber-500" />
+                                            <Calendar className="mb-1 h-4 w-4 text-brand-600" />
                                         )}
                                         <div className="flex items-center gap-1">
                                             <span className="text-lg font-bold sm:text-xl">
