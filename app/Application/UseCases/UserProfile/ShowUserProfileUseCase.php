@@ -89,7 +89,7 @@ class ShowUserProfileUseCase
                 ->where('type', 'pre_race')
                 ->get()
                 ->map(fn ($p) => [
-                    'category' => $p->category,
+                    'category' => $p->category->value,
                     ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
                     'points' => (int) ($preRacePoints[$p->category->value] ?? 0),
                 ])
@@ -134,7 +134,7 @@ class ShowUserProfileUseCase
 
             $totalPoints = 0;
             $mappedPredictions = $predictions->map(fn ($p) => [
-                'category' => $p->category,
+                'category' => $p->category->value,
                 ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
                 'points' => (int) ($stageCategoryPoints->get($stage->id.'|'.$p->category->value)?->total_points ?? 0),
             ])->sortBy(fn ($p) => $stageOrder[$p['category']] ?? 999)->values();
