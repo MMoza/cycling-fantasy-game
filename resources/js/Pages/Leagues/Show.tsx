@@ -160,15 +160,19 @@ function formatDiff(ms: number): string {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-function Countdown({ scheduledStart }: { scheduledStart: string }) {
+function Countdown({ scheduledStart, onExpired }: { scheduledStart: string; onExpired?: () => void }) {
     const [diff, setDiff] = useState(0);
 
     useEffect(() => {
-        const update = () => setDiff(new Date(scheduledStart).getTime() - Date.now());
+        const update = () => {
+            const d = new Date(scheduledStart).getTime() - Date.now();
+            setDiff(d);
+            if (d <= 0) onExpired?.();
+        };
         update();
         const id = setInterval(update, 1000);
         return () => clearInterval(id);
-    }, [scheduledStart]);
+    }, [scheduledStart, onExpired]);
 
     return (
         <span className="font-mono text-xs font-bold tabular-nums tracking-wider">
@@ -187,6 +191,9 @@ export default function Show({ league, next_stage, user_position, stages, leader
     const [showAllLeaderboard, setShowAllLeaderboard] = useState(false);
     const [sortKey, setSortKey] = useState<'rank' | 'user_name' | 'points'>('points');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+    const [countdownExpired, setCountdownExpired] = useState(false);
+
+    const isOngoing = next_stage?.status === 'ongoing' || (next_stage?.status === 'upcoming' && countdownExpired);
 
     const sortedLeaderboard = [...leaderboard].sort((a, b) => {
         let cmp = 0;
@@ -600,7 +607,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
 
                     <Link href={route('stages.show', [league.id, next_stage?.id ?? ''])} className="block">
                         <Card className={`cursor-pointer transition-all h-full ${
-                            next_stage?.status === 'ongoing'
+                            isOngoing
                                 ? 'bg-gradient-to-b from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 border-amber-400 dark:border-amber-600 shadow-amber-200/50 dark:shadow-amber-900/30 shadow-md ring-1 ring-amber-300/50 dark:ring-amber-700/50'
                                 : next_stage?.has_predictions
                                     ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-700 hover:bg-green-100/50'
@@ -611,7 +618,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                             <CardContent className="flex flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6">
                                 {next_stage ? (
                                     <>
-                                        {next_stage.status === 'ongoing' ? (
+                                        {isOngoing ? (
                                             <div className="relative mb-1">
                                                 <Play className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                                 <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
@@ -623,14 +630,14 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                             <Calendar className="mb-1 h-4 w-4 text-brand-600" />
                                         )}
                                         <div className="flex items-center gap-1">
-                                            <span className={`text-lg font-bold sm:text-xl ${next_stage.status === 'ongoing' ? 'text-amber-800 dark:text-amber-200' : ''}`}>
+                                            <span className={`text-lg font-bold sm:text-xl ${isOngoing ? 'text-amber-800 dark:text-amber-200' : ''}`}>
                                                 Etapa {next_stage.number}
                                             </span>
                                         </div>
-                                        {next_stage.status === 'ongoing' ? (
+                                        {isOngoing ? (
                                             <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 tracking-wide uppercase">En curso</span>
                                         ) : next_stage.scheduled_start ? (
-                                            <Countdown scheduledStart={next_stage.scheduled_start} />
+                                            <Countdown scheduledStart={next_stage.scheduled_start} onExpired={() => setCountdownExpired(true)} />
                                         ) : (
                                             <p className="text-[11px] text-muted-foreground">{next_stage.date}</p>
                                         )}

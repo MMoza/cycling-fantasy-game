@@ -11,6 +11,7 @@ use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class LockPredictionsCommand extends Command
 {
@@ -20,6 +21,8 @@ class LockPredictionsCommand extends Command
 
     public function handle(ActivityLogService $activityLog): int
     {
+        Log::info('race:lock-predictions started');
+
         $stageId = $this->argument('stage_id');
 
         if ($stageId) {
@@ -29,6 +32,10 @@ class LockPredictionsCommand extends Command
                 ->where('scheduled_start', '<=', now()->addMinutes(5))
                 ->get();
         }
+
+        Log::info("Found {$stages->count()} stages to process", [
+            'stage_ids' => $stages->pluck('id', 'number')->toArray(),
+        ]);
 
         if ($stages->isEmpty()) {
             $this->warn('No stages found to lock predictions for');
@@ -60,6 +67,8 @@ class LockPredictionsCommand extends Command
             if ($stage->status === StageStatus::Upcoming) {
                 $stage->update(['status' => StageStatus::Ongoing]);
 
+                Log::info("Stage {$stage->number} ({$stage->name}) status updated to ongoing");
+
                 foreach ($stage->edition->leagues as $league) {
                     if (! $activityLog->hasStageStartForLeague($league, $stage->id)) {
                         $activityLog->logStageStart($league, $stage);
@@ -74,6 +83,7 @@ class LockPredictionsCommand extends Command
         }
 
         $this->info("Total locked: {$locked} predictions");
+        Log::info('race:lock-predictions finished', ['locked' => $locked]);
 
         return self::SUCCESS;
     }
