@@ -144,7 +144,7 @@ class ShowUserProfileUseCase
                 ->filter(fn ($e) => $e->stage_id === $stage->id)
                 ->mapWithKeys(fn ($e) => [$e->context => (int) $e->total_points]);
 
-            $mappedPredictions = $predictions->map(function ($p) use ($stage, $contextPoints, $stageResultFlags, $riders, $teamNames) {
+            $mappedPredictions = $predictions->map(function ($p) use ($contextPoints, $stageResultFlags, $riders, $teamNames) {
                 $cat = $p->category->value;
 
                 $ctx = match ($cat) {
