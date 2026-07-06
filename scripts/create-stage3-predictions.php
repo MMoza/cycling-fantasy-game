@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 // === CONFIGURACIÓN ===
 $leagueId = 'db3baa1b-7028-49df-8479-eb6d3a64e132';
-$userId   = '019f242b-6742-7246-9ca1-06c752eb1a30';
+$userId = '019f242b-6742-7246-9ca1-06c752eb1a30';
 $stageNumber = 3;
 
 // === BUSCAR ETAPA ===
@@ -22,9 +22,9 @@ $stage = $league->stages()->where('number', $stageNumber)->firstOrFail();
 echo "Etapa {$stage->number}: {$stage->name} ({$stage->id})\n";
 
 // === BUSCAR CORREDORES (por apellido parcial) ===
-$healy    = RiderModel::where('last_name', 'Healy')->firstOrFail();
+$healy = RiderModel::where('last_name', 'Healy')->firstOrFail();
 $aranburu = RiderModel::where('last_name', 'Aranburu')->firstOrFail();
-$pogacar  = RiderModel::where('last_name', 'Pogačar')->orWhere('last_name', 'Pogacar')->firstOrFail();
+$pogacar = RiderModel::where('last_name', 'Pogačar')->orWhere('last_name', 'Pogacar')->firstOrFail();
 $molenaar = RiderModel::where('last_name', 'Molenaar')->firstOrFail();
 
 echo "Healy: {$healy->full_name} ({$healy->id})\n";
