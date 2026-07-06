@@ -608,9 +608,9 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     <Link href={route('stages.show', [league.id, next_stage?.id ?? ''])} className="block">
                         <Card className={`cursor-pointer transition-all h-full ${
                             isOngoing
-                                ? 'bg-gradient-to-b from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 border-amber-400 dark:border-amber-600 shadow-amber-200/50 dark:shadow-amber-900/30 shadow-md ring-1 ring-amber-300/50 dark:ring-amber-700/50'
+                                ? 'border-amber-400 dark:border-amber-600 shadow-amber-200/50 dark:shadow-amber-900/30 shadow-md ring-1 ring-amber-300/50 dark:ring-amber-700/50'
                                 : next_stage?.has_predictions
-                                    ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-700 hover:bg-green-100/50'
+                                    ? 'border-green-300 dark:border-green-700 hover:bg-muted/50'
                                     : next_stage
                                         ? 'animate-pulse border-amber-400 hover:bg-muted/50'
                                         : 'hover:bg-muted/50'
