@@ -11,6 +11,7 @@ use App\Infrastructure\Persistence\Models\RiderModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -58,7 +59,7 @@ class ShowUserProfileUseCase
         $topPoints = $leaderboard->first()['points'] ?? 0;
         $targetEntry = $leaderboard->firstWhere('user_id', $targetUserId);
 
-        $riderNames = RiderModel::pluck('first_name', 'id');
+        $riders = RiderModel::select('id', 'first_name', 'last_name')->get()->keyBy('id');
         $teamNames = TeamModel::pluck('name', 'id');
 
         $stages = $league->stages()->orderBy('number')->get(['id', 'number', 'name', 'status']);
@@ -80,7 +81,7 @@ class ShowUserProfileUseCase
                 ->get()
                 ->map(fn ($p) => [
                     'category' => $p->category,
-                    'value' => $this->formatPrediction($p->prediction_value, $p->category->value, $riderNames, $teamNames),
+                    ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
                     'points' => (int) ($preRacePoints[$p->category->value] ?? 0),
                 ])
                 ->values()
@@ -116,7 +117,7 @@ class ShowUserProfileUseCase
             $totalPoints = 0;
             $mappedPredictions = $predictions->map(fn ($p) => [
                 'category' => $p->category,
-                'value' => $this->formatPrediction($p->prediction_value, $p->category->value, $riderNames, $teamNames),
+                ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
                 'points' => (int) ($stageCategoryPoints->get($stage->id.'|'.$p->category->value)?->total_points ?? 0),
             ])->values();
 
@@ -156,21 +157,43 @@ class ShowUserProfileUseCase
         ];
     }
 
-    private function formatPrediction(array $value, string $category, $riderNames, $teamNames): string
+    private function formatPrediction(array $value, string $category, Collection $riders, $teamNames): array
     {
         if (isset($value['team_id'])) {
-            return $teamNames[$value['team_id']] ?? '—';
+            $name = $teamNames[$value['team_id']] ?? '—';
+
+            return [
+                'label' => $name,
+                'items' => [
+                    ['id' => $value['team_id'], 'name' => $name, 'type' => 'team'],
+                ],
+            ];
         }
 
         if ($category === 'gc_top_5' || str_contains($category, 'winner') || str_contains($category, 'youth') || str_contains($category, 'mountains')) {
             $ids = $value['rider_ids'] ?? $value;
 
-            return collect($ids)->map(fn ($id) => $riderNames[$id] ?? '—')->implode(', ');
+            $items = collect($ids)->map(fn ($id) => [
+                'id' => $id,
+                'name' => isset($riders[$id]) ? $riders[$id]->full_name : '—',
+                'type' => 'rider',
+            ])->all();
+
+            return [
+                'label' => collect($items)->pluck('name')->implode(', '),
+                'items' => $items,
+            ];
         }
 
         $riderId = $value['rider_id'] ?? null;
+        $name = $riderId && isset($riders[$riderId]) ? $riders[$riderId]->full_name : '—';
 
-        return $riderNames[$riderId] ?? '—';
+        return [
+            'label' => $name,
+            'items' => [
+                ['id' => $riderId, 'name' => $name, 'type' => 'rider'],
+            ],
+        ];
     }
 
     private function resolveAvatarUrl(?string $path): ?string
