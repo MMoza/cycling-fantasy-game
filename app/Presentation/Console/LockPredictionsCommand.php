@@ -29,7 +29,13 @@ class LockPredictionsCommand extends Command
             $stages = StageModel::where('id', $stageId)->get();
         } else {
             $stages = StageModel::where('status', StageStatus::Upcoming)
-                ->where('scheduled_start', '<=', now()->addMinutes(5))
+                ->where(function ($query) {
+                    $query->where('scheduled_start', '<=', now()->addMinutes(5))
+                        ->orWhere(function ($q) {
+                            $q->whereNull('scheduled_start')
+                                ->where('date', '<=', now()->toDateString());
+                        });
+                })
                 ->get();
         }
 
