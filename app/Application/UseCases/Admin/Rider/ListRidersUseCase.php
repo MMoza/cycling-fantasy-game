@@ -7,14 +7,24 @@ namespace App\Application\UseCases\Admin\Rider;
 use App\Application\DTOs\Admin\RiderDTO;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
+use Illuminate\Support\Facades\DB;
 
 class ListRidersUseCase
 {
     public function execute(): array
     {
         $riders = RiderModel::with('country')
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->leftJoin('competition_participants', function ($join) {
+                $join->on('riders.id', '=', 'competition_participants.rider_id')
+                    ->whereRaw('competition_participants.created_at = (
+                        SELECT MAX(cp.created_at) FROM competition_participants cp
+                        WHERE cp.rider_id = riders.id
+                    )');
+            })
+            ->leftJoin('teams', 'competition_participants.team_id', '=', 'teams.id')
+            ->orderBy('riders.last_name')
+            ->orderBy('riders.first_name')
+            ->select('riders.*', 'teams.name as team_name')
             ->get()
             ->map(fn ($r) => new RiderDTO(
                 id: $r->id,
@@ -24,6 +34,7 @@ class ListRidersUseCase
                 countryId: $r->country_id,
                 profileImage: $r->profile_image,
                 age: $r->age,
+                teamName: $r->team_name,
             ));
 
         $countries = CountryModel::orderBy('name')

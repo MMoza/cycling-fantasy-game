@@ -14,6 +14,7 @@ readonly class RiderDTO
         public ?string $countryId,
         public ?string $profileImage,
         public ?int $age,
+        public ?string $teamName = null,
     ) {}
 }
 

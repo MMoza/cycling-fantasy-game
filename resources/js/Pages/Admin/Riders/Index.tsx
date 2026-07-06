@@ -13,6 +13,7 @@ interface Rider {
     country_id: string | null;
     profile_image: string | null;
     age: number | null;
+    team_name: string | null;
 }
 
 interface CountryOption {
@@ -67,6 +68,7 @@ export default function Index({ riders, countries }: { riders: Rider[]; countrie
                                                 <p className="text-sm text-muted-foreground">
                                                     {rider.country_id && <FlagIcon code={rider.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}
                                                     {countryLabel(rider.country_id)}
+                                                    {rider.team_name ? ` · ${rider.team_name}` : ''}
                                                     {rider.age !== null ? ` · ${rider.age} años` : ''}
                                                 </p>
                                             </div>
