@@ -19,6 +19,7 @@ interface Competition {
     logo_image: string | null;
     cover_image_url: string | null;
     logo_image_url: string | null;
+    pcs_slug: string | null;
 }
 
 interface CountryOption {
@@ -36,6 +37,7 @@ export default function Form({ competition, countries }: { competition: Competit
         logo_image: null as File | null,
         remove_cover_image: false,
         remove_logo_image: false,
+        pcs_slug: competition?.pcs_slug ?? '',
     });
 
     const [coverPreview, setCoverPreview] = useState<string | null>(competition?.cover_image_url ?? null);
@@ -139,6 +141,20 @@ export default function Form({ competition, countries }: { competition: Competit
                                     onChange={(v) => setData('country_id', v)}
                                 />
                                 {errors.country_id && <p className="text-sm text-destructive">{errors.country_id}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="pcs_slug">PCS Slug</Label>
+                                <Input
+                                    id="pcs_slug"
+                                    value={data.pcs_slug}
+                                    onChange={(e) => setData('pcs_slug', e.target.value)}
+                                    placeholder="tour-de-france"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Slug de ProcyclingStats para enlaces en vivo (ej: tour-de-france, giro-d-italia)
+                                </p>
+                                {errors.pcs_slug && <p className="text-sm text-destructive">{errors.pcs_slug}</p>}
                             </div>
 
                             <div className="space-y-2">

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/ui/searchable-select';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
-import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck, Trophy, Medal, Users, Crown, Flame, ChevronDown, ChevronUp, Route, Mountain, Clock, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck, Trophy, Medal, Users, Crown, Flame, ChevronDown, ChevronUp, Route, Mountain, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Stage {
@@ -73,6 +73,8 @@ interface ShowProps {
     all_stages: { id: string; number: number; name: string }[];
     availableRiders: Option[];
     availableTeams: Option[];
+    pcs_slug: string | null;
+    edition_year: number;
 }
 
 const PREDICTION_CATEGORIES = [
@@ -238,7 +240,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
     );
 }
 
-export default function Show({ league_id, league_name, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams }: ShowProps) {
+export default function Show({ league_id, league_name, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams, pcs_slug, edition_year }: ShowProps) {
     const { errors } = usePage().props as any;
     const isTimeTrial = stage.type_value === 'time_trial' || stage.type_value === 'team_time_trial';
     const isTTT = stage.type_value === 'team_time_trial';
@@ -417,6 +419,19 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                             <Stat icon={<Clock className="h-5 w-5 text-muted-foreground" />} label="Salida" value={stage.scheduled_start ? new Date(stage.scheduled_start).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC' : '-'} />
                             <Stat icon={<MapPin className="h-5 w-5 text-muted-foreground" />} label="Recorrido" value={`${stage.origin} → ${stage.destination}`} />
                         </div>
+                        {pcs_slug && (
+                            <div className="pt-2 border-t">
+                                <a
+                                    href={`https://www.procyclingstats.com/race/${pcs_slug}/${edition_year}/stage-${stage.number}/live`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                >
+                                    <ExternalLink className="h-4 w-4" />
+                                    Seguir en directo en PCS
+                                </a>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 

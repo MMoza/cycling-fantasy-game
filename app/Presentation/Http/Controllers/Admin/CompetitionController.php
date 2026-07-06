@@ -62,6 +62,7 @@ class CompetitionController extends Controller
             'country_id' => 'required|string|size:2|exists:countries,id',
             'cover_image' => 'nullable|image|mimes:jpeg,png,webp|max:4096',
             'logo_image' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
+            'pcs_slug' => 'nullable|string|max:255',
         ]);
 
         $data = $validated;
@@ -98,6 +99,7 @@ class CompetitionController extends Controller
             'active' => 'boolean',
             'cover_image' => 'nullable|image|mimes:jpeg,png,webp|max:4096',
             'logo_image' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
+            'pcs_slug' => 'nullable|string|max:255',
             'remove_cover_image' => 'boolean',
             'remove_logo_image' => 'boolean',
         ]);

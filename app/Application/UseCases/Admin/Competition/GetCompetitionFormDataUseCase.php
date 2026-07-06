@@ -27,6 +27,7 @@ class GetCompetitionFormDataUseCase
                 'active' => $model->active,
                 'cover_image' => $model->cover_image,
                 'logo_image' => $model->logo_image,
+                'pcs_slug' => $model->pcs_slug,
             ];
         }
 

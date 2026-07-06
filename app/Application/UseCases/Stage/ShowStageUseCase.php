@@ -67,7 +67,7 @@ class ShowStageUseCase
                 'name' => $s->name,
             ]);
 
-        $edition = $league->edition;
+        $edition = $league->edition->load('competition');
 
         $availableRiders = DB::table('competition_participants')
             ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
@@ -168,6 +168,8 @@ class ShowStageUseCase
             'allStages' => $allStages,
             'availableRiders' => $availableRiders,
             'availableTeams' => $availableTeams,
+            'pcsSlug' => $edition->competition->pcs_slug ?? null,
+            'editionYear' => $edition->year,
         ];
     }
 }
