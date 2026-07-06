@@ -7,7 +7,6 @@ namespace App\Application\UseCases\Admin\Rider;
 use App\Application\DTOs\Admin\RiderDTO;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
-use Illuminate\Support\Facades\DB;
 
 class ListRidersUseCase
 {

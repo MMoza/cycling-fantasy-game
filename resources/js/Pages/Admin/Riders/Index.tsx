@@ -7,13 +7,13 @@ import { FlagIcon } from '@/components/ui/flag-icon';
 
 interface Rider {
     id: string;
-    first_name: string;
-    last_name: string;
-    full_name: string;
-    country_id: string | null;
-    profile_image: string | null;
+    firstName: string;
+    lastName: string;
+    fullName: string;
+    countryId: string | null;
+    profileImage: string | null;
     age: number | null;
-    team_name: string | null;
+    teamName: string | null;
 }
 
 interface CountryOption {
@@ -54,8 +54,8 @@ export default function Index({ riders, countries }: { riders: Rider[]; countrie
                                 {riders.map((rider) => (
                                     <div key={rider.id} className="flex items-center justify-between p-4">
                                         <div className="flex items-center gap-3">
-                                            {rider.profile_image ? (
-                                                <img src={rider.profile_image} alt="" className="h-9 w-9 rounded-full object-cover object-top" />
+                                            {rider.profileImage ? (
+                                                <img src={rider.profileImage} alt="" className="h-9 w-9 rounded-full object-cover object-top" />
                                             ) : (
                                                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                                                     <Bike className="h-4 w-4 text-muted-foreground" />
@@ -63,12 +63,12 @@ export default function Index({ riders, countries }: { riders: Rider[]; countrie
                                             )}
                                             <div>
                                                 <p className="font-medium">
-                                                    <span className="uppercase">{rider.last_name}</span> {rider.first_name}
+                                                    <span className="uppercase">{rider.lastName}</span> {rider.firstName}
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">
-                                                    {rider.country_id && <FlagIcon code={rider.country_id} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}
-                                                    {countryLabel(rider.country_id)}
-                                                    {rider.team_name ? ` · ${rider.team_name}` : ''}
+                                                    {rider.countryId && <FlagIcon code={rider.countryId} className="mr-1 inline-block h-3 w-4 align-middle rounded-sm" />}
+                                                    {countryLabel(rider.countryId)}
+                                                    {rider.teamName ? ` · ${rider.teamName}` : ''}
                                                     {rider.age !== null ? ` · ${rider.age} años` : ''}
                                                 </p>
                                             </div>
