@@ -366,7 +366,7 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
         <AppLayout>
             <Head title={`Etapa ${stage.number} — ${stage.name}`} />
 
-            <div className="space-y-6">
+            <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         {navigation.prev ? (
