@@ -150,6 +150,7 @@ class ShowStageUseCase
             difficulty: $stage->difficulty,
             status: $stage->status->value,
             scheduledStart: $stage->scheduled_start?->toIso8601String(),
+            liveStreamUrl: $stage->live_stream_url,
         );
 
         return [

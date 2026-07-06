@@ -32,6 +32,7 @@ class StageModel extends Model
         'elevation_gain',
         'profile_image',
         'difficulty',
+        'live_stream_url',
     ];
 
     protected $casts = [

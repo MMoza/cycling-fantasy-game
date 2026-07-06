@@ -25,6 +25,7 @@ interface Stage {
     destination: string;
     profile_image: string | null;
     scheduled_start: string | null;
+    live_stream_url: string | null;
     status: string;
 }
 
@@ -59,6 +60,7 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         destination: stage?.destination ?? '',
         scheduled_start: utcToLocalDatetime(stage?.scheduled_start ?? null),
         profile_image: stage?.profile_image ?? '',
+        live_stream_url: stage?.live_stream_url ?? '',
         status: stage?.status ?? 'upcoming',
     });
 
@@ -227,6 +229,20 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
                                         />
                                     </div>
                                 )}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="live_stream_url">URL de retransmisión en vivo</Label>
+                                <Input
+                                    id="live_stream_url"
+                                    type="url"
+                                    placeholder="https://play.hbomax.com/video/watch-sport/..."
+                                    value={data.live_stream_url}
+                                    onChange={(e) => setData('live_stream_url', e.target.value)}
+                                />
+                                {(errors as any).live_stream_url && <p className="text-sm text-destructive">{(errors as any).live_stream_url}</p>}
+                                <p className="text-xs text-muted-foreground">
+                                    URL del directo (HBO Max, etc.). Si se rellena, se mostrará un botón en la etapa.
+                                </p>
                             </div>
                             {stage && (
                                 <div className="space-y-2">

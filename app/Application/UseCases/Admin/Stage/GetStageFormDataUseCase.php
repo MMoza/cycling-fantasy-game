@@ -30,6 +30,8 @@ class GetStageFormDataUseCase
                 'origin' => $model->origin,
                 'destination' => $model->destination,
                 'profile_image' => $model->profile_image,
+                'scheduled_start' => $model->scheduled_start?->toIso8601String(),
+                'live_stream_url' => $model->live_stream_url,
                 'status' => $model->status->value,
             ];
         }

@@ -67,6 +67,7 @@ class StageController extends Controller
             'destination' => 'required|string|max:255',
             'scheduled_start' => 'nullable|date',
             'profile_image' => 'nullable|url|max:2048',
+            'live_stream_url' => 'nullable|url|max:2048',
         ]);
 
         $this->storeStageUseCase->execute(
@@ -102,6 +103,7 @@ class StageController extends Controller
             'destination' => 'required|string|max:255',
             'scheduled_start' => 'nullable|date',
             'profile_image' => 'nullable|url|max:2048',
+            'live_stream_url' => 'nullable|url|max:2048',
         ]);
 
         $this->updateStageUseCase->execute(

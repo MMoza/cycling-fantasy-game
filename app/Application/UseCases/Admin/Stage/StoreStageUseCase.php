@@ -37,6 +37,7 @@ class StoreStageUseCase
             'destination' => $data['destination'],
             'scheduled_start' => $data['scheduled_start'] ?? null,
             'profile_image' => $data['profile_image'] ?? null,
+            'live_stream_url' => $data['live_stream_url'] ?? null,
             'status' => 'upcoming',
         ]);
     }

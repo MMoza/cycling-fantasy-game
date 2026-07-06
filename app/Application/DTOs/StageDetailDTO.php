@@ -21,5 +21,6 @@ readonly class StageDetailDTO
         public ?int $difficulty,
         public string $status,
         public ?string $scheduledStart,
+        public ?string $liveStreamUrl,
     ) {}
 }

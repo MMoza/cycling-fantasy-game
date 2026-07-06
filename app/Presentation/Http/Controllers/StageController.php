@@ -55,6 +55,7 @@ class StageController extends Controller
                 'difficulty' => $data['stage']->difficulty,
                 'status' => $data['stage']->status,
                 'scheduled_start' => $data['stage']->scheduledStart,
+                'live_stream_url' => $data['stage']->liveStreamUrl,
             ],
             'is_finished' => $data['isFinished'],
             'is_locked' => $data['isLocked'],

@@ -25,6 +25,7 @@ interface Stage {
     destination: string;
     status: string;
     scheduled_start: string | null;
+    live_stream_url: string | null;
 }
 
 interface Navigation {
@@ -420,15 +421,32 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                             <Stat icon={<MapPin className="h-5 w-5 text-muted-foreground" />} label="Recorrido" value={`${stage.origin} → ${stage.destination}`} />
                         </div>
                         {pcs_slug && (
-                            <div className="pt-2 border-t">
+                            <div className="pt-3 border-t">
                                 <a
                                     href={`https://www.procyclingstats.com/race/${pcs_slug}/${edition_year}/stage-${stage.number}/live`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                    className="flex items-center justify-center gap-2 w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
                                 >
                                     <ExternalLink className="h-4 w-4" />
-                                    Seguir en directo en PCS
+                                    Seguir carrera en PCS
+                                </a>
+                            </div>
+                        )}
+                        {stage.live_stream_url && (
+                            <div className={pcs_slug ? 'pt-2' : 'pt-3 border-t'}>
+                                <a
+                                    href={stage.live_stream_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full rounded-md bg-black px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-neutral-800 transition-colors"
+                                >
+                                    <img
+                                        src="https://images.cdn.prd.api.discomax.com/9274/49faa35978a9.png?h=60&f=webp"
+                                        alt="HBO Max"
+                                        className="h-5 w-auto"
+                                    />
+                                    Ver en HBO Max
                                 </a>
                             </div>
                         )}
