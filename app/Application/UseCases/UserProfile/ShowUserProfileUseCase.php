@@ -91,7 +91,9 @@ class ShowUserProfileUseCase
                 ->map(fn ($p) => [
                     'category' => $p->category->value,
                     ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
-                    'points' => (int) ($preRacePoints[$p->category->value] ?? 0),
+                    'points' => collect($preRacePoints)
+                        ->filter(fn ($pts, $ctx) => str_starts_with((string) $ctx, $p->category->value))
+                        ->sum(),
                 ])
                 ->sortBy(fn ($p) => $preRaceOrder[$p['category']] ?? 999)
                 ->values()
@@ -132,12 +134,34 @@ class ShowUserProfileUseCase
                 continue;
             }
 
-            $totalPoints = 0;
-            $mappedPredictions = $predictions->map(fn ($p) => [
-                'category' => $p->category->value,
-                ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
-                'points' => (int) ($stageCategoryPoints->get($stage->id.'|'.$p->category->value)?->total_points ?? 0),
-            ])->sortBy(fn ($p) => $stageOrder[$p['category']] ?? 999)->values();
+            $stageResultFlags = DB::table('stage_results')
+                ->where('stage_id', $stage->id)
+                ->select(['position', 'is_combativo', 'is_gc_leader'])
+                ->get()
+                ->keyBy('position');
+
+            $contextPoints = $stageCategoryPoints
+                ->filter(fn ($e) => $e->stage_id === $stage->id)
+                ->mapWithKeys(fn ($e) => [$e->context => (int) $e->total_points]);
+
+            $mappedPredictions = $predictions->map(function ($p) use ($stage, $contextPoints, $stageResultFlags) {
+                $cat = $p->category->value;
+
+                $ctx = match ($cat) {
+                    'stage_winner' => 'stage_1',
+                    'stage_second' => 'stage_2',
+                    'stage_third' => 'stage_3',
+                    'stage_combativo' => $this->flagContext('is_combativo', $stageResultFlags),
+                    'stage_leader' => $this->flagContext('is_gc_leader', $stageResultFlags),
+                    default => null,
+                };
+
+                return [
+                    'category' => $cat,
+                    ...$this->formatPrediction($p->prediction_value, $cat, $riders, $teamNames),
+                    'points' => $ctx ? ($contextPoints[$ctx] ?? 0) : 0,
+                ];
+            })->sortBy(fn ($p) => $stageOrder[$p['category']] ?? 999)->values();
 
             $totalPoints = $mappedPredictions->sum('points');
 
@@ -212,6 +236,13 @@ class ShowUserProfileUseCase
                 ['id' => $riderId, 'name' => $name, 'type' => 'rider'],
             ],
         ];
+    }
+
+    private function flagContext(string $flag, $stageResultFlags): ?string
+    {
+        $position = $stageResultFlags->firstWhere($flag, true)?->position;
+
+        return $position ? 'stage_'.$position : null;
     }
 
     private function resolveAvatarUrl(?string $path): ?string
