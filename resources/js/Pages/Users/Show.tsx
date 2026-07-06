@@ -294,32 +294,30 @@ export default function Show({
                                                     </div>
                                                 ) : (
                                                     stage.predictions.map((p, j) => (
-                                                        <div key={j} className="flex items-center justify-between px-10 py-2">
-                                                            <span className="flex items-center gap-1.5 w-8 shrink-0">
+                                                        <div key={j} className="flex items-center gap-3 px-10 py-2">
+                                                            <span className="w-6 shrink-0">
                                                                 {STAGE_ICONS[p.category] ?? (
                                                                     <span className="text-sm text-muted-foreground">
                                                                         {CATEGORY_LABELS[p.category] ?? p.category}
                                                                     </span>
                                                                 )}
                                                             </span>
-                                                            <div className="flex items-center gap-2 text-right ml-4 min-w-0">
-                                                                {p.items[0]?.type === 'rider' && (
-                                                                    <RiderAvatar name={p.items[0].name} size="xs" />
-                                                                )}
-                                                                <span className="text-sm font-medium truncate max-w-[150px]">
-                                                                    {p.label}
+                                                            {p.items[0]?.type === 'rider' && (
+                                                                <RiderAvatar name={p.items[0].name} size="xs" />
+                                                            )}
+                                                            <span className="text-sm font-medium truncate min-w-0">
+                                                                {p.label}
+                                                            </span>
+                                                            {(p.points > 0 || isFinished) && (
+                                                                <span
+                                                                    className={cn(
+                                                                        'text-xs font-semibold tabular-nums shrink-0 ml-auto',
+                                                                        p.points > 0 ? 'text-green-600' : 'text-muted-foreground',
+                                                                    )}
+                                                                >
+                                                                    {p.points > 0 ? `+${p.points}` : '0'}
                                                                 </span>
-                                                                {(p.points > 0 || isFinished) && (
-                                                                    <span
-                                                                        className={cn(
-                                                                            'text-xs font-semibold tabular-nums shrink-0',
-                                                                            p.points > 0 ? 'text-green-600' : 'text-muted-foreground',
-                                                                        )}
-                                                                    >
-                                                                        {p.points > 0 ? `+${p.points}` : '0'}
-                                                                    </span>
-                                                                )}
-                                                            </div>
+                                                            )}
                                                         </div>
                                                     ))
                                                 )}
