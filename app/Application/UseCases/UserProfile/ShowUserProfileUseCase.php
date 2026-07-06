@@ -131,7 +131,7 @@ class ShowUserProfileUseCase
 
             $predictions = $stagePredictions->get($stage->id);
             if (! $predictions) {
-                continue;
+                $predictions = collect();
             }
 
             $stageResultFlags = DB::table('stage_results')
