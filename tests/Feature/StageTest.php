@@ -209,7 +209,7 @@ test('stage show shows results and classification when finished', function () {
         'scoring_rule_id' => Str::uuid()->toString(),
         'points' => 30,
         'description' => 'Test score',
-        'context' => 'stage_1',
+        'context' => 'stage_winner',
         'stage_id' => $this->stage2->id,
         'created_at' => now(),
         'updated_at' => now(),

@@ -11,7 +11,7 @@ test('creates score event', function () {
         scoringRuleId: 'rule-uuid',
         points: 50,
         description: 'Ganador etapa 3',
-        context: 'stage_3',
+        context: 'stage_winner',
     );
 
     expect($event->id)->toBeUuid();
@@ -19,7 +19,7 @@ test('creates score event', function () {
     expect($event->leagueId)->toBe('league-uuid');
     expect($event->points)->toBe(50);
     expect($event->description)->toBe('Ganador etapa 3');
-    expect($event->context)->toBe('stage_3');
+    expect($event->context)->toBe('stage_winner');
 });
 
 test('identifies positive score', function () {
