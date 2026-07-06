@@ -367,7 +367,7 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
             <Head title={`Etapa ${stage.number} — ${stage.name}`} />
 
             <div className="space-y-6 py-6" style={{ maxWidth: '42rem', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem' }}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-center">
                     <div className="flex items-center gap-3">
                         {navigation.prev ? (
                             <Link
