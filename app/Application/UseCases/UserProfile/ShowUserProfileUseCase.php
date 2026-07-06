@@ -125,10 +125,6 @@ class ShowUserProfileUseCase
 
         $stageDetails = [];
         foreach ($stages as $stage) {
-            if ($stage->status === StageStatus::Upcoming) {
-                continue;
-            }
-
             $predictions = $stagePredictions->get($stage->id);
             if (! $predictions) {
                 continue;
