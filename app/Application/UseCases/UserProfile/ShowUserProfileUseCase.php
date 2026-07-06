@@ -74,6 +74,15 @@ class ShowUserProfileUseCase
                 ->groupBy('context')
                 ->pluck('total_points', 'context');
 
+            $preRaceOrder = [
+                'gc_top_5' => 0,
+                'points_winner' => 1,
+                'youth_winner' => 2,
+                'mountains_winner' => 3,
+                'teams_winner' => 4,
+                'super_combativo' => 5,
+            ];
+
             $preRacePredictions = PredictionModel::where('league_id', $leagueId)
                 ->where('user_id', $targetUserId)
                 ->whereNull('stage_id')
@@ -84,6 +93,7 @@ class ShowUserProfileUseCase
                     ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
                     'points' => (int) ($preRacePoints[$p->category->value] ?? 0),
                 ])
+                ->sortBy(fn ($p) => $preRaceOrder[$p['category']] ?? 999)
                 ->values()
                 ->all();
         }
@@ -103,6 +113,14 @@ class ShowUserProfileUseCase
             ->get()
             ->groupBy('stage_id');
 
+        $stageOrder = [
+            'stage_winner' => 0,
+            'stage_second' => 1,
+            'stage_third' => 2,
+            'stage_combativo' => 3,
+            'stage_leader' => 4,
+        ];
+
         $stageDetails = [];
         foreach ($stages as $stage) {
             if ($stage->status === StageStatus::Upcoming) {
@@ -119,7 +137,7 @@ class ShowUserProfileUseCase
                 'category' => $p->category,
                 ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
                 'points' => (int) ($stageCategoryPoints->get($stage->id.'|'.$p->category->value)?->total_points ?? 0),
-            ])->values();
+            ])->sortBy(fn ($p) => $stageOrder[$p['category']] ?? 999)->values();
 
             $totalPoints = $mappedPredictions->sum('points');
 
