@@ -599,33 +599,36 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </Link>
 
                     <Link href={route('stages.show', [league.id, next_stage?.id ?? ''])} className="block">
-                        <Card className={`cursor-pointer transition-colors hover:bg-muted/50 h-full ${
+                        <Card className={`cursor-pointer transition-all h-full ${
                             next_stage?.status === 'ongoing'
-                                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-400'
+                                ? 'bg-gradient-to-b from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 border-amber-400 dark:border-amber-600 shadow-amber-200/50 dark:shadow-amber-900/30 shadow-md ring-1 ring-amber-300/50 dark:ring-amber-700/50'
                                 : next_stage?.has_predictions
-                                    ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-700'
+                                    ? 'bg-green-50 dark:bg-green-950/20 border-green-300 dark:border-green-700 hover:bg-green-100/50'
                                     : next_stage
-                                        ? 'animate-pulse border-amber-400'
-                                        : ''
+                                        ? 'animate-pulse border-amber-400 hover:bg-muted/50'
+                                        : 'hover:bg-muted/50'
                         }`}>
                             <CardContent className="flex flex-col items-center justify-center px-3 py-5 sm:px-4 sm:py-6">
                                 {next_stage ? (
                                     <>
                                         {next_stage.status === 'ongoing' ? (
-                                            <Play className="mb-1 h-4 w-4 text-amber-600" />
+                                            <div className="relative mb-1">
+                                                <Play className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                                <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+                                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                                                </span>
+                                            </div>
                                         ) : (
                                             <Calendar className="mb-1 h-4 w-4 text-brand-600" />
                                         )}
                                         <div className="flex items-center gap-1">
-                                            <span className="text-lg font-bold sm:text-xl">
+                                            <span className={`text-lg font-bold sm:text-xl ${next_stage.status === 'ongoing' ? 'text-amber-800 dark:text-amber-200' : ''}`}>
                                                 Etapa {next_stage.number}
                                             </span>
-                                            {next_stage.status === 'ongoing' && (
-                                                <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-amber-600" />
-                                            )}
                                         </div>
                                         {next_stage.status === 'ongoing' ? (
-                                            <span className="text-[11px] text-amber-700 dark:text-amber-400">En curso</span>
+                                            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 tracking-wide uppercase">En curso</span>
                                         ) : next_stage.scheduled_start ? (
                                             <Countdown scheduledStart={next_stage.scheduled_start} />
                                         ) : (
