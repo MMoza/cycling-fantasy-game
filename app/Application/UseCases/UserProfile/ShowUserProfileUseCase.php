@@ -91,9 +91,7 @@ class ShowUserProfileUseCase
                 ->map(fn ($p) => [
                     'category' => $p->category->value,
                     ...$this->formatPrediction($p->prediction_value, $p->category->value, $riders, $teamNames),
-                    'points' => collect($preRacePoints)
-                        ->filter(fn ($pts, $ctx) => str_starts_with($ctx, $p->category->value))
-                        ->sum(),
+                    'points' => (int) ($preRacePoints[$p->category->value] ?? 0),
                 ])
                 ->sortBy(fn ($p) => $preRaceOrder[$p['category']] ?? 999)
                 ->values()

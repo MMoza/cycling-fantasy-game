@@ -97,7 +97,7 @@ test('classification shows scores when they exist', function () {
         'scoring_rule_id' => Str::uuid()->toString(),
         'points' => 50,
         'description' => 'Ganador etapa 1',
-        'context' => 'stage_winner',
+        'context' => 'stage_1',
     ]);
 
     ScoreEventModel::create([
@@ -107,7 +107,7 @@ test('classification shows scores when they exist', function () {
         'scoring_rule_id' => Str::uuid()->toString(),
         'points' => 100,
         'description' => 'Amarillo etapa 1',
-        'context' => 'stage_winner',
+        'context' => 'stage_1',
     ]);
 
     $response = $this->actingAs($this->user)->get(route('classification.index', $this->league->id));
@@ -136,7 +136,7 @@ test('classification highlights current user', function () {
         'scoring_rule_id' => Str::uuid()->toString(),
         'points' => 50,
         'description' => 'Ganador etapa 1',
-        'context' => 'stage_winner',
+        'context' => 'stage_1',
     ]);
 
     $response = $this->actingAs($this->user)->get(route('classification.index', $this->league->id));
