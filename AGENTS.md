@@ -367,3 +367,145 @@ Seeder completo que genera datos de prueba realistas llamando al motor de puntua
 - **Create**: admin ve toggle "Oficial" / "Privada / Amigos". Si oficial → oculta selector scoring (forzado Conservador), oculta visibilidad (forzado público), siempre `is_public=true`
 - **Show**: badge "Oficial" junto al nombre, settings sin max_players
 - **Index**: badge "Oficial" en las cards
+
+## Plan Futuro: Liga Oficial Automática por Competición
+
+### Objetivo
+Cada edición tiene automáticamente una liga oficial visible para todos. Las ligas de amigos quedan ocultas por ahora.
+
+### Cambios necesarios
+
+#### 1. Auto-crear liga oficial al crear edición (Backend)
+
+**`app/Application/UseCases/Admin/Edition/StoreEditionUseCase.php`**
+- Después de crear la `EditionModel`, crear automáticamente una `LeagueModel`:
+  - `name`: `"Liga Oficial {competition->name} {year}"`
+  - `edition_id`: la edición recién creada
+  - `scoring_system_id`: sistema Conservative
+  - `owner_id`: el admin que crea (se pasa como parámetro)
+  - `is_official`: `true`, `is_public`: `true`
+  - `invite_code`: generado automáticamente (8 chars)
+  - `max_players`: 0 (sin límite para oficiales)
+- El admin se auto-une como `role=owner` en `league_user`
+
+**`app/Presentation/Http/Controllers/Admin/EditionController.php`**
+- Pasar `$request->user()->id` al use case para setear el `owner_id`
+
+#### 2. Mostrar botón "Unirte" / "Entrar" en competición (Frontend)
+
+**`resources/js/Pages/Competitions/Show.tsx`**
+- Recibir `isUserInOfficialLeague: boolean` desde el backend
+- Si NO está unido → botón "Unirse a la liga oficial" que haga POST a `/leagues/join`
+- Si YA está unido → botón "Entrar a la liga" que lleve a `leagues.show`
+
+**`app/Application/UseCases/Competition/ShowCompetitionUseCase.php`**
+- Añadir `isUserInOfficialLeague` al retorno, consultando `league_user` pivot
+
+#### 3. Ocultar creación de ligas de amigos
+
+**`resources/js/Pages/Leagues/Index.tsx`**
+- Ocultar el botón "Crear liga" de la interfaz
+- Solo mostrar las ligas en las que el usuario ya está unido
+
+**`resources/js/Layouts/AppLayout.tsx`**
+- Eliminar u ocultar el link "Crear liga" del menú
+
+#### 4. Simplificar LeagueController
+
+Los métodos `create()` y `store()` pueden mantenerse por si se reactivan en el futuro.
+
+### Archivos a modificar
+| Archivo | Cambio |
+|---|---|
+| `StoreEditionUseCase.php` | Auto-crear liga oficial |
+| `EditionController.php` | Pasar user ID al use case |
+| `ShowCompetitionUseCase.php` | Añadir `isUserInOfficialLeague` |
+| `Competitions/Show.tsx` | Botón Unirte / Entrar |
+| `Leagues/Index.tsx` | Ocultar "Crear liga" |
+| `AppLayout.tsx` | Ocultar link de crear liga |
+
+## Plan Futuro: Notificaciones Push con FCM
+
+### Objetivo
+Notificar a los usuarios de eventos relevantes: etapas, resultados, recordatorios y clasificación. Global por competiciones en las que participe.
+
+### Stack
+- **Firebase Cloud Messaging (FCM)** v1 API
+- **`laravel-notification-channels/fcm`** — integración nativa con `Notification` de Laravel
+- **PWA Push API** — service worker existente ampliado
+
+### Migración necesaria
+```sql
+-- push_subscriptions
+user_id (uuid FK -> users)
+endpoint (string, unique)
+p256dh (string)
+auth (string)
+user_agent (string, nullable)
+last_used_at (timestamp, nullable)
+```
+
+### Eventos a notificar
+| Evento | Trigger | Destinatarios | Contenido |
+|--------|---------|---------------|-----------|
+| Recordatorio antes de cerrar | `race:lock-predictions` (5 min antes) | Miembros sin predicción para esa etapa | "Etapa X cierra en 5 min — ¡haz tu pronóstico!" |
+| Resultados publicados | `StoreStageResultUseCase::scoreStage()` | Todos los miembros de la liga | "Etapa X: resultados listos. Puntuaste +N pts" |
+| Clasificación actualizada | Tras scoring de etapa | Todos los miembros de la liga | "Clasificación actualizada — estás en puesto #N" |
+| Competición finalizada | `StoreStageResultUseCase` (all stages finished) | Todos los miembros | "Tour de Francia 2026 ha terminado. Posición final: #N" |
+
+### Archivos a crear/modificar
+
+#### Backend
+| Archivo | Cambio |
+|---|---|
+| `database/migrations/xxx_create_push_subscriptions_table.php` | Nueva migración |
+| `app/Infrastructure/Persistence/Models/PushSubscriptionModel.php` | Modelo Eloquent |
+| `app/Application/Services/PushNotificationService.php` | Servicio central: `sendToLeague()`, `sendToUser()` |
+| `config/firebase.php` | Configuración Firebase credentials |
+| `app/Presentation/Http/Controllers/PushSubscriptionController.php` | Endpoint para registrar token |
+| `app/Presentation/Console/LockPredictionsCommand.php` | Añadir recordatorio antes de lock |
+| `app/Application/UseCases/Admin/Stage/StoreStageResultUseCase.php` | Añadir notificación tras scoring |
+| `routes/web.php` | Ruta POST para push subscription |
+
+#### Frontend
+| Archivo | Cambio |
+|---|---|
+| `resources/js/hooks/usePushNotifications.ts` | Hook: permiso + token + registro |
+| `resources/js/Layouts/AppLayout.tsx` | Llamar a `usePushNotifications()` |
+| `public/firebase-messaging-sw.js` | Service worker FCM (push + notificationclick) |
+| `public/sw.js` | Integrar firebase-messaging-sw |
+
+#### Environment variables (Railway)
+```
+FIREBASE_CREDENTIALS={"type":"service_account","project_id":"...",...}
+FIREBASE_PROJECT_ID=tu-project-id
+```
+
+### Flujo de suscripción
+1. Usuario abre la app → `usePushNotifications()` pide permiso
+2. Si acepta → browser genera push subscription (endpoint + keys)
+3. Frontend envía subscription a `POST /push-subscriptions`
+4. Backend guarda en `push_subscriptions` con `user_id`
+
+### Flujo de envío (ejemplo: resultados)
+```
+Admin guarda resultados
+  → StoreStageResultUseCase::scoreStage()
+    → Itera leagues de la edición
+      → PushNotificationService::sendToLeague($league, $notification)
+        → Busca miembros de la liga
+        → Para cada miembro: busca sus push_subscriptions
+        → Envía FCM message v1 API
+```
+
+### Limpieza de tokens
+- Comando `php artisan push:clean` (job programado)
+- Eliminar suscripciones con `last_used_at > 30 días`
+- Manejar errores FCM `404` (token inválido) → eliminar automáticamente
+
+### Configuración Firebase (pasos manuales)
+1. Crear proyecto en [Firebase Console](https://console.firebase.google.com)
+2. Habilitar Cloud Messaging
+3. Generar service account key (JSON)
+4. Añadir `FIREBASE_CREDENTIALS` en Railway (el JSON completo)
+5. Copiar `firebase-messaging-sw.js` a `/public/`
