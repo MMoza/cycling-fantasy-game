@@ -27,6 +27,15 @@
         <meta name="twitter:description" content="Crea tu liga, pronostica el Top 5, maillots y ganadores de etapa. Compite con tus amigos en las Grandes Vueltas del ciclismo.">
         <meta name="twitter:image" content="{{ config('app.url') }}/og-image.svg">
 
+        <!-- PWA -->
+        <link rel="manifest" href="/manifest.json">
+        <meta name="theme-color" content="#18181b">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        <meta name="apple-mobile-web-app-title" content="Pedales">
+        <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+        <link rel="mask-icon" href="/icons/icon-maskable.svg" color="#18181b">
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
