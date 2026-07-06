@@ -5,7 +5,7 @@ import Avatar from '@/components/Avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Target, Medal, ChevronDown, ChevronUp, EyeOff } from 'lucide-react';
+import { ArrowLeft, Target, Medal, ChevronDown, ChevronUp, EyeOff, Zap, Shirt } from 'lucide-react';
 
 interface PredictionItem {
     id: string;
@@ -60,6 +60,14 @@ const CATEGORY_LABELS: Record<string, string> = {
     stage_third: '3º clasificado',
     stage_leader: 'Líder general',
     stage_combativo: 'Combativo',
+};
+
+const STAGE_ICONS: Record<string, React.ReactNode> = {
+    stage_winner: <Medal className="h-4 w-4 text-yellow-500 shrink-0" aria-label="1º" />,
+    stage_second: <Medal className="h-4 w-4 text-slate-400 shrink-0" aria-label="2º" />,
+    stage_third: <Medal className="h-4 w-4 text-amber-700 shrink-0" aria-label="3º" />,
+    stage_combativo: <Zap className="h-4 w-4 text-red-500 shrink-0" aria-label="Combativo" />,
+    stage_leader: <Shirt className="h-4 w-4 text-yellow-500 shrink-0" aria-label="Líder" />,
 };
 
 function RiderAvatar({ name, size = 'xs' }: { name: string; size?: 'xs' | 'sm' }) {
@@ -147,7 +155,7 @@ export default function Show({
 
                 {competition_started && pre_race_predictions.length > 0 && (
                     <Card>
-                        <CardHeader className="px-6 pb-3">
+                        <CardHeader className="px-6 pt-1 pb-3">
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <Target className="h-4 w-4" />
                                 Pronósticos pre-race
@@ -169,11 +177,8 @@ export default function Show({
                                                     {isMulti ? (
                                                         <button
                                                             onClick={() => toggleCategory(p.category)}
-                                                            className="flex items-center gap-1.5 text-right"
+                                                            className="flex items-center text-right"
                                                         >
-                                                            <span className="text-sm font-medium truncate max-w-[160px]">
-                                                                {p.label}
-                                                            </span>
                                                             {isExpanded ? (
                                                                 <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                                             ) : (
@@ -239,7 +244,7 @@ export default function Show({
 
                 {has_stage_predictions && stage_details.length > 0 && (
                     <Card>
-                        <CardHeader className="px-6 pb-3">
+                        <CardHeader className="px-6 pt-1 pb-3">
                             <CardTitle className="flex items-center gap-2 text-base">
                                 <Medal className="h-4 w-4" />
                                 Pronósticos por etapa
@@ -290,8 +295,12 @@ export default function Show({
                                                 ) : (
                                                     stage.predictions.map((p, j) => (
                                                         <div key={j} className="flex items-center justify-between px-10 py-2">
-                                                            <span className="text-sm text-muted-foreground">
-                                                                {CATEGORY_LABELS[p.category] ?? p.category}
+                                                            <span className="flex items-center gap-1.5 w-8 shrink-0">
+                                                                {STAGE_ICONS[p.category] ?? (
+                                                                    <span className="text-sm text-muted-foreground">
+                                                                        {CATEGORY_LABELS[p.category] ?? p.category}
+                                                                    </span>
+                                                                )}
                                                             </span>
                                                             <div className="flex items-center gap-2 text-right ml-4 min-w-0">
                                                                 {p.items[0]?.type === 'rider' && (
