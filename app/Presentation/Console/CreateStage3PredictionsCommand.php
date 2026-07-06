@@ -63,7 +63,7 @@ class CreateStage3PredictionsCommand extends Command
         }
 
         $this->newLine();
-        $this->info("¡Listo! 5 pronósticos creados.");
+        $this->info('¡Listo! 5 pronósticos creados.');
 
         return self::SUCCESS;
     }
