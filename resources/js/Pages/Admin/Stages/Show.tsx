@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy, Star, Bike, MapPin, Ruler, Crown, Flame } from 'lucide-react';
+import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy, Star, Bike, MapPin, Ruler, Crown, Flame, Clock, Minus } from 'lucide-react';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
+import { FlagIcon } from '@/components/ui/flag-icon';
+import SearchableSelect from '@/components/ui/searchable-select';
 import { cn } from '@/lib/utils';
 
 interface Rider {
@@ -48,6 +49,15 @@ interface Stage {
     status_label: string;
 }
 
+function getPositionBadgeColor(position: number): string {
+    switch (position) {
+        case 1: return 'bg-yellow-500/15 text-yellow-700 border-yellow-500/30';
+        case 2: return 'bg-gray-400/15 text-gray-600 border-gray-400/30';
+        case 3: return 'bg-amber-600/15 text-amber-700 border-amber-600/30';
+        default: return 'bg-muted text-muted-foreground border-border';
+    }
+}
+
 export default function Show({ edition, stage, availableRiders, availableTeams, results, is_ttt }: {
     edition: { id: string; year: number; competition: string };
     stage: Stage;
@@ -63,12 +73,28 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
     );
 
     const [tttGcLeader, setTttGcLeader] = useState('');
+
+    const riderOptions = availableRiders.map((r) => ({
+        value: r.id,
+        label: r.name,
+    }));
+
+    const teamOptions = (availableTeams ?? []).map((t) => ({
+        value: t.id,
+        label: t.name,
+    }));
+
+    const selectedRiderCountry = (riderId: string): string | null => {
+        return availableRiders.find((r) => r.id === riderId)?.country_id ?? null;
+    };
+
     const addRow = () => {
         setResultEntries([...resultEntries, { id: '', rider_id: '', position: resultEntries.length + 1, time: '', gap: '' }]);
     };
 
     const removeRow = (index: number) => {
-        setResultEntries(resultEntries.filter((_, i) => i !== index));
+        const updated = resultEntries.filter((_, i) => i !== index).map((r, i) => ({ ...r, position: i + 1 }));
+        setResultEntries(updated);
     };
 
     const updateRow = (index: number, field: keyof Result, value: string | number | boolean) => {
@@ -186,106 +212,127 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
                             Resultados
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-3">
-                            {resultEntries.map((entry, index) => (
-                                <div key={index} className="flex items-end gap-2">
-                                    <div className="w-8 text-center">
-                                        <Label className="text-xs text-muted-foreground">#{index + 1}</Label>
+                    <CardContent className="space-y-2">
+                        {resultEntries.map((entry, index) => (
+                            <div
+                                key={index}
+                                className={cn(
+                                    'group flex items-center gap-3 rounded-lg border p-3 transition-colors',
+                                    entry.is_gc_leader && 'border-yellow-500/30 bg-yellow-500/5',
+                                    entry.is_combativo && 'border-red-500/30 bg-red-500/5',
+                                )}
+                            >
+                                <div className={cn(
+                                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold',
+                                    getPositionBadgeColor(index + 1),
+                                )}>
+                                    {index + 1}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        {!is_ttt && entry.rider_id && (
+                                            <FlagIcon code={selectedRiderCountry(entry.rider_id) ?? ''} className="h-4 w-5 shrink-0" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <SearchableSelect
+                                                options={is_ttt ? teamOptions : riderOptions}
+                                                value={entry.rider_id}
+                                                onChange={(v) => updateRow(index, 'rider_id', v)}
+                                                placeholder={is_ttt ? 'Seleccionar equipo...' : 'Buscar corredor...'}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="flex-1 space-y-1">
-                                        <Label className="text-xs text-muted-foreground">{is_ttt ? 'Equipo' : 'Corredor'}</Label>
-                                        <Select
-                                            value={entry.rider_id}
-                                            onValueChange={(v) => v && updateRow(index, 'rider_id', v)}
-                                        >
-                                            <SelectTrigger><SelectValue placeholder="Seleccionar...">
-                                                {(value: string) => {
-                                                    if (is_ttt && availableTeams) return availableTeams.find(t => t.id === value)?.name ?? value;
-                                                    return availableRiders.find(r => r.id === value)?.name ?? value;
-                                                }}
-                                            </SelectValue></SelectTrigger>
-                                            <SelectContent>
-                                                {(is_ttt && availableTeams ? availableTeams : availableRiders).map((item) => (
-                                                    <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="w-24 space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Tiempo</Label>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <div className="w-28">
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                                            <Clock className="h-3 w-3" />
+                                            Tiempo
+                                        </div>
                                         <Input
                                             value={entry.time ?? ''}
                                             onChange={(e) => updateRow(index, 'time', e.target.value)}
                                             placeholder="4:30:00"
+                                            className="h-9 text-sm"
                                         />
                                     </div>
-                                    <div className="w-20 space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Dif.</Label>
+                                    <div className="w-24">
+                                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                                            <Minus className="h-3 w-3" />
+                                            Dif.
+                                        </div>
                                         <Input
                                             value={entry.gap ?? ''}
                                             onChange={(e) => updateRow(index, 'gap', e.target.value)}
                                             placeholder="+0:00"
+                                            className="h-9 text-sm"
                                         />
                                     </div>
-                                    {!is_ttt && (
-                                        <div className="flex flex-col items-center gap-1 pt-5">
-                                            <button
-                                                type="button"
-                                                onClick={() => updateRow(index, 'is_gc_leader', !entry.is_gc_leader)}
-                                                className={cn(
-                                                    'flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors',
-                                                    entry.is_gc_leader ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-600' : 'border-border text-muted-foreground/50 hover:text-muted-foreground',
-                                                )}
-                                                title="Líder GC"
-                                            >
-                                                <Crown className="h-3.5 w-3.5" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => updateRow(index, 'is_combativo', !entry.is_combativo)}
-                                                className={cn(
-                                                    'flex h-7 w-7 items-center justify-center rounded-md border text-xs transition-colors',
-                                                    entry.is_combativo ? 'border-red-500/50 bg-red-500/10 text-red-600' : 'border-border text-muted-foreground/50 hover:text-muted-foreground',
-                                                )}
-                                                title="Supercombativo"
-                                            >
-                                                <Flame className="h-3.5 w-3.5" />
-                                            </button>
-                                        </div>
-                                    )}
-                                    {!is_ttt && resultEntries.length > 1 && (
-                                        <Button variant="ghost" size="icon" onClick={() => removeRow(index)}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    )}
                                 </div>
-                            ))}
-                        </div>
+
+                                {!is_ttt && (
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => updateRow(index, 'is_gc_leader', !entry.is_gc_leader)}
+                                            className={cn(
+                                                'flex h-8 w-8 items-center justify-center rounded-lg border transition-colors',
+                                                entry.is_gc_leader
+                                                    ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-600 shadow-sm'
+                                                    : 'border-transparent text-muted-foreground/40 hover:bg-muted hover:text-muted-foreground',
+                                            )}
+                                            title="Líder GC"
+                                        >
+                                            <Crown className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => updateRow(index, 'is_combativo', !entry.is_combativo)}
+                                            className={cn(
+                                                'flex h-8 w-8 items-center justify-center rounded-lg border transition-colors',
+                                                entry.is_combativo
+                                                    ? 'border-red-500/50 bg-red-500/10 text-red-600 shadow-sm'
+                                                    : 'border-transparent text-muted-foreground/40 hover:bg-muted hover:text-muted-foreground',
+                                            )}
+                                            title="Supercombativo"
+                                        >
+                                            <Flame className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+
+                                {!is_ttt && resultEntries.length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => removeRow(index)}
+                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/30 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
 
                         {is_ttt && (
-                            <div className="space-y-3 border-t pt-4">
-                                <div className="flex items-end gap-4">
-                                    <div className="flex-1 space-y-1">
-                                        <Label className="flex items-center gap-1.5 text-xs font-medium">
-                                            <Crown className="h-3.5 w-3.5 text-yellow-500" />
-                                            Líder de la general
-                                        </Label>
-                                        <Select value={tttGcLeader} onValueChange={(v) => v && setTttGcLeader(v)}>
-                                            <SelectTrigger><SelectValue placeholder="Seleccionar corredor..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {availableRiders.map((r) => (
-                                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex-1" />
+                            <div className="rounded-lg border border-dashed p-4 mt-2">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Crown className="h-4 w-4 text-yellow-500" />
+                                    <Label className="text-sm font-medium">Líder de la general</Label>
+                                </div>
+                                <div className="max-w-md">
+                                    <SearchableSelect
+                                        options={riderOptions}
+                                        value={tttGcLeader}
+                                        onChange={(v) => setTttGcLeader(v)}
+                                        placeholder="Buscar corredor..."
+                                    />
                                 </div>
                             </div>
                         )}
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 pt-3 border-t">
                             {!is_ttt && (
                                 <Button variant="outline" size="sm" onClick={addRow}>
                                     <Plus className="mr-1 h-3 w-3" />
@@ -295,7 +342,7 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
                             <div className="flex-1" />
                             <Button onClick={saveResults} disabled={resultEntries.some((r) => !r.rider_id) || (is_ttt && !tttGcLeader)}>
                                 <Trophy className="mr-2 h-4 w-4" />
-                                {isFinished ? 'Actualizar resultados' : 'Guardar resultados y finalizar'}
+                                {isFinished ? 'Actualizar resultados' : 'Guardar y finalizar'}
                             </Button>
                         </div>
                     </CardContent>
