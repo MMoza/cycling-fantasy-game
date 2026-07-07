@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Domain\Interfaces\CyclingDataFetcherInterface;
 use App\Infrastructure\Services\MockCyclingDataFetcher;
+use App\Presentation\Console\CleanPushSubscriptionsCommand;
 use App\Presentation\Console\Deploy\AppDeployCommand;
 use App\Presentation\Console\ImportResultsCommand;
 use App\Presentation\Console\ImportStagesCommand;
@@ -40,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
             RebuildScoresCommand::class,
             ScorePreRaceCommand::class,
             LockPredictionsCommand::class,
+            CleanPushSubscriptionsCommand::class,
         ]);
     }
 }

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Route, Trophy, Shield, Search, Bike } from 'lucide-react';
+import { LayoutDashboard, Route, Trophy, Shield, Search, Bike, Bell, BellOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from '@/components/UserMenu';
 import SearchModal from '@/components/SearchModal';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const page = usePage();
@@ -16,6 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const activeLeague = activeLeagueId ? { id: activeLeagueId } : currentLeague;
 
     const [searchOpen, setSearchOpen] = useState(false);
+    const { isSupported, isSubscribed, subscribe, unsubscribe, loading } = usePushNotifications();
 
     const navItems = [
         { route: 'dashboard', href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
@@ -75,6 +77,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <Search className="h-4 w-4" />
                                 Buscar
                             </button>
+                            {isSupported && (
+                                <button
+                                    type="button"
+                                    onClick={isSubscribed ? unsubscribe : subscribe}
+                                    disabled={loading}
+                                    className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                                >
+                                    {isSubscribed ? (
+                                        <BellOff className="h-4 w-4" />
+                                    ) : (
+                                        <Bell className="h-4 w-4" />
+                                    )}
+                                    {loading ? '...' : isSubscribed ? 'Silenciar' : 'Notificar'}
+                                </button>
+                            )}
                         </nav>
                     </div>
                     <UserMenu user={auth.user} leagues={auth.user_leagues ?? []} />
@@ -91,6 +108,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </div>
                 </Link>
                 <div className="flex items-center gap-3">
+                    {isSupported && (
+                        <button
+                            type="button"
+                            onClick={isSubscribed ? unsubscribe : subscribe}
+                            disabled={loading}
+                            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            {isSubscribed ? (
+                                <BellOff className="h-4 w-4" />
+                            ) : (
+                                <Bell className="h-4 w-4" />
+                            )}
+                        </button>
+                    )}
                     <UserMenu user={auth.user} leagues={auth.user_leagues ?? []} />
                 </div>
             </header>

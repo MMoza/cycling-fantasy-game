@@ -6,6 +6,7 @@ namespace App\Application\UseCases\Admin\Stage;
 
 use App\Application\Exceptions\ApplicationException;
 use App\Application\Services\ActivityLogService;
+use App\Application\Services\PushNotificationService;
 use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
@@ -26,6 +27,7 @@ class StoreStageResultUseCase
 {
     public function __construct(
         private readonly ActivityLogService $activityLog,
+        private readonly PushNotificationService $pushNotification,
     ) {}
 
     public function execute(string $editionId, string $id, array $results): void
@@ -161,6 +163,13 @@ class StoreStageResultUseCase
             if (! $this->activityLog->hasStageEndForLeague($league, $stage->id)) {
                 $this->activityLog->logStageEnd($league, $stage);
             }
+
+            $totalPoints = DB::table('score_events')
+                ->where('league_id', $league->id)
+                ->where('stage_id', $stage->id)
+                ->sum('points');
+
+            $this->pushNotification->sendStageResults($league, $stage, (int) $totalPoints);
         }
 
         $allStagesFinished = StageModel::where('edition_id', $stage->edition_id)
@@ -173,6 +182,20 @@ class StoreStageResultUseCase
                 if (! $this->activityLog->hasTypeForLeague($league, ActivityLogType::CompetitionEnd)) {
                     $this->activityLog->logCompetitionEnd($league);
                 }
+
+                $totalScore = DB::table('score_events')
+                    ->where('league_id', $league->id)
+                    ->whereNull('stage_id')
+                    ->sum('points');
+
+                $position = LeagueModel::where('edition_id', $stage->edition_id)
+                    ->where('id', '!=', $league->id)
+                    ->whereHas('users', function ($query) use ($totalScore) {
+                        $query->whereRaw('(SELECT COALESCE(SUM(points), 0) FROM score_events WHERE score_events.user_id = users.id AND stage_id IS NULL) > ?', [$totalScore]);
+                    })
+                    ->count() + 1;
+
+                $this->pushNotification->sendCompetitionFinished($league, $league->owner->name, $position);
             }
         }
     }

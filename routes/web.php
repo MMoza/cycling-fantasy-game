@@ -17,6 +17,7 @@ use App\Presentation\Http\Controllers\LandingController;
 use App\Presentation\Http\Controllers\LeagueController;
 use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
+use App\Presentation\Http\Controllers\PushSubscriptionController;
 use App\Presentation\Http\Controllers\SearchController;
 use App\Presentation\Http\Controllers\StageController;
 use App\Presentation\Http\Controllers\UserProfileController;
@@ -53,6 +54,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/leagues/{league}/members/{member}', [UserProfileController::class, 'show'])->name('leagues.members.show');
 
     Route::get('/search', [SearchController::class, '__invoke'])->name('search');
+
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 
     Route::get('/competitions', [UserCompetitionController::class, 'index'])->name('competitions.index');
     Route::get('/competitions/{year?}', [UserCompetitionController::class, 'index'])->name('competitions.year');

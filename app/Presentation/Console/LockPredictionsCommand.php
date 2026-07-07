@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Console;
 
 use App\Application\Services\ActivityLogService;
+use App\Application\Services\PushNotificationService;
 use App\Domain\ValueObjects\EditionStatus;
 use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
@@ -19,7 +20,7 @@ class LockPredictionsCommand extends Command
 
     protected $description = 'Lock predictions for stages that have started and update their status to ongoing';
 
-    public function handle(ActivityLogService $activityLog): int
+    public function handle(ActivityLogService $activityLog, PushNotificationService $pushNotification): int
     {
         Log::info('race:lock-predictions started');
 
@@ -80,6 +81,8 @@ class LockPredictionsCommand extends Command
                         $activityLog->logStageStart($league, $stage);
                         $this->info("Logged stage_start for league {$league->id}");
                     }
+
+                    $pushNotification->sendStageReminder($league, $stage);
                 }
 
                 $this->info("Stage status updated to ongoing: {$stage->name}");
