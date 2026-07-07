@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pedales-v1';
+const CACHE_NAME = 'pedales-v2';
 
 const STATIC_ASSETS = [
     '/offline',
@@ -10,21 +10,25 @@ self.addEventListener('install', (event) => {
             Promise.allSettled(STATIC_ASSETS.map((url) => cache.add(url).catch(() => null)))
         ),
     );
+    self.skipWaiting();
 });
 
 self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((cached) => {
-            const fetchPromise = fetch(event.request).then((response) => {
-                if (response && response.status === 200) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-                }
-                return response;
-            }).catch(() => cached);
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).catch(() => caches.match('/offline')),
+        );
+        return;
+    }
 
-            return cached || fetchPromise;
-        }),
+    event.respondWith(
+        fetch(event.request).then((response) => {
+            if (response && response.status === 200) {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            }
+            return response;
+        }).catch(() => caches.match(event.request)),
     );
 });
 
