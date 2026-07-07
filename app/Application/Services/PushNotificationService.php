@@ -34,6 +34,12 @@ class PushNotificationService
             try {
                 $token = $this->extractTokenFromEndpoint($subscription->endpoint);
 
+                Log::info('[Push] Sending to token', [
+                    'user_id' => $user->id,
+                    'endpoint' => $subscription->endpoint,
+                    'token' => $token,
+                ]);
+
                 $message = CloudMessage::new()
                     ->withToken($token)
                     ->withNotification([
@@ -42,10 +48,19 @@ class PushNotificationService
                     ])
                     ->withData($data);
 
-                $this->messaging->send($message);
+                $result = $this->messaging->send($message);
+
+                Log::info('[Push] FCM response', [
+                    'user_id' => $user->id,
+                    'result' => $result,
+                ]);
+
                 $subscription->update(['last_used_at' => now()]);
             } catch (\Exception $e) {
-                Log::warning("Push notification failed for user {$user->id}: {$e->getMessage()}");
+                Log::error("[Push] Failed for user {$user->id}: {$e->getMessage()}", [
+                    'endpoint' => $subscription->endpoint,
+                    'trace' => $e->getTraceAsString(),
+                ]);
 
                 if (str_contains($e->getMessage(), '404') || str_contains($e->getMessage(), 'Not Found')) {
                     $subscription->delete();
