@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Avatar from '@/components/Avatar';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
-import { Trophy, Calendar, Route, ChevronRight, Users, Target, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, ShieldCheck } from 'lucide-react';
+import { Trophy, Calendar, Route, ChevronRight, Users, Target, Settings, X, Save, Copy, Info, Flag, Play, CheckCheck, Award, Activity, ShieldCheck, ChevronUp, ChevronDown, Minus } from 'lucide-react';
 
 interface League {
     id: string;
@@ -63,6 +63,8 @@ interface LeaderboardEntry {
     points: number;
     behind_leader: number;
     is_current_user: boolean;
+    previous_rank: number | null;
+    rank_change: number | null;
 }
 
 interface ActivityLog {
@@ -100,6 +102,26 @@ interface ShowProps {
     stages: Stage[];
     leaderboard: LeaderboardEntry[];
     activity_logs: ActivityLog[];
+}
+
+function PositionChange({ change }: { change: number | null }) {
+    if (change === null || change === 0) {
+        return <Minus className="h-3 w-3 text-muted-foreground/40" />;
+    }
+    if (change > 0) {
+        return (
+            <span className="flex items-center gap-0.5 text-xs font-medium text-green-600">
+                <ChevronUp className="h-3 w-3" />
+                {change}
+            </span>
+        );
+    }
+    return (
+        <span className="flex items-center gap-0.5 text-xs font-medium text-red-500">
+            <ChevronDown className="h-3 w-3" />
+            {Math.abs(change)}
+        </span>
+    );
 }
 
 function buildVisibleLeaderboard(
@@ -709,6 +731,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                         Usuario
                                         {sortKey === 'user_name' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                                     </button>
+                                    <span className="w-8 text-center">Var.</span>
                                     <button type="button" onClick={() => toggleSort('points')} className="flex shrink-0 items-center gap-0.5 hover:text-foreground transition-colors">
                                         Puntos
                                         {sortKey === 'points' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
@@ -748,7 +771,10 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                                 {entry.is_current_user && (
                                                     <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
                                                 )}
-                                                <span className="ml-auto shrink-0 text-sm font-medium tabular-nums">
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <PositionChange change={entry.rank_change} />
+                                                <span className="text-sm font-medium tabular-nums">
                                                     {entry.points}
                                                 </span>
                                             </div>
@@ -802,7 +828,10 @@ export default function Show({ league, next_stage, user_position, stages, leader
                                                     {entry.is_current_user && (
                                                         <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
                                                     )}
-                                                    <span className="ml-auto shrink-0 text-sm font-medium tabular-nums">
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <PositionChange change={entry.rank_change} />
+                                                    <span className="text-sm font-medium tabular-nums">
                                                         {entry.points}
                                                     </span>
                                                 </div>

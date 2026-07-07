@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, Route, CheckCircle2, XCircle } from 'lucide-react';
+import { Trophy, Users, Route, ChevronUp, ChevronDown, Minus } from 'lucide-react';
 
 interface LeaderboardEntry {
     rank: number;
@@ -11,6 +11,8 @@ interface LeaderboardEntry {
     points: number;
     is_current_user: boolean;
     behind_leader: number;
+    previous_rank: number | null;
+    rank_change: number | null;
 }
 
 interface Stage {
@@ -50,6 +52,26 @@ interface IndexProps {
     last_scored_stage_id: string | null;
     general_details: GeneralDetail[];
     user_position?: { rank: number | string; points: number; behind_leader: number };
+}
+
+function PositionChange({ change }: { change: number | null }) {
+    if (change === null || change === 0) {
+        return <Minus className="h-3 w-3 text-muted-foreground/40" />;
+    }
+    if (change > 0) {
+        return (
+            <span className="flex items-center gap-0.5 text-xs font-medium text-green-600">
+                <ChevronUp className="h-3 w-3" />
+                {change}
+            </span>
+        );
+    }
+    return (
+        <span className="flex items-center gap-0.5 text-xs font-medium text-red-500">
+            <ChevronDown className="h-3 w-3" />
+            {Math.abs(change)}
+        </span>
+    );
 }
 
 function LeaderboardTable({ league_id, leaderboard, emptyMessage }: { league_id: string; leaderboard: LeaderboardEntry[]; emptyMessage: string }) {
@@ -104,7 +126,10 @@ function LeaderboardTable({ league_id, leaderboard, emptyMessage }: { league_id:
                         )}
                     </Link>
                     </div>
-                    <span className="text-sm font-medium">{entry.points} pts</span>
+                    <div className="flex items-center gap-3">
+                        <PositionChange change={entry.rank_change} />
+                        <span className="text-sm font-medium">{entry.points} pts</span>
+                    </div>
                 </div>
             ))}
         </div>

@@ -125,10 +125,15 @@ class LeagueController extends Controller
                 ->exists()
             : false;
 
-        $scoresPerUser = ScoreEventModel::where('league_id', $leagueModel->id)
-            ->selectRaw('user_id, SUM(points) as total_points')
-            ->groupBy('user_id')
-            ->pluck('total_points', 'user_id');
+        $allScoreEvents = ScoreEventModel::where('league_id', $leagueModel->id)
+            ->selectRaw('user_id, stage_id, SUM(points) as total_points')
+            ->groupBy('user_id', 'stage_id')
+            ->get();
+
+        $generalScores = $allScoreEvents->whereNull('stage_id');
+        $perStageScores = $allScoreEvents->whereNotNull('stage_id');
+
+        $scoresPerUser = $generalScores->pluck('total_points', 'user_id');
 
         $members = DB::table('league_user')
             ->where('league_id', $leagueModel->id)
@@ -136,7 +141,7 @@ class LeagueController extends Controller
             ->select('users.id', 'users.name', 'users.avatar')
             ->get();
 
-        $leaderboard = $members
+        $generalLeaderboard = $members
             ->map(fn ($member) => [
                 'user_id' => $member->id,
                 'user_name' => $member->name,
@@ -151,12 +156,46 @@ class LeagueController extends Controller
                 ...$entry,
             ]);
 
+        $generalRanks = $generalLeaderboard->pluck('rank', 'user_id')->toArray();
+
+        $stageIdsWithScores = $perStageScores->pluck('stage_id')->unique()->toArray();
+
+        $leaderboard = $members
+            ->map(function ($member) use ($generalScores, $perStageScores, $stageIdsWithScores) {
+                $cumulativeScores = $generalScores->concat(
+                    $perStageScores->filter(fn ($s) => in_array($s->stage_id, $stageIdsWithScores, true))
+                );
+
+                $scoresPerUser = $cumulativeScores->pluck('total_points', 'user_id');
+
+                return [
+                    'user_id' => $member->id,
+                    'user_name' => $member->name,
+                    'avatar' => $this->resolveAvatarUrl($member->avatar),
+                    'points' => (int) ($scoresPerUser[$member->id] ?? 0),
+                    'is_current_user' => $member->id === $userId,
+                ];
+            })
+            ->sortByDesc('points')
+            ->values()
+            ->map(fn ($entry, $index) => [
+                'rank' => $index + 1,
+                ...$entry,
+            ]);
+
         $topPoints = $leaderboard->first()['points'] ?? 0;
 
-        $leaderboard = $leaderboard->map(fn ($entry) => [
-            ...$entry,
-            'behind_leader' => $topPoints - $entry['points'],
-        ]);
+        $leaderboard = $leaderboard->map(function ($entry) use ($generalRanks, $topPoints) {
+            $previousRank = $generalRanks[$entry['user_id']] ?? null;
+            $rankChange = $previousRank !== null ? $previousRank - $entry['rank'] : null;
+
+            return [
+                ...$entry,
+                'previous_rank' => $previousRank,
+                'rank_change' => $rankChange,
+                'behind_leader' => $topPoints - $entry['points'],
+            ];
+        });
 
         $userEntry = $leaderboard->firstWhere('is_current_user', true);
 

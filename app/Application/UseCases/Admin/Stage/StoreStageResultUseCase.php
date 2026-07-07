@@ -21,6 +21,7 @@ use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class StoreStageResultUseCase
@@ -35,7 +36,16 @@ class StoreStageResultUseCase
         $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
 
         if ($stage->status === StageStatus::Finished) {
-            throw new ApplicationException('La etapa ya está finalizada');
+            $hasScores = DB::table('score_events')
+                ->where('league_id', '!=', null)
+                ->where('stage_id', $stage->id)
+                ->exists();
+
+            if ($hasScores) {
+                throw new ApplicationException('La etapa ya está finalizada y puntuada');
+            }
+
+            DB::table('score_events')->where('stage_id', $stage->id)->delete();
         }
 
         $isRoadStage = $stage->type !== StageType::TimeTrial
@@ -76,30 +86,38 @@ class StoreStageResultUseCase
             ->map(fn ($rows) => $rows->first()->rider_id)
             ->toArray() : [];
 
-        DB::table('stage_results')->where('stage_id', $id)->delete();
+        DB::transaction(function () use ($id, $results, $isTTT, $teamRiderMap, $stage) {
+            DB::table('stage_results')->where('stage_id', $id)->delete();
 
-        foreach ($results as $result) {
-            $riderId = $isTTT && isset($result['rider_id'])
-                ? ($teamRiderMap[$result['rider_id']] ?? $result['rider_id'])
-                : $result['rider_id'];
+            foreach ($results as $result) {
+                $riderId = $isTTT && isset($result['rider_id'])
+                    ? ($teamRiderMap[$result['rider_id']] ?? $result['rider_id'])
+                    : $result['rider_id'];
 
-            DB::table('stage_results')->insert([
-                'id' => Str::uuid()->toString(),
-                'stage_id' => $id,
-                'rider_id' => $riderId,
-                'position' => $result['position'],
-                'time' => $result['time'] ?? null,
-                'gap' => $result['gap'] ?? null,
-                'is_gc_leader' => $result['is_gc_leader'] ?? false,
-                'is_combativo' => $result['is_combativo'] ?? false,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                DB::table('stage_results')->insert([
+                    'id' => Str::uuid()->toString(),
+                    'stage_id' => $id,
+                    'rider_id' => $riderId,
+                    'position' => $result['position'],
+                    'time' => $result['time'] ?? null,
+                    'gap' => $result['gap'] ?? null,
+                    'is_gc_leader' => $result['is_gc_leader'] ?? false,
+                    'is_combativo' => $result['is_combativo'] ?? false,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            $stage->update(['status' => StageStatus::Finished->value]);
+        });
+
+        try {
+            $this->scoreStage($stage);
+        } catch (\Throwable $e) {
+            report($e);
+
+            throw new ApplicationException('Resultados guardados pero error al puntuar: '.$e->getMessage());
         }
-
-        $stage->update(['status' => StageStatus::Finished->value]);
-
-        $this->scoreStage($stage);
     }
 
     private function scoreStage(StageModel $stage): void
@@ -123,53 +141,56 @@ class StoreStageResultUseCase
             ->get();
 
         foreach ($leagues as $league) {
-            $scoringSystemModel = ScoringSystemModel::with('rules')->find($league->scoring_system_id);
+            try {
+                $scoringSystemModel = ScoringSystemModel::with('rules')->find($league->scoring_system_id);
 
-            if (! $scoringSystemModel) {
-                continue;
-            }
+                if (! $scoringSystemModel) {
+                    continue;
+                }
 
-            $system = $this->buildScoringSystem($scoringSystemModel);
-            $engine = new ScoringEngine($system, $riderTeamMap);
+                $system = $this->buildScoringSystem($scoringSystemModel);
+                $engine = new ScoringEngine($system, $riderTeamMap);
 
-            $predictions = PredictionModel::where('league_id', $league->id)
-                ->where('stage_id', $stage->id)
-                ->where('type', PredictionType::PreStage)
-                ->get();
+                $predictions = PredictionModel::where('league_id', $league->id)
+                    ->where('stage_id', $stage->id)
+                    ->where('type', PredictionType::PreStage)
+                    ->get();
 
-            foreach ($predictions as $predictionModel) {
-                $prediction = Prediction::fromModel($predictionModel);
+                DB::table('score_events')
+                    ->where('league_id', $league->id)
+                    ->where('stage_id', $stage->id)
+                    ->delete();
 
-                foreach ($stageResults as $stageResult) {
-                    $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageDifficulty, $stage->id);
+                foreach ($predictions as $predictionModel) {
+                    $prediction = Prediction::fromModel($predictionModel);
 
-                    if ($scoreEvent->points > 0) {
-                        DB::table('score_events')->insert([
-                            'id' => $scoreEvent->id,
-                            'user_id' => $scoreEvent->userId,
-                            'league_id' => $scoreEvent->leagueId,
-                            'scoring_rule_id' => $scoreEvent->scoringRuleId,
-                            'points' => $scoreEvent->points,
-                            'description' => $scoreEvent->description,
-                            'context' => $scoreEvent->context,
-                            'stage_id' => $scoreEvent->stageId,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
+                    foreach ($stageResults as $stageResult) {
+                        $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageDifficulty, $stage->id);
+
+                        if ($scoreEvent->points > 0) {
+                            DB::table('score_events')->insert([
+                                'id' => $scoreEvent->id,
+                                'user_id' => $scoreEvent->userId,
+                                'league_id' => $scoreEvent->leagueId,
+                                'scoring_rule_id' => $scoreEvent->scoringRuleId,
+                                'points' => $scoreEvent->points,
+                                'description' => $scoreEvent->description,
+                                'context' => $scoreEvent->context,
+                                'stage_id' => $scoreEvent->stageId,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                        }
                     }
                 }
+
+                if (! $this->activityLog->hasStageEndForLeague($league, $stage->id)) {
+                    $this->activityLog->logStageEnd($league, $stage);
+                }
+            } catch (\Throwable $e) {
+                report($e);
+                Log::error("[ScoreStage] Failed for league {$league->id}: {$e->getMessage()}");
             }
-
-            if (! $this->activityLog->hasStageEndForLeague($league, $stage->id)) {
-                $this->activityLog->logStageEnd($league, $stage);
-            }
-
-            $totalPoints = DB::table('score_events')
-                ->where('league_id', $league->id)
-                ->where('stage_id', $stage->id)
-                ->sum('points');
-
-            $this->pushNotification->sendStageResults($league, $stage, (int) $totalPoints);
         }
 
         $allStagesFinished = StageModel::where('edition_id', $stage->edition_id)
@@ -179,23 +200,14 @@ class StoreStageResultUseCase
 
         if ($allStagesFinished) {
             foreach ($leagues as $league) {
-                if (! $this->activityLog->hasTypeForLeague($league, ActivityLogType::CompetitionEnd)) {
-                    $this->activityLog->logCompetitionEnd($league);
+                try {
+                    if (! $this->activityLog->hasTypeForLeague($league, ActivityLogType::CompetitionEnd)) {
+                        $this->activityLog->logCompetitionEnd($league);
+                    }
+                } catch (\Throwable $e) {
+                    report($e);
+                    Log::error("[ScoreStage] Competition end failed for league {$league->id}: {$e->getMessage()}");
                 }
-
-                $totalScore = DB::table('score_events')
-                    ->where('league_id', $league->id)
-                    ->whereNull('stage_id')
-                    ->sum('points');
-
-                $position = LeagueModel::where('edition_id', $stage->edition_id)
-                    ->where('id', '!=', $league->id)
-                    ->whereHas('users', function ($query) use ($totalScore) {
-                        $query->whereRaw('(SELECT COALESCE(SUM(points), 0) FROM score_events WHERE score_events.user_id = users.id AND stage_id IS NULL) > ?', [$totalScore]);
-                    })
-                    ->count() + 1;
-
-                $this->pushNotification->sendCompetitionFinished($league, $league->owner->name, $position);
             }
         }
     }
