@@ -7,6 +7,7 @@ namespace App\Presentation\Http\Controllers;
 use App\Infrastructure\Persistence\Models\PushSubscriptionModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PushSubscriptionController extends Controller
@@ -20,6 +21,12 @@ class PushSubscriptionController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        Log::info('[Push] Store request received', [
+            'user_id' => $request->user()?->id,
+            'has_endpoint' => $request->has('endpoint'),
+            'has_keys' => $request->has('keys'),
+        ]);
+
         $request->validate([
             'endpoint' => 'required|string',
             'keys.p256dh' => 'required|string',
@@ -39,6 +46,8 @@ class PushSubscriptionController extends Controller
                 'last_used_at' => now(),
             ]
         );
+
+        Log::info('[Push] Subscription saved', ['user_id' => $user->id]);
 
         return response()->json(['message' => 'Suscripción guardada correctamente']);
     }

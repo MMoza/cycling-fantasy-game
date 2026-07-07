@@ -59,6 +59,7 @@ export function usePushNotifications() {
         setLoading(true);
         try {
             const vapidKey = await fetchVapidKey();
+            console.log('[Push] VAPID key fetched:', vapidKey ? 'OK' : 'MISSING');
             if (!vapidKey) {
                 console.error('[Push] VAPID public key not available from server');
                 setLoading(false);
@@ -66,6 +67,7 @@ export function usePushNotifications() {
             }
 
             const perm = await Notification.requestPermission();
+            console.log('[Push] Permission:', perm);
             setPermission(perm);
 
             if (perm !== 'granted') {
@@ -75,14 +77,17 @@ export function usePushNotifications() {
             }
 
             const reg = swRegistration || await navigator.serviceWorker.ready;
+            console.log('[Push] SW ready:', !!reg);
             const sub = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(vapidKey),
             });
+            console.log('[Push] Subscribed:', !!sub);
 
             setSubscription(sub);
 
             const subscriptionJson = sub.toJSON();
+            console.log('[Push] Sending to server:', subscriptionJson.endpoint?.substring(0, 50) + '...');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
             const res = await fetch('/push-subscriptions', {
@@ -99,6 +104,7 @@ export function usePushNotifications() {
                 }),
             });
 
+            console.log('[Push] Server response:', res.status, res.statusText);
             if (!res.ok) {
                 console.error('[Push] Server error:', res.status, await res.text());
             }
