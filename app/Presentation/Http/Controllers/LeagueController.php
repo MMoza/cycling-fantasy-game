@@ -133,32 +133,45 @@ class LeagueController extends Controller
         $generalScores = $allScoreEvents->whereNull('stage_id');
         $perStageScores = $allScoreEvents->whereNotNull('stage_id');
 
-        $scoresPerUser = $generalScores->pluck('total_points', 'user_id');
-
         $members = DB::table('league_user')
             ->where('league_id', $leagueModel->id)
             ->join('users', 'users.id', '=', 'league_user.user_id')
             ->select('users.id', 'users.name', 'users.avatar')
             ->get();
 
-        $generalLeaderboard = $members
-            ->map(fn ($member) => [
-                'user_id' => $member->id,
-                'user_name' => $member->name,
-                'avatar' => $this->resolveAvatarUrl($member->avatar),
-                'points' => (int) ($scoresPerUser[$member->id] ?? 0),
-                'is_current_user' => $member->id === $userId,
-            ])
-            ->sortByDesc('points')
-            ->values()
-            ->map(fn ($entry, $index) => [
-                'rank' => $index + 1,
-                ...$entry,
-            ]);
+        $scoredStages = $leagueModel->stages()
+            ->where('status', 'finished')
+            ->whereIn('id', $perStageScores->pluck('stage_id')->unique())
+            ->orderBy('number')
+            ->get(['id', 'number']);
 
-        $generalRanks = $generalLeaderboard->pluck('rank', 'user_id')->toArray();
+        $previousRanks = null;
 
-        $stageIdsWithScores = $perStageScores->pluck('stage_id')->unique()->toArray();
+        if ($scoredStages->count() >= 2) {
+            $previousStageId = $scoredStages->slice(-2, 1)->first()->id;
+
+            $previousScores = $generalScores->concat(
+                $perStageScores->filter(fn ($s) => in_array($s->stage_id, $scoredStages->pluck('id')->take($scoredStages->count() - 1)->toArray(), true))
+            );
+
+            $previousScoresPerUser = $previousScores
+                ->groupBy('user_id')
+                ->map(fn ($events) => $events->sum('total_points'));
+
+            $previousLeaderboard = $members
+                ->map(fn ($member) => [
+                    'user_id' => $member->id,
+                    'points' => (int) ($previousScoresPerUser[$member->id] ?? 0),
+                ])
+                ->sortByDesc('points')
+                ->values()
+                ->map(fn ($entry, $index) => [
+                    'rank' => $index + 1,
+                    ...$entry,
+                ]);
+
+            $previousRanks = $previousLeaderboard->pluck('rank', 'user_id')->toArray();
+        }
 
         $totalScoresPerUser = $allScoreEvents
             ->groupBy('user_id')
@@ -181,8 +194,8 @@ class LeagueController extends Controller
 
         $topPoints = $leaderboard->first()['points'] ?? 0;
 
-        $leaderboard = $leaderboard->map(function ($entry) use ($generalRanks, $topPoints) {
-            $previousRank = $generalRanks[$entry['user_id']] ?? null;
+        $leaderboard = $leaderboard->map(function ($entry) use ($previousRanks, $topPoints) {
+            $previousRank = $previousRanks[$entry['user_id']] ?? null;
             $rankChange = $previousRank !== null ? $previousRank - $entry['rank'] : null;
 
             return [
