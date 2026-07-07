@@ -22,5 +22,7 @@ readonly class StageDetailDTO
         public string $status,
         public ?string $scheduledStart,
         public ?string $liveStreamUrl,
+        public array $stageRules,
+        public int $totalPossiblePoints,
     ) {}
 }

@@ -69,6 +69,8 @@ class StageController extends Controller
             'availableTeams' => $data['availableTeams'],
             'pcs_slug' => $data['pcsSlug'],
             'edition_year' => $data['editionYear'],
+            'stage_rules' => $data['stageRules'],
+            'total_possible_points' => $data['totalPossiblePoints'],
         ]);
     }
 }

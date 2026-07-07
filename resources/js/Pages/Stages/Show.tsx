@@ -61,6 +61,12 @@ interface Option {
     label: string;
 }
 
+interface StageRule {
+    category: string;
+    label: string;
+    points: number;
+}
+
 interface ShowProps {
     league_id: string;
     league_name: string;
@@ -76,15 +82,11 @@ interface ShowProps {
     availableTeams: Option[];
     pcs_slug: string | null;
     edition_year: number;
+    stage_rules: StageRule[];
+    total_possible_points: number;
 }
 
-const PREDICTION_CATEGORIES = [
-    { key: 'stage_winner', label: 'Ganador de etapa' },
-    { key: 'stage_second', label: '2º clasificado' },
-    { key: 'stage_third', label: '3º clasificado' },
-    { key: 'stage_leader', label: 'Líder GC' },
-    { key: 'stage_combativo', label: 'Combativo del día' },
-];
+const PREDICTION_ORDER = ['stage_winner', 'stage_second', 'stage_third', 'stage_leader', 'stage_combativo'];
 
 const MEDAL_COLORS = ['text-yellow-500', 'text-gray-400', 'text-amber-700'];
 
@@ -241,12 +243,15 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
     );
 }
 
-export default function Show({ league_id, league_name, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams, pcs_slug, edition_year }: ShowProps) {
+export default function Show({ league_id, league_name, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams, pcs_slug, edition_year, stage_rules, total_possible_points }: ShowProps) {
     const { errors } = usePage().props as any;
     const isTimeTrial = stage.type_value === 'time_trial' || stage.type_value === 'team_time_trial';
     const isTTT = stage.type_value === 'team_time_trial';
 
-    const categories = PREDICTION_CATEGORIES.filter((c) => c.key !== 'stage_combativo' || !isTimeTrial);
+    const categories = stage_rules
+        .filter((r) => r.category !== 'stage_combativo' || !isTimeTrial)
+        .map((r) => ({ key: r.category, label: r.label, points: r.points }))
+        .sort((a, b) => PREDICTION_ORDER.indexOf(a.key) - PREDICTION_ORDER.indexOf(b.key));
 
     const riderMap = useMemo(() => {
         const map: Record<string, string> = {};
@@ -366,7 +371,7 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
         <AppLayout>
             <Head title={`Etapa ${stage.number} — ${stage.name}`} />
 
-            <div className="space-y-6 py-6" style={{ maxWidth: '42rem', marginLeft: 'auto', marginRight: 'auto'}}>
+            <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-0">
                 <div className="flex items-center justify-center">
                     <div className="flex items-center gap-3">
                         {navigation.prev ? (
@@ -539,11 +544,14 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                     <CardContent className="space-y-6 px-6 py-5 sm:px-8 sm:py-6">
                         {is_finished || is_locked ? (
                             <div className="space-y-5">
-                                {categories.map(({ key, label }) => {
+                                {categories.map(({ key, label, points }) => {
                                     const prediction = predictions[key];
                                     return (
                                         <div key={key} className="space-y-1">
-                                            <Label className="text-muted-foreground">{label}</Label>
+                                            <Label className="text-muted-foreground">
+                                                {label}
+                                                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(+{points} pts)</span>
+                                            </Label>
                                             <p className="rounded-lg border bg-muted px-3 py-2 text-sm">
                                                 {prediction ? (
                                                     resolvePredictionValue(prediction.value)
@@ -557,11 +565,20 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-5">
-                                {categories.map(({ key, label }) => {
+                                {total_possible_points > 0 && (
+                                    <div className="rounded-lg bg-muted/50 px-4 py-2.5 text-center">
+                                        <span className="text-sm text-muted-foreground">Puntos máximos posibles: </span>
+                                        <span className="text-sm font-semibold">{total_possible_points} pts</span>
+                                    </div>
+                                )}
+                                {categories.map(({ key, label, points }) => {
                                     const isTeamPick = isTTT && key !== 'stage_leader';
                                     return (
                                         <div key={key} className="space-y-2">
-                                            <Label htmlFor={key}>{label}</Label>
+                                            <Label htmlFor={key}>
+                                                {label}
+                                                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(+{points} pts)</span>
+                                            </Label>
                                             <SearchableSelect
                                                 options={getFilteredOptions(key)}
                                                 value={formData[key]}

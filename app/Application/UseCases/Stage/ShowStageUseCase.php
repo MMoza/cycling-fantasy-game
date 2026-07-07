@@ -6,9 +6,11 @@ namespace App\Application\UseCases\Stage;
 
 use App\Application\DTOs\PredictionDTO;
 use App\Application\DTOs\StageDetailDTO;
+use App\Domain\ValueObjects\ScoringRuleContext;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
+use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
@@ -85,6 +87,21 @@ class ShowStageUseCase
             ->get()
             ->map(fn ($t) => ['value' => $t->id, 'label' => $t->name]);
 
+        $scoringSystem = ScoringSystemModel::with('rules')->find($league->scoring_system_id);
+
+        $stageRules = $scoringSystem->rules
+            ->filter(fn ($rule) => $rule->context === ScoringRuleContext::PreStage)
+            ->filter(fn ($rule) => $rule->difficulty === null || $rule->difficulty === $stage->difficulty)
+            ->map(fn ($rule) => [
+                'category' => $rule->type->value,
+                'label' => $rule->type->label(),
+                'points' => $rule->points,
+            ])
+            ->values()
+            ->toArray();
+
+        $totalPossiblePoints = array_sum(array_column($stageRules, 'points'));
+
         $stageResults = [];
         $stageClassification = [];
 
@@ -151,6 +168,8 @@ class ShowStageUseCase
             status: $stage->status->value,
             scheduledStart: $stage->scheduled_start?->toIso8601String(),
             liveStreamUrl: $stage->live_stream_url,
+            stageRules: $stageRules,
+            totalPossiblePoints: $totalPossiblePoints,
         );
 
         return [
@@ -171,6 +190,8 @@ class ShowStageUseCase
             'availableTeams' => $availableTeams,
             'pcsSlug' => $edition->competition->pcs_slug ?? null,
             'editionYear' => $edition->year,
+            'stageRules' => $stageRules,
+            'totalPossiblePoints' => $totalPossiblePoints,
         ];
     }
 }
