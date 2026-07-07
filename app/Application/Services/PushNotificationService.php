@@ -25,8 +25,10 @@ class PushNotificationService
 
         foreach ($subscriptions as $subscription) {
             try {
+                $token = $this->extractTokenFromEndpoint($subscription->endpoint);
+
                 $message = CloudMessage::new()
-                    ->withToken($subscription->endpoint)
+                    ->withToken($token)
                     ->withNotification([
                         'title' => $title,
                         'body' => $body,
@@ -43,6 +45,13 @@ class PushNotificationService
                 }
             }
         }
+    }
+
+    private function extractTokenFromEndpoint(string $endpoint): string
+    {
+        $parts = explode('/fcm/send/', $endpoint);
+
+        return end($parts);
     }
 
     public function sendToLeague(LeagueModel $league, string $title, string $body, array $data = []): void
