@@ -10,29 +10,33 @@ use App\Infrastructure\Persistence\Models\StageModel;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use NotificationChannels\FCM\FCMMessage;
+use Kreait\Firebase\Contract\Messaging;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class PushNotificationService
 {
+    public function __construct(
+        private readonly Messaging $messaging,
+    ) {}
+
     public function sendToUser(User $user, string $title, string $body, array $data = []): void
     {
         $subscriptions = PushSubscriptionModel::where('user_id', $user->id)->get();
 
         foreach ($subscriptions as $subscription) {
             try {
-                $message = FCMMessage::create()
-                    ->topic(null)
-                    ->data($data)
-                    ->notification([
+                $message = CloudMessage::new()
+                    ->withTarget('token', $subscription->endpoint)
+                    ->withNotification([
                         'title' => $title,
                         'body' => $body,
-                        'icon' => '/icons/icon-192.svg',
-                    ]);
+                    ])
+                    ->withData($data);
 
-                $user->notify($message);
+                $this->messaging->send($message);
                 $subscription->update(['last_used_at' => now()]);
             } catch (\Exception $e) {
-                Log::error("Failed to send push notification to user {$user->id}: {$e->getMessage()}");
+                Log::warning("Push notification failed for user {$user->id}: {$e->getMessage()}");
 
                 if (str_contains($e->getMessage(), '404') || str_contains($e->getMessage(), 'Not Found')) {
                     $subscription->delete();
