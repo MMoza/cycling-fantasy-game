@@ -160,22 +160,18 @@ class LeagueController extends Controller
 
         $stageIdsWithScores = $perStageScores->pluck('stage_id')->unique()->toArray();
 
+        $totalScoresPerUser = $allScoreEvents
+            ->groupBy('user_id')
+            ->map(fn ($events) => $events->sum('total_points'));
+
         $leaderboard = $members
-            ->map(function ($member) use ($generalScores, $perStageScores, $stageIdsWithScores) {
-                $cumulativeScores = $generalScores->concat(
-                    $perStageScores->filter(fn ($s) => in_array($s->stage_id, $stageIdsWithScores, true))
-                );
-
-                $scoresPerUser = $cumulativeScores->pluck('total_points', 'user_id');
-
-                return [
-                    'user_id' => $member->id,
-                    'user_name' => $member->name,
-                    'avatar' => $this->resolveAvatarUrl($member->avatar),
-                    'points' => (int) ($scoresPerUser[$member->id] ?? 0),
-                    'is_current_user' => $member->id === $userId,
-                ];
-            })
+            ->map(fn ($member) => [
+                'user_id' => $member->id,
+                'user_name' => $member->name,
+                'avatar' => $this->resolveAvatarUrl($member->avatar),
+                'points' => (int) ($totalScoresPerUser[$member->id] ?? 0),
+                'is_current_user' => $member->id === $userId,
+            ])
             ->sortByDesc('points')
             ->values()
             ->map(fn ($entry, $index) => [
