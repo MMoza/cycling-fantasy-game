@@ -15,12 +15,19 @@ use Kreait\Firebase\Messaging\CloudMessage;
 
 class PushNotificationService
 {
-    public function __construct(
-        private readonly Messaging $messaging,
-    ) {}
+    private readonly ?Messaging $messaging;
+
+    public function __construct(?Messaging $messaging = null)
+    {
+        $this->messaging = $messaging;
+    }
 
     public function sendToUser(User $user, string $title, string $body, array $data = []): void
     {
+        if (! $this->messaging) {
+            return;
+        }
+
         $subscriptions = PushSubscriptionModel::where('user_id', $user->id)->get();
 
         foreach ($subscriptions as $subscription) {
