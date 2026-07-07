@@ -14,6 +14,7 @@ use App\Presentation\Console\LockPredictionsCommand;
 use App\Presentation\Console\RebuildScoresCommand;
 use App\Presentation\Console\ScorePreRaceCommand;
 use App\Presentation\Console\ScoreStageCommand;
+use App\Presentation\Console\TestPushNotificationCommand;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -42,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
             ScorePreRaceCommand::class,
             LockPredictionsCommand::class,
             CleanPushSubscriptionsCommand::class,
+            TestPushNotificationCommand::class,
         ]);
     }
 }
