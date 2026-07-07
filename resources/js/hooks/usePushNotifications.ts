@@ -1,7 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
-
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -40,19 +38,33 @@ export function usePushNotifications() {
         }
     }
 
+    async function fetchVapidKey(): Promise<string | null> {
+        try {
+            const res = await fetch('/push/vapid-key', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            const data = await res.json();
+            return data.public_key || null;
+        } catch {
+            return null;
+        }
+    }
+
     const subscribe = useCallback(async () => {
         if (!isSupported) {
             console.warn('[Push] Not supported');
             return;
         }
 
-        if (!VAPID_PUBLIC_KEY) {
-            console.error('[Push] VAPID_PUBLIC_KEY is missing. Check VITE_VAPID_PUBLIC_KEY env var.');
-            return;
-        }
-
         setLoading(true);
         try {
+            const vapidKey = await fetchVapidKey();
+            if (!vapidKey) {
+                console.error('[Push] VAPID public key not available from server');
+                setLoading(false);
+                return;
+            }
+
             const perm = await Notification.requestPermission();
             setPermission(perm);
 
@@ -65,7 +77,7 @@ export function usePushNotifications() {
             const reg = swRegistration || await navigator.serviceWorker.ready;
             const sub = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                applicationServerKey: urlBase64ToUint8Array(vapidKey),
             });
 
             setSubscription(sub);

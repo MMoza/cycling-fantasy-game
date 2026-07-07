@@ -46,4 +46,10 @@ return [
         'project_id' => env('FIREBASE_PROJECT_ID'),
     ],
 
+    'vapid' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'email' => env('VAPID_EMAIL'),
+    ],
+
 ];

@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/search', [SearchController::class, '__invoke'])->name('search');
 
+    Route::get('/push/vapid-key', [PushSubscriptionController::class, 'vapidKey'])->name('push.vapid-key');
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
     Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
 

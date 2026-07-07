@@ -11,6 +11,13 @@ use Illuminate\Support\Str;
 
 class PushSubscriptionController extends Controller
 {
+    public function vapidKey(): JsonResponse
+    {
+        return response()->json([
+            'public_key' => config('services.vapid.public_key'),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $request->validate([
