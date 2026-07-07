@@ -26,7 +26,7 @@ class PushNotificationService
         foreach ($subscriptions as $subscription) {
             try {
                 $message = CloudMessage::new()
-                    ->withTarget('token', $subscription->endpoint)
+                    ->withToken($subscription->endpoint)
                     ->withNotification([
                         'title' => $title,
                         'body' => $body,
