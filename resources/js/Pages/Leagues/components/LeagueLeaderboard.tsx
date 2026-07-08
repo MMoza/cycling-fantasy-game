@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Avatar from '@/components/Avatar';
-import { Trophy, Users } from 'lucide-react';
+import { Trophy, Users, ChevronDown } from 'lucide-react';
 import { PositionChange } from './PositionChange';
 import type { LeaderboardEntry } from './types';
 
@@ -61,6 +61,7 @@ function buildVisibleLeaderboard(
 }
 
 export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardProps) {
+    const [collapsed, setCollapsed] = useState(false);
     const [showAll, setShowAll] = useState(false);
     const [sortKey, setSortKey] = useState<'rank' | 'user_name' | 'points'>('points');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -127,12 +128,20 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
 
     return (
         <Card className="border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-white dark:border-emerald-800/30 dark:from-emerald-950/20 dark:to-transparent">
-            <CardHeader className="pb-3 px-6 pt-6">
-                <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    Clasificación
-                </CardTitle>
-            </CardHeader>
+            <button
+                type="button"
+                onClick={() => setCollapsed(!collapsed)}
+                className="w-full"
+            >
+                <CardHeader className="pb-3 px-6 pt-6">
+                    <CardTitle className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        Clasificación
+                        <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '' : 'rotate-180'}`} />
+                    </CardTitle>
+                </CardHeader>
+            </button>
+            {!collapsed && (
             <CardContent className="p-0">
                 {leaderboard.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center px-6">
@@ -192,6 +201,7 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                     </div>
                 )}
             </CardContent>
+            )}
         </Card>
     );
 }

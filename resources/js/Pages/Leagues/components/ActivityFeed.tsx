@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flag, Play, CheckCheck, Award, Activity, Info } from 'lucide-react';
+import { Flag, Play, CheckCheck, Award, Activity, Info, ChevronDown } from 'lucide-react';
 import type { ActivityLog } from './types';
 
 interface ActivityFeedProps {
@@ -20,40 +21,68 @@ const activityColors: Record<string, string> = {
     competition_end: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
 };
 
+const INITIAL_COUNT = 5;
+
 export function ActivityFeed({ activity_logs }: ActivityFeedProps) {
+    const [collapsed, setCollapsed] = useState(false);
+    const [showAll, setShowAll] = useState(false);
+
     if (activity_logs.length === 0) return null;
+
+    const visibleLogs = showAll ? activity_logs : activity_logs.slice(0, INITIAL_COUNT);
+    const hasMore = activity_logs.length > INITIAL_COUNT;
 
     return (
         <Card className="border-purple-200/60 bg-gradient-to-br from-purple-50 to-white dark:border-purple-800/30 dark:from-purple-950/20 dark:to-transparent">
-            <CardHeader className="pb-3 px-6 pt-6">
-                <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    Actividad
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="px-6 pb-6">
-                <div className="relative space-y-0">
-                    {activity_logs.map((log, i) => (
-                        <div key={log.id} className="flex gap-3 pb-4 last:pb-0">
-                            <div className="flex flex-col items-center">
-                                <div className={`flex h-7 w-7 items-center justify-center rounded-full ${activityColors[log.type] ?? 'bg-muted text-muted-foreground'}`}>
-                                    {activityIcons[log.type] ?? <Info className="h-4 w-4" />}
+            <button
+                type="button"
+                onClick={() => setCollapsed(!collapsed)}
+                className="w-full"
+            >
+                <CardHeader className="pb-3 px-6 pt-6">
+                    <CardTitle className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        Actividad
+                        <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '' : 'rotate-180'}`} />
+                    </CardTitle>
+                </CardHeader>
+            </button>
+            {!collapsed && (
+                <CardContent className="px-6 pb-6">
+                    <div className="relative space-y-0">
+                        {visibleLogs.map((log, i) => (
+                            <div key={log.id} className="flex gap-3 pb-4 last:pb-0">
+                                <div className="flex flex-col items-center">
+                                    <div className={`flex h-7 w-7 items-center justify-center rounded-full ${activityColors[log.type] ?? 'bg-muted text-muted-foreground'}`}>
+                                        {activityIcons[log.type] ?? <Info className="h-4 w-4" />}
+                                    </div>
+                                    {i < visibleLogs.length - 1 && (
+                                        <div className="mt-1 h-full w-px bg-border" />
+                                    )}
                                 </div>
-                                {i < activity_logs.length - 1 && (
-                                    <div className="mt-1 h-full w-px bg-border" />
-                                )}
+                                <div className="flex-1 min-w-0 pt-0.5">
+                                    <p className="text-sm font-medium">{log.title}</p>
+                                    {log.description && (
+                                        <p className="text-xs text-muted-foreground mt-0.5">{log.description}</p>
+                                    )}
+                                    <p className="text-xs text-muted-foreground/60 mt-0.5">{log.created_at}</p>
+                                </div>
                             </div>
-                            <div className="flex-1 min-w-0 pt-0.5">
-                                <p className="text-sm font-medium">{log.title}</p>
-                                {log.description && (
-                                    <p className="text-xs text-muted-foreground mt-0.5">{log.description}</p>
-                                )}
-                                <p className="text-xs text-muted-foreground/60 mt-0.5">{log.created_at}</p>
-                            </div>
+                        ))}
+                    </div>
+                    {hasMore && (
+                        <div className="border-t border-purple-200/40 dark:border-purple-800/20 mt-4 pt-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowAll(!showAll)}
+                                className="flex w-full items-center justify-center gap-1.5 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                            >
+                                {showAll ? 'Mostrar menos' : `Ver más (${activity_logs.length})`}
+                            </button>
                         </div>
-                    ))}
-                </div>
-            </CardContent>
+                    )}
+                </CardContent>
+            )}
         </Card>
     );
 }
