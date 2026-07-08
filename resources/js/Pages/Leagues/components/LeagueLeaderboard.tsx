@@ -142,7 +142,7 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                 </CardHeader>
             </button>
             {!collapsed && (
-            <CardContent className="p-0">
+            <CardContent className="p-0 bg-white/80">
                 {leaderboard.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center px-6">
                         <Users className="h-12 w-12 text-muted-foreground" />
