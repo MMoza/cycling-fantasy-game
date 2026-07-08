@@ -51,7 +51,7 @@ class EditionController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
-        $this->storeEditionUseCase->execute($competitionId, $validated);
+        $this->storeEditionUseCase->execute($competitionId, $validated, $request->user()->id);
 
         return redirect()->route('admin.competitions.editions.index', $competitionId);
     }

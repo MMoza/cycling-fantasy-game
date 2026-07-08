@@ -12,10 +12,12 @@ use App\Application\UseCases\League\JoinLeagueUseCase;
 use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\ShowLeagueUseCase;
 use App\Application\UseCases\League\UpdateLeagueUseCase;
+use App\Application\UseCases\Season\ShowSeasonUseCase;
 use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -30,6 +32,7 @@ class LeagueController extends Controller
         private readonly ShowLeagueUseCase $showLeagueUseCase,
         private readonly JoinLeagueUseCase $joinLeagueUseCase,
         private readonly UpdateLeagueUseCase $updateLeagueUseCase,
+        private readonly ShowSeasonUseCase $showSeasonUseCase,
     ) {}
 
     public function index(Request $request)
@@ -294,7 +297,19 @@ class LeagueController extends Controller
                 ]),
             'leaderboard' => $leaderboard->values(),
             'activity_logs' => $activityLogs,
+            'season' => $this->getSeasonSummary($request->user()),
         ]);
+    }
+
+    private function getSeasonSummary(User $user): array
+    {
+        $seasonData = $this->showSeasonUseCase->execute($user);
+
+        return [
+            'year' => $seasonData['year'],
+            'joined_count' => $seasonData['user_joined_count'],
+            'total_competitions' => $seasonData['total_competitions'],
+        ];
     }
 
     public function store(Request $request)
@@ -334,6 +349,21 @@ class LeagueController extends Controller
             $league = $this->joinLeagueUseCase->execute($request->user(), $validated['invite_code']);
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['invite_code' => $e->getMessage()]);
+        }
+
+        return redirect()->route('leagues.show', $league->id);
+    }
+
+    public function joinOfficial(Request $request)
+    {
+        $validated = $request->validate([
+            'league_id' => ['required', 'uuid', 'exists:leagues,id'],
+        ]);
+
+        try {
+            $league = $this->joinLeagueUseCase->executeById($request->user(), $validated['league_id']);
+        } catch (ApplicationException $e) {
+            return redirect()->back()->withErrors(['league' => $e->getMessage()]);
         }
 
         return redirect()->route('leagues.show', $league->id);

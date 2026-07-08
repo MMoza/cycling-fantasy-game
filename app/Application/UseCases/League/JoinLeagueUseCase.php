@@ -18,6 +18,22 @@ class JoinLeagueUseCase
     {
         $league = LeagueModel::where('invite_code', $inviteCode)->firstOrFail();
 
+        return $this->joinLeague($user, $league);
+    }
+
+    public function executeById(User $user, string $leagueId): LeagueModel
+    {
+        $league = LeagueModel::findOrFail($leagueId);
+
+        if (! $league->is_official) {
+            throw new ApplicationException('Solo puedes unirte directamente a ligas oficiales.');
+        }
+
+        return $this->joinLeague($user, $league);
+    }
+
+    private function joinLeague(User $user, LeagueModel $league): LeagueModel
+    {
         if (! $user->leagues()->where('leagues.id', $league->id)->exists()) {
             $plan = $user->plan;
 

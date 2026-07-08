@@ -18,8 +18,11 @@ use App\Presentation\Http\Controllers\LeagueController;
 use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
 use App\Presentation\Http\Controllers\PushSubscriptionController;
+use App\Presentation\Http\Controllers\RiderController as LeagueRiderController;
 use App\Presentation\Http\Controllers\SearchController;
+use App\Presentation\Http\Controllers\SeasonController;
 use App\Presentation\Http\Controllers\StageController;
+use App\Presentation\Http\Controllers\TeamController as LeagueTeamController;
 use App\Presentation\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/leagues', [LeagueController::class, 'store'])->name('leagues.store');
     Route::get('/leagues/{league}', [LeagueController::class, 'show'])->name('leagues.show');
     Route::post('/leagues/join', [LeagueController::class, 'join'])->name('leagues.join');
+    Route::post('/leagues/join-official', [LeagueController::class, 'joinOfficial'])->name('leagues.join-official');
     Route::match(['put', 'patch'], '/leagues/{league}', [LeagueController::class, 'update'])->name('leagues.update');
 
     Route::get('/leagues/{league}/stage', [StageController::class, 'index'])->name('stages.index');
@@ -51,6 +55,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/leagues/{league}/predictions/pre-race', [PredictionController::class, 'storePreRace'])->name('predictions.pre-race.store');
 
     Route::get('/leagues/{league}/classification', [ClassificationController::class, 'index'])->name('classification.index');
+    Route::get('/leagues/{league}/teams', [LeagueTeamController::class, 'index'])->name('leagues.teams');
+    Route::get('/leagues/{league}/riders/{rider}', [LeagueRiderController::class, 'show'])->name('leagues.riders.show');
     Route::get('/leagues/{league}/members/{member}', [UserProfileController::class, 'show'])->name('leagues.members.show');
 
     Route::get('/search', [SearchController::class, '__invoke'])->name('search');
@@ -62,6 +68,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/competitions', [UserCompetitionController::class, 'index'])->name('competitions.index');
     Route::get('/competitions/{year?}', [UserCompetitionController::class, 'index'])->name('competitions.year');
     Route::get('/competitions/e/{edition}', [UserCompetitionController::class, 'show'])->name('competitions.show');
+
+    Route::get('/season', [SeasonController::class, 'index'])->name('season.index');
+    Route::get('/season/classification', [SeasonController::class, 'classification'])->name('season.classification');
 });
 
 Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->group(function () {
