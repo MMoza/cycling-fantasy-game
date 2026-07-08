@@ -24,10 +24,10 @@ export function ActivityFeed({ activity_logs }: ActivityFeedProps) {
     if (activity_logs.length === 0) return null;
 
     return (
-        <Card>
+        <Card className="border-purple-200/60 bg-gradient-to-br from-purple-50 to-white dark:border-purple-800/30 dark:from-purple-950/20 dark:to-transparent">
             <CardHeader className="pb-3 px-6 pt-6">
                 <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <Activity className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     Actividad
                 </CardTitle>
             </CardHeader>

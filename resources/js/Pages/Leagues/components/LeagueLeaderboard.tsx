@@ -126,9 +126,12 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
     );
 
     return (
-        <Card>
+        <Card className="border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-white dark:border-emerald-800/30 dark:from-emerald-950/20 dark:to-transparent">
             <CardHeader className="pb-3 px-6 pt-6">
-                <CardTitle>Clasificación</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    Clasificación
+                </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
                 {leaderboard.length === 0 ? (

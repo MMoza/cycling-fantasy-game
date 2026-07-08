@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Route, Trophy, Shield, Search, Bike, Bell, BellOff } from 'lucide-react';
+import { LayoutDashboard, Route, Trophy, Shield, Search, Bell, BellOff, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from '@/components/UserMenu';
 import SearchModal from '@/components/SearchModal';
@@ -21,7 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const navItems = [
         { route: 'dashboard', href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
-        { route: 'competitions.index', href: route('competitions.index'), label: 'Competiciones', icon: Bike },
+        { route: 'season.index', href: route('season.index'), label: 'Temporada', icon: Calendar },
         ...(activeLeague
             ? [
                   { route: 'stages.index', href: route('stages.index', activeLeague.id), label: 'Etapa', icon: Route },
@@ -37,11 +37,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         if (item.route === 'admin') {
             return url.startsWith('/admin');
         }
+        if (item.route === 'season.index') {
+            return route().current('season.*');
+        }
         return route().current(item.route);
     }
 
     return (
         <div className="min-h-screen bg-background pb-16 md:pb-0">
+            {/* Background pattern */}
+            <div
+                className="pointer-events-none fixed inset-0 z-0 opacity-10 dark:opacity-5"
+                style={{
+                    backgroundImage: 'url(/logo.png)',
+                    backgroundSize: '40px 40px',
+                    backgroundRepeat: 'repeat',
+                }}
+            />
             {/* Desktop header */}
             <header className="sticky top-0 z-50 hidden border-b bg-background/95 backdrop-blur md:block">
                 <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -153,7 +165,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </button>
             </nav>
 
-            <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <main className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 {children}
             </main>
 
