@@ -406,7 +406,7 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                     </div>
                 </div>
 
-                <Card className="overflow-hidden border">
+                <Card className="overflow-hidden">
                     {stage.profile_image && (
                         <div className="w-full">
                             <img
@@ -463,7 +463,7 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                 )}
 
                 {is_finished && stage_classification.length > 0 && (
-        <Card className="border-0">
+                    <Card className="border-0">
                         <CardHeader className="pb-3">
                             <CardTitle className="flex items-center gap-2">
                                 <Users className="h-5 w-5 text-accent-500" />
