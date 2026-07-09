@@ -46,9 +46,9 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-    upcoming: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    ongoing: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    finished: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+    upcoming: 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white',
+    ongoing: 'bg-green-600 text-white dark:bg-green-500 dark:text-white',
+    finished: 'bg-gray-500 text-white dark:bg-gray-400 dark:text-gray-900',
 };
 
 const typeOrder = ['gc', 'major', 'monument', 'classic', 'championship'];
@@ -178,7 +178,7 @@ export default function Index({ year, competitions, user_joined_count, total_com
 
                                         <CardContent className="space-y-3 p-4">
                                             <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className={`text-xs ${statusColors[comp.editionStatus] ?? ''}`}>
+                                                <Badge variant="secondary" className={`text-xs rounded-full ${statusColors[comp.editionStatus] ?? ''}`}>
                                                     {statusLabels[comp.editionStatus] ?? comp.editionStatus}
                                                 </Badge>
                                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
