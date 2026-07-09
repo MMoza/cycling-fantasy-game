@@ -1,4 +1,3 @@
-import ApplicationLogo from '@/breeze/ApplicationLogo';
 import PedalesLogo from '@/components/PedalesLogo';
 import { Link, usePage } from '@inertiajs/react';
 import { LayoutDashboard, Route, Trophy, Shield, Bell, BellOff, Calendar } from 'lucide-react';
@@ -29,7 +28,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         ...(auth.user?.is_admin
             ? [{ route: 'admin', href: '/admin', label: 'Admin', icon: Shield }]
             : []),
-        { route: 'pedales', href: route('pedales'), label: 'Pedales', icon: PedalesLogo },
+        // TODO: Descomentar para añadir Pedales al nav
+        // { route: 'pedales', href: route('pedales'), label: 'Pedales', icon: PedalesLogo },
     ];
 
     function isActive(item: typeof navItems[number]): boolean {
@@ -38,9 +38,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
         if (item.route === 'season.index') {
             return route().current('season.*');
-        }
-        if (item.route === 'pedales') {
-            return route().current('pedales');
         }
         return route().current(item.route);
     }
@@ -61,7 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-6">
                         <Link href={route('dashboard')} className="flex items-center gap-2">
-                            <ApplicationLogo className="h-7 w-7" />
+                            <PedalesLogo className="h-7 w-7" />
                             <div className="flex flex-col">
                                 <span className="text-sm font-semibold leading-tight">Pedales</span>
                                 <span className="text-[10px] leading-tight text-muted-foreground">PREDICTOR CYCLING</span>
@@ -79,14 +76,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                             : 'text-muted-foreground hover:text-foreground',
                                     )}
                                 >
-                                    {item.route === 'pedales' ? (
-                                        <item.icon className={cn('h-16 w-16', isActive(item) && 'text-accent-500')} />
-                                    ) : (
-                                        <>
-                                            <item.icon className={cn('h-4 w-4', isActive(item) && 'text-accent-500')} />
-                                            {item.label}
-                                        </>
-                                    )}
+                                    <item.icon className={cn('h-4 w-4', isActive(item) && 'text-accent-500')} />
+                                    {item.label}
                                 </Link>
                             ))}
                             {isSupported && (
@@ -113,7 +104,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Mobile header */}
             <header className="sticky top-0 z-50 flex items-center justify-between border-b bg-background/95 backdrop-blur px-4 py-3 md:hidden">
                 <Link href={route('dashboard')} className="flex items-center gap-2">
-                    <ApplicationLogo className="h-6 w-6" />
+                    <PedalesLogo className="h-6 w-6" />
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold leading-tight">Pedales</span>
                         <span className="text-[9px] leading-tight text-muted-foreground">PREDICTOR CYCLING</span>
@@ -151,14 +142,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 : 'text-muted-foreground hover:text-foreground active:text-foreground',
                         )}
                     >
-                        {item.route === 'pedales' ? (
-                            <item.icon className="h-16 w-16" />
-                        ) : (
-                            <>
-                                <item.icon className="h-5 w-5" />
-                                <span className="text-[10px] font-medium">{item.label}</span>
-                            </>
-                        )}
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-[10px] font-medium">{item.label}</span>
                     </Link>
                 ))}
             </nav>
