@@ -15,6 +15,7 @@ use App\Presentation\Http\Controllers\CompetitionController as UserCompetitionCo
 use App\Presentation\Http\Controllers\DashboardController;
 use App\Presentation\Http\Controllers\LandingController;
 use App\Presentation\Http\Controllers\LeagueController;
+use App\Presentation\Http\Controllers\PedalesController;
 use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
 use App\Presentation\Http\Controllers\PushSubscriptionController;
@@ -31,6 +32,10 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth'])
     ->name('dashboard');
+
+Route::get('/pedales', [PedalesController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('pedales');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

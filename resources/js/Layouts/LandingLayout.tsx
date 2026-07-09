@@ -10,7 +10,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                         <ApplicationLogo className="h-7 w-7" />
                         <div className="flex flex-col">
                             <span className="text-sm font-semibold leading-tight">Pedales</span>
-                            <span className="text-[10px] leading-tight text-muted-foreground">FANTASY CYCLING</span>
+                            <span className="text-[10px] leading-tight text-muted-foreground">PREDICTOR CYCLING</span>
                         </div>
                     </Link>
                     <nav className="flex items-center gap-4">

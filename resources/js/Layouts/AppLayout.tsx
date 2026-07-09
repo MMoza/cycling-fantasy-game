@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import ApplicationLogo from '@/breeze/ApplicationLogo';
+import PedalesLogo from '@/components/PedalesLogo';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Route, Trophy, Shield, Search, Bell, BellOff, Calendar } from 'lucide-react';
+import { LayoutDashboard, Route, Trophy, Shield, Bell, BellOff, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from '@/components/UserMenu';
-import SearchModal from '@/components/SearchModal';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +15,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const activeLeagueId = pageProps.league_id ?? pageProps.leagueId ?? currentLeague?.id;
     const activeLeague = activeLeagueId ? { id: activeLeagueId } : currentLeague;
 
-    const [searchOpen, setSearchOpen] = useState(false);
     const { isSupported, isSubscribed, subscribe, unsubscribe, loading } = usePushNotifications();
 
     const navItems = [
@@ -31,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         ...(auth.user?.is_admin
             ? [{ route: 'admin', href: '/admin', label: 'Admin', icon: Shield }]
             : []),
+        { route: 'pedales', href: route('pedales'), label: 'Pedales', icon: PedalesLogo },
     ];
 
     function isActive(item: typeof navItems[number]): boolean {
@@ -39,6 +38,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
         if (item.route === 'season.index') {
             return route().current('season.*');
+        }
+        if (item.route === 'pedales') {
+            return route().current('pedales');
         }
         return route().current(item.route);
     }
@@ -62,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             <ApplicationLogo className="h-7 w-7" />
                             <div className="flex flex-col">
                                 <span className="text-sm font-semibold leading-tight">Pedales</span>
-                                <span className="text-[10px] leading-tight text-muted-foreground">FANTASY CYCLING</span>
+                                <span className="text-[10px] leading-tight text-muted-foreground">PREDICTOR CYCLING</span>
                             </div>
                         </Link>
                         <nav className="flex items-center gap-4">
@@ -77,18 +79,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                             : 'text-muted-foreground hover:text-foreground',
                                     )}
                                 >
-                                    <item.icon className={cn('h-4 w-4', isActive(item) && 'text-accent-500')} />
-                                    {item.label}
+                                    {item.route === 'pedales' ? (
+                                        <item.icon className={cn('h-16 w-16', isActive(item) && 'text-accent-500')} />
+                                    ) : (
+                                        <>
+                                            <item.icon className={cn('h-4 w-4', isActive(item) && 'text-accent-500')} />
+                                            {item.label}
+                                        </>
+                                    )}
                                 </Link>
                             ))}
-                            <button
-                                type="button"
-                                onClick={() => setSearchOpen(true)}
-                                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                            >
-                                <Search className="h-4 w-4" />
-                                Buscar
-                            </button>
                             {isSupported && (
                                 <button
                                     type="button"
@@ -116,7 +116,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <ApplicationLogo className="h-6 w-6" />
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold leading-tight">Pedales</span>
-                        <span className="text-[9px] leading-tight text-muted-foreground">FANTASY CYCLING</span>
+                        <span className="text-[9px] leading-tight text-muted-foreground">PREDICTOR CYCLING</span>
                     </div>
                 </Link>
                 <div className="flex items-center gap-3">
@@ -151,25 +151,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 : 'text-muted-foreground hover:text-foreground active:text-foreground',
                         )}
                     >
-                        <item.icon className="h-5 w-5" />
-                        <span className="text-[10px] font-medium">{item.label}</span>
+                        {item.route === 'pedales' ? (
+                            <item.icon className="h-16 w-16" />
+                        ) : (
+                            <>
+                                <item.icon className="h-5 w-5" />
+                                <span className="text-[10px] font-medium">{item.label}</span>
+                            </>
+                        )}
                     </Link>
                 ))}
-                <button
-                    type="button"
-                    onClick={() => setSearchOpen(true)}
-                    className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors hover:text-foreground active:text-foreground"
-                >
-                    <Search className="h-5 w-5" />
-                    <span className="text-[10px] font-medium">Buscar</span>
-                </button>
             </nav>
 
             <main className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 {children}
             </main>
-
-            <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
         </div>
     );
 }

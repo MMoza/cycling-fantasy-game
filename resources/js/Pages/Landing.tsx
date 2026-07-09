@@ -75,18 +75,23 @@ export default function Landing() {
 
             {/* Hero */}
             <section className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-900 via-brand-800 to-brand-950" />
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-accent-500/10 via-transparent to-transparent" />
+                <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: 'url(/portada-landing.avif)' }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-black/30" />
                 <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
                     <div className="mx-auto max-w-3xl text-center">
-                        
                         <img
                             src="/logo-pedales.png"
                             alt="Pedales"
-                            className="mx-auto h-42 w-42 rounded-full object-cover shadow-2xl ring-4 ring-white/10 sm:h-40 sm:w-40"
+                            className="mx-auto h-32 w-32 rounded-full object-cover shadow-2xl ring-4 ring-white/10 sm:h-40 sm:w-40"
                         />
-                        <p className="mt-6 text-lg leading-8 text-gray-300">
-                            
+                        <h1 className="mt-6 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                            Pedales
+                        </h1>
+                        <p className="mt-4 text-lg leading-8 text-gray-300">
+                            El fantasy de ciclismo para Grandes Vueltas. Pronósticos sellados, ligas privadas y emoción hasta el último metro.
                         </p>
                         <div className="mt-10 flex items-center justify-center gap-4">
                             <Link
