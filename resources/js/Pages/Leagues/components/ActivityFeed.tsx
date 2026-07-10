@@ -48,7 +48,7 @@ export function ActivityFeed({ activity_logs }: ActivityFeedProps) {
                 </CardHeader>
             </button>
             {!collapsed && (
-                <CardContent className="px-6 pb-6 bg-white/80">
+                <CardContent className="px-6 pb-6 pt-4 bg-white/80">
                     <div className="relative space-y-0">
                         {visibleLogs.map((log, i) => (
                             <div key={log.id} className="flex gap-3 pb-4 last:pb-0">
