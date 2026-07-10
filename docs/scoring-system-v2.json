@@ -1,0 +1,301 @@
+{
+  "version": "1.0",
+  "season": "2027",
+  "description": "Sistema oficial de puntuación de Pedales para competiciones oficiales.",
+
+  "competitions": {
+    "grand_tour": {
+      "name": "Grandes Vueltas",
+      "events": [
+        "Tour de Francia",
+        "Giro de Italia",
+        "Vuelta a España"
+      ],
+
+      "stage_predictions": {
+        "difficulty_1": {
+          "winner": 15,
+          "second": 10,
+          "third": 5,
+          "podium_unordered": 3
+        },
+        "difficulty_2": {
+          "winner": 20,
+          "second": 15,
+          "third": 10,
+          "podium_unordered": 6
+        },
+        "difficulty_3": {
+          "winner": 25,
+          "second": 18,
+          "third": 12,
+          "podium_unordered": 8
+        }
+      },
+
+      "daily_classifications": {
+        "general": 10,
+        "points": 6,
+        "mountains": 6,
+        "young": 6,
+        "team": 5
+      },
+
+      "final_classifications": {
+        "general": {
+          "positions": {
+            "1": 100,
+            "2": 75,
+            "3": 60,
+            "4": 45,
+            "5": 35
+          },
+          "unordered": 15
+        },
+        "points": {
+          "positions": {
+            "1": 35,
+            "2": 25,
+            "3": 18
+          },
+          "unordered": 10
+        },
+        "mountains": {
+          "positions": {
+            "1": 35,
+            "2": 25,
+            "3": 18
+          },
+          "unordered": 10
+        },
+        "young": {
+          "positions": {
+            "1": 35,
+            "2": 25,
+            "3": 18
+          },
+          "unordered": 10
+        },
+        "team": {
+          "winner": 30
+        }
+      }
+    },
+
+    "stage_race": {
+      "name": "Vueltas de una semana",
+      "events": [
+        "París-Niza",
+        "Tirreno-Adriático",
+        "Volta a Catalunya",
+        "Itzulia",
+        "Tour de Romandía",
+        "Critérium du Dauphiné",
+        "Tour de Suiza",
+        "UAE Tour"
+      ],
+
+      "stage_predictions": {
+        "difficulty_1": {
+          "winner": 15,
+          "second": 10,
+          "third": 5,
+          "podium_unordered": 3
+        },
+        "difficulty_2": {
+          "winner": 20,
+          "second": 15,
+          "third": 10,
+          "podium_unordered": 6
+        },
+        "difficulty_3": {
+          "winner": 25,
+          "second": 18,
+          "third": 12,
+          "podium_unordered": 8
+        }
+      },
+
+      "daily_classifications": {
+        "general": 8,
+        "points": 5,
+        "mountains": 5,
+        "young": 5,
+        "team": 4
+      },
+
+      "final_classifications": {
+        "general": {
+          "positions": {
+            "1": 70,
+            "2": 55,
+            "3": 40,
+            "4": 30,
+            "5": 20
+          },
+          "unordered": 10
+        },
+        "points": {
+          "positions": {
+            "1": 30,
+            "2": 20,
+            "3": 15
+          },
+          "unordered": 8
+        },
+        "mountains": {
+          "positions": {
+            "1": 30,
+            "2": 20,
+            "3": 15
+          },
+          "unordered": 8
+        },
+        "young": {
+          "positions": {
+            "1": 30,
+            "2": 20,
+            "3": 15
+          },
+          "unordered": 8
+        },
+        "team": {
+          "winner": 20
+        }
+      }
+    },
+
+    "monument": {
+      "name": "Monumentos",
+      "events": [
+        "Milán-San Remo",
+        "Tour de Flandes",
+        "París-Roubaix",
+        "Lieja-Bastoña-Lieja",
+        "Il Lombardia"
+      ],
+
+      "prediction": {
+        "top10": {
+          "positions": {
+            "1": 80,
+            "2": 60,
+            "3": 50,
+            "4": 40,
+            "5": 35,
+            "6": 30,
+            "7": 25,
+            "8": 20,
+            "9": 15,
+            "10": 10
+          },
+          "unordered": {
+            "1": 20,
+            "2": 18,
+            "3": 16,
+            "4": 14,
+            "5": 12,
+            "6": 10,
+            "7": 8,
+            "8": 6,
+            "9": 5,
+            "10": 4
+          },
+          "bonus": {
+            "perfect_top10": 100
+          }
+        }
+      }
+    },
+
+    "classic": {
+      "name": "Clásicas de un día",
+
+      "events": [
+        "Strade Bianche",
+        "E3 Saxo Classic",
+        "A Través de Flandes",
+        "Giro dell'Emilia",
+        "Tre Valli Varesine",
+        "GP Québec",
+        "GP Montréal"
+      ],
+
+      "prediction": {
+        "top4": {
+          "positions": {
+            "1": 50,
+            "2": 35,
+            "3": 25,
+            "4": 18
+          },
+          "unordered": {
+            "1": 12,
+            "2": 10,
+            "3": 8,
+            "4": 6
+          },
+          "bonus": {
+            "perfect_top4": 40
+          }
+        }
+      }
+    }
+  },
+
+  "global_rules": {
+    "combative_prediction": false,
+    "super_combative_prediction": false,
+
+    "design_principles": [
+      "Sistema accesible para jugadores nuevos.",
+      "Premiar el conocimiento sin penalizar en exceso los pequeños errores.",
+      "Las Grandes Vueltas son el evento principal de la temporada.",
+      "Las etapas mantienen viva la clasificación.",
+      "Las clasificaciones finales premian la estrategia a largo plazo.",
+      "Los Monumentos deben tener un gran peso en la temporada.",
+      "Las vueltas de una semana deben situarse entre un Monumento y una Gran Vuelta.",
+      "Las clásicas menores deben seguir siendo relevantes sin eclipsar el resto del calendario."
+    ]
+  },
+
+  "badges": {
+    "visible": [
+      "Cazador de Etapas",
+      "Maestro del Podio",
+      "Oráculo Amarillo",
+      "Rey Verde",
+      "Rey de la Montaña",
+      "Joven Promesa",
+      "Estratega",
+      "Campeón",
+      "Podios",
+      "Top 10",
+      "Campeón de Temporada",
+      "Podios de Temporada",
+      "Top 10 de Temporada",
+      "Participante",
+      "Veterano",
+      "Siempre Presente",
+      "Puntos Históricos",
+      "Etapas Jugadas",
+      "Farolillo Rojo"
+    ],
+
+    "hidden": [
+      "Coleccionista",
+      "Triple Corona",
+      "Cinco Monumentos",
+      "Perfecto",
+      "Adivino"
+    ],
+
+    "special": [
+      {
+        "name": "Tester Fundador",
+        "description": "Participó en la primera beta pública de Pedales durante el Tour de Francia 2026.",
+        "exclusive": true
+      }
+    ]
+  }
+}
