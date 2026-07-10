@@ -121,7 +121,7 @@ test('command rebuilds scores for a specific league', function () {
         'scoring_rule_id' => Str::uuid()->toString(),
         'points' => 999,
         'description' => 'Stale event',
-        'context' => 'stage_1',
+        'context' => 'stage_winner',
     ]);
 
     $this->artisan('race:rebuild-scores', ['league_id' => $this->league1->id])

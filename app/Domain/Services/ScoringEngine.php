@@ -50,7 +50,7 @@ class ScoringEngine
             scoringRuleId: $rule?->id ?? '',
             points: $finalPoints,
             description: $description,
-            context: "stage_{$actualResult->position}",
+            context: $prediction->category->value,
             stageId: $stageId,
         );
     }

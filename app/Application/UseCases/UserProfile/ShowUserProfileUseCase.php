@@ -134,32 +134,17 @@ class ShowUserProfileUseCase
                 $predictions = collect();
             }
 
-            $stageResultFlags = DB::table('stage_results')
-                ->where('stage_id', $stage->id)
-                ->select(['position', 'is_combativo', 'is_gc_leader'])
-                ->get()
-                ->keyBy('position');
-
             $contextPoints = $stageCategoryPoints
                 ->filter(fn ($e) => $e->stage_id === $stage->id)
                 ->mapWithKeys(fn ($e) => [$e->context => (int) $e->total_points]);
 
-            $mappedPredictions = $predictions->map(function ($p) use ($contextPoints, $stageResultFlags, $riders, $teamNames) {
+            $mappedPredictions = $predictions->map(function ($p) use ($contextPoints, $riders, $teamNames) {
                 $cat = $p->category->value;
-
-                $ctx = match ($cat) {
-                    'stage_winner' => 'stage_1',
-                    'stage_second' => 'stage_2',
-                    'stage_third' => 'stage_3',
-                    'stage_combativo' => $this->flagContext('is_combativo', $stageResultFlags),
-                    'stage_leader' => $this->flagContext('is_gc_leader', $stageResultFlags),
-                    default => null,
-                };
 
                 return [
                     'category' => $cat,
                     ...$this->formatPrediction($p->prediction_value, $cat, $riders, $teamNames),
-                    'points' => $ctx ? ($contextPoints[$ctx] ?? 0) : 0,
+                    'points' => $contextPoints[$cat] ?? 0,
                 ];
             })->sortBy(fn ($p) => $stageOrder[$p['category']] ?? 999)->values();
 
@@ -236,13 +221,6 @@ class ShowUserProfileUseCase
                 ['id' => $riderId, 'name' => $name, 'type' => 'rider'],
             ],
         ];
-    }
-
-    private function flagContext(string $flag, $stageResultFlags): ?string
-    {
-        $position = $stageResultFlags->firstWhere($flag, true)?->position;
-
-        return $position ? 'stage_'.$position : null;
     }
 
     private function resolveAvatarUrl(?string $path): ?string
