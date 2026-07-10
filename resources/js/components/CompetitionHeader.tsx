@@ -12,7 +12,7 @@ interface CompetitionHeaderProps {
 
 export function CompetitionHeader({ competitionName, year, leagueName, logoImageUrl, isOfficial, onSettingsClick }: CompetitionHeaderProps) {
     return (
-        <div className="sticky top-[65px] z-40 bg-background/85 backdrop-blur md:hidden">
+        <div className="sticky top-[88px] z-40 bg-background/85 backdrop-blur md:hidden">
             <div className="flex items-center gap-2 px-4 py-2">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
                     {logoImageUrl ? (

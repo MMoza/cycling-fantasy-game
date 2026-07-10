@@ -39,7 +39,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
             <Head title={league.name} />
 
             {/* Mobile sticky header */}
-            <div className="sticky top-[65px] z-40 bg-background/95 backdrop-blur md:hidden">
+            <div className="sticky top-[88px] z-40 bg-background/95 backdrop-blur md:hidden">
                 <div className="flex items-center gap-2 px-4 py-2">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
                         {league.competition.logoImageUrl ? (
