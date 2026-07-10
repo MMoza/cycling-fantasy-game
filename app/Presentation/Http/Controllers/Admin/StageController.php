@@ -104,6 +104,7 @@ class StageController extends Controller
             'scheduled_start' => 'nullable|date',
             'profile_image' => 'nullable|url|max:2048',
             'live_stream_url' => 'nullable|url|max:2048',
+            'status' => 'required|string|in:upcoming,ongoing,finished',
         ]);
 
         $this->updateStageUseCase->execute(

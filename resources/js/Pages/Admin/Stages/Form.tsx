@@ -129,7 +129,7 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
                                     {errors.date && <p className="text-sm text-destructive">{errors.date}</p>}
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="scheduled_start">Hora de inicio (UTC)</Label>
+                                    <Label htmlFor="scheduled_start">Hora de inicio</Label>
                                     <Input id="scheduled_start" type="datetime-local" value={data.scheduled_start} onChange={(e) => setData('scheduled_start', e.target.value)} />
                                     {errors.scheduled_start && <p className="text-sm text-destructive">{errors.scheduled_start}</p>}
                                 </div>
