@@ -42,6 +42,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'plan' => UserPlan::class,
+            'last_active_at' => 'datetime',
         ];
     }
 

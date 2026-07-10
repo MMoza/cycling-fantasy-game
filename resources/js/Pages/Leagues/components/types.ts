@@ -51,6 +51,7 @@ export interface LeaderboardEntry {
     points: number;
     behind_leader: number;
     is_current_user: boolean;
+    is_online?: boolean;
     previous_rank: number | null;
     rank_change: number | null;
 }

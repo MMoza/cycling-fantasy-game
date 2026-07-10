@@ -108,7 +108,7 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                     </span>
                 )}
             </div>
-            <Avatar user={{ name: entry.user_name, avatar: entry.avatar }} size="sm" />
+            <Avatar user={{ name: entry.user_name, avatar: entry.avatar }} size="sm" isOnline={entry.is_online} />
             <div className="flex min-w-0 flex-1 items-center gap-2">
                 <span className="truncate text-sm">
                     {entry.user_name}

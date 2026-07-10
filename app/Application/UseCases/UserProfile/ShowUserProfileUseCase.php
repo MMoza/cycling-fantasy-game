@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\UserProfile;
 
+use App\Domain\Services\OnlineStatusService;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
@@ -178,6 +179,8 @@ class ShowUserProfileUseCase
                 'rank' => $targetEntry ? $targetEntry['rank'] : '-',
                 'points' => $targetEntry ? $targetEntry['points'] : 0,
                 'behind_leader' => $targetEntry ? $topPoints - $targetEntry['points'] : 0,
+                'is_online' => OnlineStatusService::isOnline($targetUser->last_active_at),
+                'last_active_at' => $targetUser->last_active_at?->toISOString(),
             ],
             'pre_race_predictions' => $preRacePredictions,
             'stage_details' => $stageDetails,

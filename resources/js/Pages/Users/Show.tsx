@@ -46,6 +46,8 @@ interface UserProfile {
     rank: number | string;
     points: number;
     behind_leader: number;
+    is_online?: boolean;
+    last_active_at?: string | null;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -69,6 +71,22 @@ const STAGE_ICONS: Record<string, React.ReactNode> = {
     stage_combativo: <Zap className="h-4 w-4 text-red-500 shrink-0" aria-label="Combativo" />,
     stage_leader: <Shirt className="h-4 w-4 text-yellow-500 shrink-0" aria-label="Líder" />,
 };
+
+function formatLastActive(isOnline?: boolean, lastActiveAt?: string | null): string {
+    if (isOnline) return 'Online';
+    if (!lastActiveAt) return '';
+
+    const diff = Date.now() - new Date(lastActiveAt).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Hace un momento';
+    if (minutes < 60) return `Hace ${minutes} min`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours}h`;
+
+    const days = Math.floor(hours / 24);
+    return `Hace ${days}d`;
+}
 
 function RiderAvatar({ name, size = 'xs' }: { name: string; size?: 'xs' | 'sm' }) {
     const sizeClasses = {
@@ -135,9 +153,21 @@ export default function Show({
 
                 <Card>
                     <div className="flex items-center gap-4 p-6">
-                        <Avatar user={{ name: user.name, avatar: user.avatar }} size="lg" />
+                        <Avatar user={{ name: user.name, avatar: user.avatar }} size="lg" isOnline={user.is_online} />
                         <div className="min-w-0 flex-1">
                             <h1 className="text-xl font-bold truncate">{user.name}</h1>
+                            <div className="mt-1 flex items-center gap-2">
+                                {user.is_online ? (
+                                    <span className="flex items-center gap-1 text-xs text-green-600">
+                                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+                                        Online
+                                    </span>
+                                ) : user.last_active_at ? (
+                                    <span className="text-xs text-muted-foreground">
+                                        {formatLastActive(user.is_online, user.last_active_at)}
+                                    </span>
+                                ) : null}
+                            </div>
                             <div className="mt-2 flex flex-wrap items-center gap-3">
                                 <Badge variant="secondary" className="text-sm">
                                     {user.rank}º puesto

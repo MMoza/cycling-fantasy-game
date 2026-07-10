@@ -13,7 +13,9 @@ use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\ShowLeagueUseCase;
 use App\Application\UseCases\League\UpdateLeagueUseCase;
 use App\Application\UseCases\Season\ShowSeasonUseCase;
+use App\Domain\Services\OnlineStatusService;
 use App\Domain\ValueObjects\PredictionType;
+use Carbon\Carbon;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
@@ -139,7 +141,7 @@ class LeagueController extends Controller
         $members = DB::table('league_user')
             ->where('league_id', $leagueModel->id)
             ->join('users', 'users.id', '=', 'league_user.user_id')
-            ->select('users.id', 'users.name', 'users.avatar')
+            ->select('users.id', 'users.name', 'users.avatar', 'users.last_active_at')
             ->get();
 
         $scoredStages = $leagueModel->stages()
@@ -187,6 +189,9 @@ class LeagueController extends Controller
                 'avatar' => $this->resolveAvatarUrl($member->avatar),
                 'points' => (int) ($totalScoresPerUser[$member->id] ?? 0),
                 'is_current_user' => $member->id === $userId,
+                'is_online' => OnlineStatusService::isOnline(
+                    $member->last_active_at ? Carbon::parse($member->last_active_at) : null
+                ),
             ])
             ->sortByDesc('points')
             ->values()
