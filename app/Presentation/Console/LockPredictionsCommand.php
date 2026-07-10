@@ -22,7 +22,10 @@ class LockPredictionsCommand extends Command
 
     public function handle(ActivityLogService $activityLog, PushNotificationService $pushNotification): int
     {
-        Log::info('race:lock-predictions started');
+        Log::info('race:lock-predictions started', [
+            'now' => now()->toIso8601String(),
+            'timezone' => now()->timezoneName,
+        ]);
 
         $stageId = $this->argument('stage_id');
 
@@ -42,6 +45,13 @@ class LockPredictionsCommand extends Command
 
         Log::info("Found {$stages->count()} stages to process", [
             'stage_ids' => $stages->pluck('id', 'number')->toArray(),
+            'stage_details' => $stages->map(fn ($s) => [
+                'number' => $s->number,
+                'name' => $s->name,
+                'scheduled_start' => $s->scheduled_start?->toIso8601String(),
+                'date' => $s->date?->format('Y-m-d'),
+                'status' => $s->status->value,
+            ])->toArray(),
         ]);
 
         if ($stages->isEmpty()) {
@@ -53,41 +63,58 @@ class LockPredictionsCommand extends Command
         $locked = 0;
 
         foreach ($stages as $stage) {
-            $stage->load('edition.leagues', 'edition.competition');
+            try {
+                $stage->load('edition.leagues', 'edition.competition');
 
-            $predictions = PredictionModel::where('stage_id', $stage->id)
-                ->whereNull('locked_at')
-                ->get();
+                $predictions = PredictionModel::where('stage_id', $stage->id)
+                    ->whereNull('locked_at')
+                    ->get();
 
-            if ($predictions->isNotEmpty()) {
-                foreach ($predictions as $prediction) {
-                    $prediction->update([
-                        'locked_at' => now(),
-                    ]);
+                if ($predictions->isNotEmpty()) {
+                    foreach ($predictions as $prediction) {
+                        $prediction->update([
+                            'locked_at' => now(),
+                        ]);
 
-                    $locked++;
-                }
-
-                $this->info("Locked {$predictions->count()} predictions for stage: {$stage->name}");
-            }
-
-            if ($stage->status === StageStatus::Upcoming) {
-                $stage->update(['status' => StageStatus::Ongoing]);
-
-                Log::info("Stage {$stage->number} ({$stage->name}) status updated to ongoing");
-
-                foreach ($stage->edition->leagues as $league) {
-                    if (! $activityLog->hasStageStartForLeague($league, $stage->id)) {
-                        $activityLog->logStageStart($league, $stage);
-                        $this->info("Logged stage_start for league {$league->id}");
+                        $locked++;
                     }
 
-                    $pushNotification->sendStageReminder($league, $stage);
+                    $this->info("Locked {$predictions->count()} predictions for stage: {$stage->name}");
                 }
 
-                $this->info("Stage status updated to ongoing: {$stage->name}");
+                if ($stage->status === StageStatus::Upcoming) {
+                    $updated = $stage->update(['status' => StageStatus::Ongoing]);
 
-                $this->startEditionIfFirstStage($stage, $activityLog);
+                    Log::info("Stage {$stage->number} ({$stage->name}) status update result", [
+                        'updated' => $updated,
+                        'new_status' => $stage->fresh()->status->value,
+                    ]);
+
+                    foreach ($stage->edition->leagues as $league) {
+                        try {
+                            if (! $activityLog->hasStageStartForLeague($league, $stage->id)) {
+                                $activityLog->logStageStart($league, $stage);
+                                $this->info("Logged stage_start for league {$league->id}");
+                            }
+
+                            $pushNotification->sendStageReminder($league, $stage);
+                        } catch (\Throwable $e) {
+                            Log::warning("Failed to process league {$league->id} for stage {$stage->number}", [
+                                'error' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+
+                    $this->info("Stage status updated to ongoing: {$stage->name}");
+
+                    $this->startEditionIfFirstStage($stage, $activityLog);
+                }
+            } catch (\Throwable $e) {
+                Log::error("Failed to process stage {$stage->number} ({$stage->name})", [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                $this->error("Failed to process stage {$stage->number}: {$e->getMessage()}");
             }
         }
 
