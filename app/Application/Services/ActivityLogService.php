@@ -131,4 +131,40 @@ class ActivityLogService
             ->where('data->stage_id', $stageId)
             ->exists();
     }
+
+    public function logPredictionsLocked(LeagueModel $league, StageModel $stage, array $topRiders): void
+    {
+        $names = array_column($topRiders, 'name');
+        $counts = array_column($topRiders, 'count');
+        $formatted = array_map(fn ($n, $c) => "{$n} ({$c})", $names, $counts);
+
+        $log = ActivityLog::create(
+            leagueId: $league->id,
+            type: ActivityLogType::PredictionsLocked,
+            title: "Apuestas cerradas — Etapa {$stage->number}: {$stage->name}",
+            description: 'Favoritos: '.implode(', ', $formatted),
+            data: [
+                'stage_id' => $stage->id,
+                'stage_number' => $stage->number,
+                'top_riders' => $topRiders,
+            ],
+        );
+
+        ActivityLogModel::create([
+            'id' => $log->id,
+            'league_id' => $log->leagueId,
+            'type' => $log->type,
+            'title' => $log->title,
+            'description' => $log->description,
+            'data' => $log->data,
+        ]);
+    }
+
+    public function hasPredictionsLockedForLeague(LeagueModel $league, string $stageId): bool
+    {
+        return ActivityLogModel::where('league_id', $league->id)
+            ->where('type', ActivityLogType::PredictionsLocked->value)
+            ->where('data->stage_id', $stageId)
+            ->exists();
+    }
 }

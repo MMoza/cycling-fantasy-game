@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flag, Play, CheckCheck, Award, Activity, Info, ChevronDown } from 'lucide-react';
+import { Flag, Play, CheckCheck, Award, Activity, Info, ChevronDown, Lock } from 'lucide-react';
 import type { ActivityLog } from './types';
 
 interface ActivityFeedProps {
     activity_logs: ActivityLog[];
+}
+
+interface TopRider {
+    rider_id: string;
+    name: string;
+    count: number;
 }
 
 const activityIcons: Record<string, React.ReactNode> = {
@@ -12,6 +18,7 @@ const activityIcons: Record<string, React.ReactNode> = {
     stage_start: <Play className="h-4 w-4" />,
     stage_end: <CheckCheck className="h-4 w-4" />,
     competition_end: <Award className="h-4 w-4" />,
+    predictions_locked: <Lock className="h-4 w-4" />,
 };
 
 const activityColors: Record<string, string> = {
@@ -19,9 +26,57 @@ const activityColors: Record<string, string> = {
     stage_start: 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400',
     stage_end: 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400',
     competition_end: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
+    predictions_locked: 'bg-slate-100 text-slate-600 dark:bg-slate-900/20 dark:text-slate-400',
 };
 
 const INITIAL_COUNT = 5;
+
+function getInitials(name: string): string {
+    return name.split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+}
+
+function PredictionsLockedContent({ topRiders }: { topRiders: TopRider[] }) {
+    const total = topRiders.reduce((sum, r) => sum + r.count, 0);
+
+    const podiumOrder = topRiders.length >= 3
+        ? [topRiders[1], topRiders[0], topRiders[2]]
+        : topRiders;
+
+    const podiumSizes = ['h-11 w-11', 'h-14 w-14', 'h-9 w-9'];
+    const badgeSizes = ['h-4.5 w-4.5 text-[8px]', 'h-5 w-5 text-[9px]', 'h-4 w-4 text-[8px]'];
+    const podiumBg = [
+        'bg-slate-400 dark:bg-slate-500',
+        'bg-amber-500 dark:bg-amber-600',
+        'bg-amber-700 dark:bg-amber-800',
+    ];
+    const podiumLabels = ['2.º', '1.º', '3.º'];
+    const podiumLift = ['mt-3', 'mt-0', 'mt-5'];
+
+    return (
+        <div className="flex items-end justify-center gap-4 mt-2">
+            {podiumOrder.map((rider, i) => {
+                const pct = total > 0 ? Math.round((rider.count / total) * 100) : 0;
+
+                return (
+                    <div key={rider.rider_id} className={`flex flex-col items-center gap-1 ${podiumLift[i]}`}>
+                        <div className="relative">
+                            <div className={`${podiumSizes[i]} ${podiumBg[i]} rounded-full flex items-center justify-center text-white font-semibold shadow-sm`}>
+                                {getInitials(rider.name)}
+                            </div>
+                            <span className={`absolute -bottom-1 -right-1 ${badgeSizes[i]} rounded-full bg-background border-2 border-background text-foreground font-bold flex items-center justify-center leading-none`}>
+                                {pct}%
+                            </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-muted-foreground">{podiumLabels[i]}</span>
+                        <span className="text-xs text-muted-foreground font-medium truncate max-w-[64px]">
+                            {rider.name}
+                        </span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 export function ActivityFeed({ activity_logs }: ActivityFeedProps) {
     const [collapsed, setCollapsed] = useState(false);
@@ -62,9 +117,11 @@ export function ActivityFeed({ activity_logs }: ActivityFeedProps) {
                                 </div>
                                 <div className="flex-1 min-w-0 pt-0.5">
                                     <p className="text-sm font-medium">{log.title}</p>
-                                    {log.description && (
+                                    {log.type === 'predictions_locked' && log.data?.top_riders ? (
+                                        <PredictionsLockedContent topRiders={log.data.top_riders as TopRider[]} />
+                                    ) : log.description ? (
                                         <p className="text-xs text-muted-foreground mt-0.5">{log.description}</p>
-                                    )}
+                                    ) : null}
                                     <p className="text-xs text-muted-foreground/60 mt-0.5">{log.created_at}</p>
                                 </div>
                             </div>

@@ -10,6 +10,7 @@ use App\Domain\ValueObjects\EditionStatus;
 use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\PredictionModel;
+use App\Infrastructure\Persistence\Models\RiderModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -97,6 +98,14 @@ class LockPredictionsCommand extends Command
                                 $this->info("Logged stage_start for league {$league->id}");
                             }
 
+                            if (! $activityLog->hasPredictionsLockedForLeague($league, $stage->id)) {
+                                $topRiders = $this->getTopPredictedRiders($league->id, $stage->id);
+                                if ($topRiders !== []) {
+                                    $activityLog->logPredictionsLocked($league, $stage, $topRiders);
+                                    $this->info("Logged predictions_locked for league {$league->id}");
+                                }
+                            }
+
                             $pushNotification->sendStageReminder($league, $stage);
                         } catch (\Throwable $e) {
                             Log::warning("Failed to process league {$league->id} for stage {$stage->number}", [
@@ -166,5 +175,38 @@ class LockPredictionsCommand extends Command
             $activityLog->logCompetitionStart($league);
             $this->info("Logged competition_start for league {$league->id}");
         }
+    }
+
+    private function getTopPredictedRiders(string $leagueId, string $stageId): array
+    {
+        $predictions = PredictionModel::where('league_id', $leagueId)
+            ->where('stage_id', $stageId)
+            ->where('category', 'stage_winner')
+            ->whereNotNull('locked_at')
+            ->get();
+
+        if ($predictions->isEmpty()) {
+            return [];
+        }
+
+        $riderCounts = $predictions
+            ->map(fn ($p) => $p->prediction_value['rider_id'] ?? null)
+            ->filter()
+            ->countBy()
+            ->sortDesc()
+            ->take(3);
+
+        if ($riderCounts->isEmpty()) {
+            return [];
+        }
+
+        $riderNames = RiderModel::whereIn('id', $riderCounts->keys())
+            ->pluck('first_name', 'id');
+
+        return $riderCounts->map(fn ($count, $id) => [
+            'rider_id' => $id,
+            'name' => $riderNames[$id] ?? '—',
+            'count' => $count,
+        ])->values()->all();
     }
 }

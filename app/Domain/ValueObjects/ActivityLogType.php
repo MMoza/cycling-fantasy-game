@@ -10,6 +10,7 @@ enum ActivityLogType: string
     case StageStart = 'stage_start';
     case StageEnd = 'stage_end';
     case CompetitionEnd = 'competition_end';
+    case PredictionsLocked = 'predictions_locked';
 
     public function icon(): string
     {
@@ -18,6 +19,7 @@ enum ActivityLogType: string
             self::StageStart => 'play',
             self::StageEnd => 'check',
             self::CompetitionEnd => 'trophy',
+            self::PredictionsLocked => 'lock',
         };
     }
 }
