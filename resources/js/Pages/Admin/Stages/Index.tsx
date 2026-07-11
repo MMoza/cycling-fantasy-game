@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, ArrowLeft, Eye, Users, Star } from 'lucide-react';
+import { Plus, Edit, ArrowLeft, Eye, Users, Star, Image, Clock } from 'lucide-react';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
 
 interface Stage {
@@ -19,6 +19,8 @@ interface Stage {
     origin: string;
     destination: string;
     status: string;
+    profile_image: string | null;
+    scheduled_start: string | null;
 }
 
 export default function Index({ edition, stages }: { edition: { id: string; year: number; competition_id: string; competition: string }; stages: Stage[] }) {
@@ -72,12 +74,31 @@ export default function Index({ edition, stages }: { edition: { id: string; year
                                                 {stage.number}
                                             </Badge>
                                             <div>
-                                                <p className="font-medium">{stage.name}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-medium">{stage.name}</p>
+                                                    {stage.profile_image ? (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                            <Image className="h-2.5 w-2.5" />
+                                                            Perfil
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                                            <Image className="h-2.5 w-2.5" />
+                                                            Sin perfil
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-sm text-muted-foreground">
                                                     <StageTypeIcon type={stage.type_value} className="mr-1 inline-block h-3.5 w-3.5 align-middle" />
                                                     {stage.type} · {stage.distance ? `${stage.distance} km` : '-'}
                                                     {stage.elevation_gain ? ` · ${stage.elevation_gain.toLocaleString()} m` : ''}
                                                     {stage.difficulty ? ` · ${'★'.repeat(stage.difficulty)}` : ''}
+                                                    {stage.scheduled_start && (
+                                                        <span className="ml-2 inline-flex items-center gap-0.5">
+                                                            <Clock className="h-3 w-3" />
+                                                            {stage.scheduled_start}
+                                                        </span>
+                                                    )}
                                                 </p>
                                             </div>
                                         </div>

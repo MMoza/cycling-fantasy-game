@@ -30,6 +30,8 @@ class ListAdminStagesUseCase
                 origin: $s->origin,
                 destination: $s->destination,
                 status: $s->status->label(),
+                profileImage: $s->profile_image,
+                scheduledStart: $s->scheduled_start?->format('H:i'),
             ));
 
         return [

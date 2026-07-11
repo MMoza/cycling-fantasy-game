@@ -19,6 +19,8 @@ readonly class AdminStageDTO
         public ?string $origin,
         public ?string $destination,
         public string $status,
+        public ?string $profileImage,
+        public ?string $scheduledStart,
     ) {}
 }
 
