@@ -167,6 +167,116 @@ class ShowUserProfileUseCase
 
         $hasStagePredictions = ! empty($stageDetails);
 
+        // --- Global stats ---
+        $userLeagueIds = DB::table('league_user')
+            ->where('user_id', $targetUserId)
+            ->pluck('league_id');
+
+        $stagesParticipated = DB::table('predictions')
+            ->where('user_id', $targetUserId)
+            ->distinct()
+            ->count('stage_id');
+
+        $stageWinnersGuessed = DB::table('predictions')
+            ->join('stage_results', function ($join) {
+                $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
+                    ->where('stage_results.position', '=', 1);
+            })
+            ->where('predictions.user_id', $targetUserId)
+            ->where('predictions.category', '=', 'stage_winner')
+            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
+            ->distinct()
+            ->count('predictions.stage_id');
+
+        // Points history (cumulative across scored stages in this league)
+        $stagePointsRaw = ScoreEventModel::where('user_id', $targetUserId)
+            ->where('league_id', $leagueId)
+            ->whereNotNull('stage_id')
+            ->selectRaw('stage_id, SUM(points) as points')
+            ->groupBy('stage_id')
+            ->get();
+
+        $stageNumbers = $league->stages()->pluck('number', 'id');
+
+        // Best stage (highest points in a single stage)
+        $bestStage = null;
+        if ($stagePointsRaw->isNotEmpty()) {
+            $bestStageRow = $stagePointsRaw->sortByDesc('points')->first();
+            $bestStageId = $bestStageRow->stage_id;
+            $bestStageNumber = (int) ($stageNumbers[$bestStageId] ?? 0);
+            $bestStagePoints = (int) $bestStageRow->points;
+
+            $bestStagePredictions = PredictionModel::where('league_id', $leagueId)
+                ->where('user_id', $targetUserId)
+                ->where('stage_id', $bestStageId)
+                ->where('type', 'pre_stage')
+                ->get();
+
+            $bestStageContextPoints = ScoreEventModel::where('league_id', $leagueId)
+                ->where('user_id', $targetUserId)
+                ->where('stage_id', $bestStageId)
+                ->selectRaw('context, SUM(points) as total_points')
+                ->groupBy('context')
+                ->pluck('total_points', 'context');
+
+            $bestStageMappedPredictions = $bestStagePredictions->map(function ($p) use ($bestStageContextPoints, $riders, $teamNames) {
+                $cat = $p->category->value;
+
+                return [
+                    'category' => $cat,
+                    ...$this->formatPrediction($p->prediction_value, $cat, $riders, $teamNames),
+                    'points' => $bestStageContextPoints[$cat] ?? 0,
+                ];
+            })->sortBy(fn ($p) => $stageOrder[$p['category']] ?? 999)->values();
+
+            $bestStage = [
+                'stage_number' => $bestStageNumber,
+                'points' => $bestStagePoints,
+                'predictions' => $bestStageMappedPredictions->all(),
+            ];
+        }
+
+        // Leader cumulative points per stage
+        $allStagePoints = ScoreEventModel::where('league_id', $leagueId)
+            ->whereNotNull('stage_id')
+            ->selectRaw('user_id, stage_id, SUM(points) as points')
+            ->groupBy('user_id', 'stage_id')
+            ->get()
+            ->groupBy('stage_id');
+
+        $leaderCumulative = [];
+        $leaderRunning = 0;
+        $leaderTotals = collect();
+
+        foreach ($stageNumbers as $stageId => $stageNumber) {
+            $stageScores = $allStagePoints->get($stageId, collect());
+            foreach ($stageScores as $score) {
+                $leaderTotals->put(
+                    $score->user_id,
+                    ($leaderTotals->get($score->user_id, 0)) + (int) $score->points
+                );
+            }
+            $maxLeader = $leaderTotals->max() ?? 0;
+            $leaderRunning = $maxLeader;
+            $leaderCumulative[$stageId] = [
+                'stage_number' => (int) $stageNumber,
+                'total' => $leaderRunning,
+            ];
+        }
+
+        $cumulativePoints = [];
+        $runningTotal = 0;
+        foreach ($stagePointsRaw->sortBy(fn ($sp) => $stageNumbers[$sp->stage_id] ?? 0) as $sp) {
+            $runningTotal += (int) $sp->points;
+            $stageNum = (int) ($stageNumbers[$sp->stage_id] ?? 0);
+            $cumulativePoints[] = [
+                'stage_number' => $stageNum,
+                'points' => (int) $sp->points,
+                'total' => $runningTotal,
+                'leader_total' => $leaderCumulative[$sp->stage_id]['total'] ?? 0,
+            ];
+        }
+
         return [
             'league_id' => $league->id,
             'league_name' => $league->name,
@@ -181,7 +291,14 @@ class ShowUserProfileUseCase
                 'behind_leader' => $targetEntry ? $topPoints - $targetEntry['points'] : 0,
                 'is_online' => OnlineStatusService::isOnline($targetUser->last_active_at),
                 'last_active_at' => $targetUser->last_active_at?->toISOString(),
+                'member_since' => $targetUser->created_at->toISOString(),
             ],
+            'global_stats' => [
+                'stages_participated' => $stagesParticipated,
+                'stage_winners_guessed' => $stageWinnersGuessed,
+                'best_stage' => $bestStage,
+            ],
+            'points_history' => $cumulativePoints,
             'pre_race_predictions' => $preRacePredictions,
             'stage_details' => $stageDetails,
         ];
