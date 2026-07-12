@@ -202,7 +202,41 @@ class LeagueController extends Controller
 
         $topPoints = $leaderboard->first()['points'] ?? 0;
 
-        $leaderboard = $leaderboard->map(function ($entry) use ($previousRanks, $topPoints) {
+        // Calculate winner streak (correctly guessed stage winner in last 2+ scored stages)
+        $winnerStreaks = [];
+        if ($scoredStages->isNotEmpty()) {
+            $lastStageIds = $scoredStages->take(-5)->pluck('id')->reverse()->values();
+
+            $correctPredictions = DB::table('predictions')
+                ->join('stage_results', function ($join) {
+                    $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
+                        ->where('stage_results.position', '=', 1);
+                })
+                ->where('predictions.league_id', $leagueModel->id)
+                ->where('predictions.category', '=', 'stage_winner')
+                ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
+                ->whereIn('predictions.stage_id', $lastStageIds)
+                ->select('predictions.user_id', 'predictions.stage_id')
+                ->get()
+                ->groupBy('user_id');
+
+            foreach ($correctPredictions as $userId => $hits) {
+                $hitStageIds = $hits->pluck('stage_id')->toArray();
+                $streak = 0;
+                foreach ($lastStageIds as $stageId) {
+                    if (in_array($stageId, $hitStageIds, true)) {
+                        $streak++;
+                    } else {
+                        break;
+                    }
+                }
+                if ($streak >= 2) {
+                    $winnerStreaks[$userId] = $streak;
+                }
+            }
+        }
+
+        $leaderboard = $leaderboard->map(function ($entry) use ($previousRanks, $topPoints, $winnerStreaks) {
             $previousRank = $previousRanks[$entry['user_id']] ?? null;
             $rankChange = $previousRank !== null ? $previousRank - $entry['rank'] : null;
 
@@ -211,6 +245,7 @@ class LeagueController extends Controller
                 'previous_rank' => $previousRank,
                 'rank_change' => $rankChange,
                 'behind_leader' => $topPoints - $entry['points'],
+                'winner_streak' => $winnerStreaks[$entry['user_id']] ?? 0,
             ];
         });
 

@@ -54,6 +54,7 @@ export interface LeaderboardEntry {
     is_online?: boolean;
     previous_rank: number | null;
     rank_change: number | null;
+    winner_streak: number;
 }
 
 export interface ActivityLog {

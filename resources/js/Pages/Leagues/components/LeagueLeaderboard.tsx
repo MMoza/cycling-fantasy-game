@@ -113,6 +113,11 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                 <span className="truncate text-sm">
                     {entry.user_name}
                 </span>
+                {entry.winner_streak >= 2 && (
+                    <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" title={`Racha de ${entry.winner_streak} aciertos`}>
+                        🔥 {entry.winner_streak}
+                    </span>
+                )}
                 {entry.is_current_user && (
                     <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
                 )}
