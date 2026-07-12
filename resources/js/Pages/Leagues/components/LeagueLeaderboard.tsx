@@ -174,9 +174,14 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                             buildVisibleLeaderboard(sortedLeaderboard, (usePage().props as any)?.auth?.user?.id).map((item, i) => {
                                 if (item.type === 'ellipsis') {
                                     return (
-                                        <div key={`ellipsis-${i}`} className="flex items-center justify-center py-2 text-muted-foreground">
+                                        <button
+                                            key={`ellipsis-${i}`}
+                                            type="button"
+                                            onClick={() => setShowAll(true)}
+                                            className="flex w-full items-center justify-center py-2 text-muted-foreground hover:text-foreground transition-colors"
+                                        >
                                             <span className="text-sm tracking-widest">...</span>
-                                        </div>
+                                        </button>
                                     );
                                 }
                                 if (item.type === 'separator') {
