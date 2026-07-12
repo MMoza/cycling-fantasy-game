@@ -370,6 +370,7 @@ export default function Show({
     const [expandedBestStage, setExpandedBestStage] = useState(false);
     const [expandedPreRace, setExpandedPreRace] = useState(true);
     const [expandedStagePredictions, setExpandedStagePredictions] = useState(true);
+    const [expandedChart, setExpandedChart] = useState(true);
     const totalPreRacePoints = pre_race_predictions.reduce((sum, p) => sum + p.points, 0);
 
     const toggleCategory = (category: string) => {
@@ -538,16 +539,37 @@ export default function Show({
 
                 {/* Points History Chart */}
                 {points_history.length > 0 && (
-                    <Card>
-                        <CardHeader className="px-6 pt-1 pb-3">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <TrendingUp className="h-4 w-4" />
-                                Histórico de puntos
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-6 pb-4">
-                            <PointsChart history={points_history} />
-                        </CardContent>
+                    <Card className="overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setExpandedChart(!expandedChart)}
+                            className="w-full"
+                        >
+                            <CardHeader className="px-6 pt-5 pb-4">
+                                <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                                    <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                                    Histórico de puntos
+                                    <span className="ml-auto text-sm font-medium text-muted-foreground tabular-nums">
+                                        {points_history.length} etapas
+                                    </span>
+                                    <ChevronDown className={cn(
+                                        'h-5 w-5 text-muted-foreground transition-transform duration-300',
+                                        expandedChart && 'rotate-180',
+                                    )} />
+                                </CardTitle>
+                            </CardHeader>
+                        </button>
+
+                        <div className={cn(
+                            'grid transition-all duration-300 ease-in-out',
+                            expandedChart ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+                        )}>
+                            <div className="overflow-hidden">
+                                <CardContent className="px-6 pb-4 pt-0">
+                                    <PointsChart history={points_history} />
+                                </CardContent>
+                            </div>
+                        </div>
                     </Card>
                 )}
 
