@@ -13,7 +13,7 @@
         <link rel="canonical" href="{{ config('app.url') }}">
 
         <!-- Favicon -->
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
 
         <!-- Open Graph -->
         <meta property="og:title" content="Pedales — Fantasy Cycling">
@@ -38,8 +38,8 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="Pedales">
-        <link rel="apple-touch-icon" href="/icons/icon-192.svg">
-        <link rel="mask-icon" href="/icons/icon-maskable.svg" color="#18181b">
+        <link rel="apple-touch-icon" href="/icons/icon-192.png">
+        <link rel="mask-icon" href="/icons/icon-512.png" color="#18181b">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
