@@ -173,17 +173,23 @@ class ShowUserProfileUseCase
             ->pluck('league_id');
 
         $stagesParticipated = DB::table('predictions')
-            ->where('user_id', $targetUserId)
+            ->join('stages', 'stages.id', '=', 'predictions.stage_id')
+            ->where('predictions.user_id', $targetUserId)
+            ->where('predictions.league_id', $leagueId)
+            ->where('stages.status', '!=', 'upcoming')
             ->distinct()
-            ->count('stage_id');
+            ->count('predictions.stage_id');
 
         $stageWinnersGuessed = DB::table('predictions')
             ->join('stage_results', function ($join) {
                 $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
                     ->where('stage_results.position', '=', 1);
             })
+            ->join('stages', 'stages.id', '=', 'predictions.stage_id')
             ->where('predictions.user_id', $targetUserId)
+            ->where('predictions.league_id', $leagueId)
             ->where('predictions.category', '=', 'stage_winner')
+            ->where('stages.status', '!=', 'upcoming')
             ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
             ->distinct()
             ->count('predictions.stage_id');
