@@ -40,7 +40,9 @@ function PredictionsLockedContent({ topRiders }: { topRiders: TopRider[] }) {
 
     const podiumOrder = topRiders.length >= 3
         ? [topRiders[1], topRiders[0], topRiders[2]]
-        : topRiders;
+        : topRiders.length === 2
+            ? [topRiders[1], topRiders[0]]
+            : topRiders;
 
     const podiumSizes = ['h-11 w-11', 'h-14 w-14', 'h-9 w-9'];
     const badgeSizes = ['h-4.5 w-4.5 text-[8px]', 'h-5 w-5 text-[9px]', 'h-4 w-4 text-[8px]'];

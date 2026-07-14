@@ -91,32 +91,32 @@ class LockPredictionsCommand extends Command
                         'new_status' => $stage->fresh()->status->value,
                     ]);
 
-                    foreach ($stage->edition->leagues as $league) {
-                        try {
-                            if (! $activityLog->hasStageStartForLeague($league, $stage->id)) {
-                                $activityLog->logStageStart($league, $stage);
-                                $this->info("Logged stage_start for league {$league->id}");
-                            }
-
-                            if (! $activityLog->hasPredictionsLockedForLeague($league, $stage->id)) {
-                                $topRiders = $this->getTopPredictedRiders($league->id, $stage->id);
-                                if ($topRiders !== []) {
-                                    $activityLog->logPredictionsLocked($league, $stage, $topRiders);
-                                    $this->info("Logged predictions_locked for league {$league->id}");
-                                }
-                            }
-
-                            $pushNotification->sendStageReminder($league, $stage);
-                        } catch (\Throwable $e) {
-                            Log::warning("Failed to process league {$league->id} for stage {$stage->number}", [
-                                'error' => $e->getMessage(),
-                            ]);
-                        }
-                    }
-
                     $this->info("Stage status updated to ongoing: {$stage->name}");
 
                     $this->startEditionIfFirstStage($stage, $activityLog);
+                }
+
+                foreach ($stage->edition->leagues as $league) {
+                    try {
+                        if (! $activityLog->hasStageStartForLeague($league, $stage->id)) {
+                            $activityLog->logStageStart($league, $stage);
+                            $this->info("Logged stage_start for league {$league->id}");
+                        }
+
+                        if (! $activityLog->hasPredictionsLockedForLeague($league, $stage->id)) {
+                            $topRiders = $this->getTopPredictedRiders($league->id, $stage->id);
+                            if ($topRiders !== []) {
+                                $activityLog->logPredictionsLocked($league, $stage, $topRiders);
+                                $this->info("Logged predictions_locked for league {$league->id}");
+                            }
+                        }
+
+                        $pushNotification->sendStageReminder($league, $stage);
+                    } catch (\Throwable $e) {
+                        Log::warning("Failed to process league {$league->id} for stage {$stage->number}", [
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
             } catch (\Throwable $e) {
                 Log::error("Failed to process stage {$stage->number} ({$stage->name})", [
