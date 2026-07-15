@@ -2,7 +2,8 @@
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
-[deploy]
+# cycling-fantasy-game: web server service.
+[services.cycling-fantasy-game.deploy]
 startCommand = "/app/start.sh"
 healthcheckPath = "/up"
 healthcheckTimeout = 60
@@ -10,7 +11,8 @@ restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
 # block-stages-scheduler: cron service — runs schedule:run once per invocation.
-# In Railway, set this service's start command to /app/start-scheduler.sh
-# and configure the cron schedule to: */5 * * * *
-# [deploy.block-stages-scheduler]
-# startCommand = "/app/start-scheduler.sh"
+# Configure the cron schedule in Railway to: */5 * * * *
+[services.block-stages-scheduler.deploy]
+startCommand = "/app/start-scheduler.sh"
+restartPolicyType = "never"
+# healthcheckPath = "/up"  # not applicable to cron jobs
