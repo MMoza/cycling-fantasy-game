@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, Route, ChevronUp, ChevronDown, Minus } from 'lucide-react';
+import { Route, ChevronDown } from 'lucide-react';
+import { StageLeaderboard } from '@/Pages/Leagues/components/StageLeaderboard';
+import { LeagueLeaderboard } from '@/Pages/Leagues/components/LeagueLeaderboard';
 
 interface LeaderboardEntry {
     rank: number;
@@ -54,92 +56,11 @@ interface IndexProps {
     user_position?: { rank: number | string; points: number; behind_leader: number };
 }
 
-function PositionChange({ change }: { change: number | null }) {
-    if (change === null || change === 0) {
-        return <Minus className="h-3 w-3 text-muted-foreground/40" />;
-    }
-    if (change > 0) {
-        return (
-            <span className="flex items-center gap-0.5 text-xs font-medium text-green-600">
-                <ChevronUp className="h-3 w-3" />
-                {change}
-            </span>
-        );
-    }
-    return (
-        <span className="flex items-center gap-0.5 text-xs font-medium text-red-500">
-            <ChevronDown className="h-3 w-3" />
-            {Math.abs(change)}
-        </span>
-    );
-}
-
-function LeaderboardTable({ league_id, leaderboard, emptyMessage }: { league_id: string; leaderboard: LeaderboardEntry[]; emptyMessage: string }) {
-    if (leaderboard.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Users className="h-12 w-12 text-muted-foreground" />
-                <p className="mt-4 text-sm text-muted-foreground">{emptyMessage}</p>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-2">
-            {leaderboard.map((entry) => (
-                <div
-                    key={entry.user_id}
-                    className={`flex items-center justify-between rounded-lg p-3 ${
-                        entry.is_current_user
-                            ? 'bg-accent-100/50 dark:bg-accent-900/10 border border-accent-200 dark:border-accent-800'
-                            : 'hover:bg-muted/50'
-                    }`}
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center">
-                            {entry.rank === 1 ? (
-                                <Trophy className="h-5 w-5 text-yellow-500" />
-                            ) : entry.rank === 2 ? (
-                                <Trophy className="h-5 w-5 text-gray-400" />
-                            ) : entry.rank === 3 ? (
-                                <Trophy className="h-5 w-5 text-amber-700" />
-                            ) : (
-                                <span className="w-6 text-center text-sm font-medium text-muted-foreground">
-                                    {entry.rank}º
-                                </span>
-                            )}
-                        </div>
-                    <Link
-                        href={route('leagues.members.show', [league_id, entry.user_id])}
-                        className="hover:underline"
-                    >
-                        <span className={`text-sm ${entry.is_current_user ? 'font-semibold' : ''}`}>
-                            {entry.user_name}
-                            {entry.is_current_user && (
-                                <span className="ml-2 text-xs text-muted-foreground">(tú)</span>
-                            )}
-                        </span>
-                        {entry.behind_leader > 0 && (
-                            <span className="ml-3 text-xs text-muted-foreground">
-                                -{entry.behind_leader} pts
-                            </span>
-                        )}
-                    </Link>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <PositionChange change={entry.rank_change} />
-                        <span className="text-sm font-medium">{entry.points} pts</span>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
-
 export default function Index({
     league_id,
     league_name,
     stages,
+    general_leaderboard,
     stage_leaderboards,
     last_scored_stage_id,
     general_details,
@@ -147,6 +68,11 @@ export default function Index({
     const scoredStages = stages.filter((s) => s.has_scores);
     const defaultTab = scoredStages.length > 0 ? 'stages' : 'general';
     const [activeTab, setActiveTab] = useState<'general' | 'stages'>(defaultTab);
+    const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+
+    const toggleCategory = (category: string) => {
+        setCollapsedCategories((prev) => ({ ...prev, [category]: !prev[category] }));
+    };
 
     const defaultStageId = last_scored_stage_id ?? scoredStages[0]?.id ?? null;
     const [selectedStageId, setSelectedStageId] = useState<string | null>(defaultStageId);
@@ -192,81 +118,97 @@ export default function Index({
 
                 {activeTab === 'general' ? (
                     <div className="space-y-4">
-                        {general_details.map((detail) => (
-                            <Card key={detail.category}>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-base">{detail.label}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="mb-3 rounded-lg bg-muted p-3">
-                                        <p className="text-xs font-medium text-muted-foreground">Resultado real</p>
-                                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                                            {detail.actual.length > 0 ? (
-                                                detail.actual.map((a) => (
-                                                    <span key={a.label} className="text-sm">
-                                                        {a.label}: <span className="font-medium">{a.value}</span>
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="text-sm text-muted-foreground">Sin resultados</span>
-                                            )}
-                                        </div>
-                                    </div>
+                        <LeagueLeaderboard
+                            league_id={league_id}
+                            leaderboard={general_leaderboard}
+                        />
 
-                                    <div className="space-y-1.5">
-                                        {detail.users.map((u) => (
-                                            <div
-                                                key={u.user_name}
-                                                className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
-                                                    u.is_current_user
-                                                        ? 'bg-accent-100/50 dark:bg-accent-900/10 border border-accent-200 dark:border-accent-800'
-                                                        : ''
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <Link
-                                                        href={route('leagues.members.show', [league_id, u.user_id])}
-                                                        className={`truncate hover:underline ${u.is_current_user ? 'font-semibold' : ''}`}
-                                                    >
-                                                        {u.user_name}
-                                                        {u.is_current_user && (
-                                                            <span className="ml-1.5 text-xs text-muted-foreground">(tú)</span>
-                                                        )}
-                                                    </Link>
-                                                    {u.predicted && (
-                                                        <span className="hidden sm:block text-xs text-muted-foreground truncate max-w-[200px]">
-                                                            → {u.predicted}
-                                                        </span>
+                        {general_details.map((detail) => {
+                            const isCollapsed = collapsedCategories[detail.category] ?? false;
+                            return (
+                                <Card key={detail.category} className="border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-white dark:border-emerald-800/30 dark:from-emerald-950/20 dark:to-transparent">
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleCategory(detail.category)}
+                                        className="w-full"
+                                    >
+                                        <CardHeader className="pb-3 px-6 pt-6">
+                                            <CardTitle className="flex items-center gap-2 text-base">
+                                                {detail.label}
+                                                <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${isCollapsed ? '' : 'rotate-180'}`} />
+                                            </CardTitle>
+                                        </CardHeader>
+                                    </button>
+                                    {!isCollapsed && (
+                                        <CardContent className="p-0 bg-white/80">
+                                            <div className="px-6 py-3 border-b border-muted-200 dark:border-muted-800">
+                                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Resultado real</p>
+                                                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                                    {detail.actual.length > 0 ? (
+                                                        detail.actual.map((a) => (
+                                                            <span key={a.label} className="text-sm">
+                                                                {a.label}: <span className="font-medium">{a.value}</span>
+                                                            </span>
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-sm text-muted-foreground">Sin resultados</span>
                                                     )}
-                                                </div>
-                                                <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                    {u.predicted && (
-                                                        <span className="text-xs text-muted-foreground sm:hidden truncate max-w-[100px]">
-                                                            → {u.predicted}
-                                                        </span>
-                                                    )}
-                                                    <span className={`text-xs font-medium tabular-nums ${
-                                                        u.points > 0 ? 'text-green-600' : 'text-muted-foreground'
-                                                    }`}>
-                                                        {u.points > 0 ? `+${u.points}` : '0'} pts
-                                                    </span>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
+
+                                            <div className="flex items-center gap-3 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-muted-200 dark:border-muted-800">
+                                                <span className="flex-1">Usuario</span>
+                                                <span className="hidden sm:block w-48 text-center">Predicción</span>
+                                                <span className="shrink-0 w-16 text-right">Puntos</span>
+                                            </div>
+
+                                            {detail.users.map((u) => (
+                                                <Link
+                                                    key={u.user_id}
+                                                    href={route('leagues.members.show', [league_id, u.user_id])}
+                                                    className={`
+                                                        flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50
+                                                        ${u.is_current_user
+                                                            ? 'bg-accent-100/50 dark:bg-accent-900/10 border-y border-accent-200 dark:border-accent-800'
+                                                            : 'border-b border-muted-100 dark:border-muted-800/50 last:border-b-0'
+                                                        }
+                                                    `}
+                                                >
+                                                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                                                        <span className={`truncate text-sm ${u.is_current_user ? 'font-semibold' : ''}`}>
+                                                            {u.user_name}
+                                                        </span>
+                                                        {u.is_current_user && (
+                                                            <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
+                                                        )}
+                                                    </div>
+                                                    {u.predicted && (
+                                                        <span className="hidden sm:block w-48 text-center text-xs text-muted-foreground truncate">
+                                                            {u.predicted}
+                                                        </span>
+                                                    )}
+                                                    <span className={`shrink-0 w-16 text-right text-sm font-medium tabular-nums ${
+                                                        u.points > 0 ? 'text-green-600' : 'text-muted-foreground'
+                                                    }`}>
+                                                        {u.points > 0 ? `+${u.points}` : '0'}
+                                                    </span>
+                                                </Link>
+                                            ))}
+                                        </CardContent>
+                                    )}
+                                </Card>
+                            );
+                        })}
                     </div>
                 ) : (
                     <>
                         {scoredStages.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex gap-2 overflow-x-auto pb-2">
                                 {scoredStages.map((stage) => (
                                     <button
                                         key={stage.id}
                                         onClick={() => setSelectedStageId(stage.id)}
-                                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                                        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                                             selectedStageId === stage.id
                                                 ? 'bg-brand-600 text-white'
                                                 : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -279,22 +221,12 @@ export default function Index({
                             </div>
                         )}
 
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle>
-                                    {selectedStageNumber
-                                        ? `Puntuación etapa ${selectedStageNumber}`
-                                        : 'Puntuación de etapa'}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <LeaderboardTable
-                                    league_id={league_id}
-                                    leaderboard={selectedStageLeaderboard?.leaderboard ?? []}
-                                    emptyMessage="Aún no hay puntuaciones para esta etapa"
-                                />
-                            </CardContent>
-                        </Card>
+                        <StageLeaderboard
+                            league_id={league_id}
+                            title={selectedStageNumber ? `Puntuación etapa ${selectedStageNumber}` : 'Puntuación de etapa'}
+                            leaderboard={selectedStageLeaderboard?.leaderboard ?? []}
+                            emptyMessage="Aún no hay puntuaciones para esta etapa"
+                        />
                     </>
                 )}
             </div>

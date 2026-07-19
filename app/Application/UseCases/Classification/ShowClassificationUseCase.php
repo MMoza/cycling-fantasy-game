@@ -49,32 +49,21 @@ class ShowClassificationUseCase
         $stageLeaderboards = [];
         $lastScoredStageId = null;
         $lastStageNumber = 0;
-        $previousCumulativeRanks = null;
 
         foreach ($stages as $stage) {
             if (! in_array($stage->id, $stageIdsWithScores, true)) {
                 continue;
             }
 
-            $cumulativeScores = $generalScores->concat(
-                $perStageScores->filter(fn ($s) => in_array($s->stage_id, $stageIdsWithScores, true))
-                    ->filter(function ($s) use ($stages, $stage) {
-                        $stageNumbers = $stages->pluck('number', 'id');
+            $stageOnlyScores = $perStageScores->where('stage_id', $stage->id);
 
-                        return ($stageNumbers[$s->stage_id] ?? 0) <= ($stageNumbers[$stage->id] ?? 0);
-                    })
-            );
+            $stageLeaderboard = $this->buildLeaderboard($members, $stageOnlyScores, $user->id);
 
-            $cumulativeLeaderboard = $this->buildLeaderboard($members, $cumulativeScores, $user->id);
-
-            $leaderboardWithChange = $cumulativeLeaderboard->map(function ($entry) use ($previousCumulativeRanks) {
-                $previousRank = $previousCumulativeRanks[$entry['user_id']] ?? null;
-                $rankChange = $previousRank !== null ? $previousRank - $entry['rank'] : null;
-
+            $leaderboardWithChange = $stageLeaderboard->map(function ($entry) {
                 return [
                     ...$entry,
-                    'previous_rank' => $previousRank,
-                    'rank_change' => $rankChange,
+                    'previous_rank' => null,
+                    'rank_change' => null,
                 ];
             });
 
@@ -83,8 +72,6 @@ class ShowClassificationUseCase
                 'stage_number' => $stage->number,
                 'leaderboard' => $leaderboardWithChange,
             ];
-
-            $previousCumulativeRanks = $cumulativeLeaderboard->pluck('rank', 'user_id')->toArray();
 
             if ($stage->number > $lastStageNumber) {
                 $lastStageNumber = $stage->number;

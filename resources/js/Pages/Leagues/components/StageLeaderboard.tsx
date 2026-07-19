@@ -1,14 +1,25 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Avatar from '@/components/Avatar';
 import { Trophy, Users, ChevronDown } from 'lucide-react';
 import { PositionChange } from './PositionChange';
-import type { LeaderboardEntry } from './types';
 
-interface LeagueLeaderboardProps {
+interface LeaderboardEntry {
+    rank: number;
+    user_id: string;
+    user_name: string;
+    points: number;
+    is_current_user: boolean;
+    behind_leader: number;
+    previous_rank: number | null;
+    rank_change: number | null;
+}
+
+interface StageLeaderboardProps {
     league_id: string;
+    title: string;
     leaderboard: LeaderboardEntry[];
+    emptyMessage?: string;
 }
 
 function buildVisibleLeaderboard(
@@ -60,7 +71,7 @@ function buildVisibleLeaderboard(
     return result;
 }
 
-export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardProps) {
+export function StageLeaderboard({ league_id, title, leaderboard, emptyMessage = 'Aún no hay puntuaciones' }: StageLeaderboardProps) {
     const [collapsed, setCollapsed] = useState(false);
     const [showAll, setShowAll] = useState(false);
     const [sortKey, setSortKey] = useState<'rank' | 'user_name' | 'points'>('points');
@@ -108,17 +119,10 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                     </span>
                 )}
             </div>
-            <Avatar user={{ name: entry.user_name, avatar: entry.avatar }} size="sm" isOnline={entry.is_online} />
             <div className="flex min-w-0 flex-1 items-center gap-2">
                 <span className="truncate text-sm">
                     {entry.user_name}
                 </span>
-                {(entry.winner_streak ?? 0) >= 2 && (
-                    <span className="shrink-0 inline-flex items-center gap-0.5 text-[11px] font-semibold text-orange-500 dark:text-orange-400" title={`Racha de ${entry.winner_streak} aciertos`}>
-                        <svg className="h-3.5 w-3.5 animate-pulse" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-3.6 0-8-2.4-8-7.7C4 10 12 1 12 1s8 9 8 14.3c0 5.3-4.4 7.7-8 7.7zm0-18.5C9.5 7.5 6 12.6 6 15.3 6 19 8.7 21 12 21s6-2 6-5.7c0-2.7-3.5-7.8-6-10.5z"/><path d="M12 21c-1.7 0-3-1-3-2.7 0-1.4 1.5-3.3 3-5.2 1.5 1.9 3 3.8 3 5.2 0 1.7-1.3 2.7-3 2.7z"/></svg>
-                        {entry.winner_streak}
-                    </span>
-                )}
                 {entry.is_current_user && (
                     <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
                 )}
@@ -142,7 +146,7 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                 <CardHeader className="pb-3 px-6 pt-6">
                     <CardTitle className="flex items-center gap-2">
                         <Trophy className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        Clasificación
+                        {title}
                         <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '' : 'rotate-180'}`} />
                     </CardTitle>
                 </CardHeader>
@@ -153,7 +157,7 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                     <div className="flex flex-col items-center justify-center py-12 text-center px-6">
                         <Users className="h-12 w-12 text-muted-foreground" />
                         <p className="mt-4 text-sm text-muted-foreground">
-                            Aún no hay participantes
+                            {emptyMessage}
                         </p>
                     </div>
                 ) : (
@@ -163,7 +167,6 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                                 Puesto
                                 {sortKey === 'rank' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
                             </button>
-                            <span className="w-8" />
                             <button type="button" onClick={() => toggleSort('user_name')} className="flex flex-1 items-center gap-0.5 hover:text-foreground transition-colors text-left">
                                 Usuario
                                 {sortKey === 'user_name' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}

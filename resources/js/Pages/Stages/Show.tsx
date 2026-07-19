@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/ui/searchable-select';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
+import { StageLeaderboard } from '@/Pages/Leagues/components/StageLeaderboard';
 import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck, Trophy, Medal, Users, Crown, Flame, ChevronDown, ChevronUp, Route, Mountain, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -367,6 +368,22 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
 
     const myStagePoints = stage_classification.find((e) => e.user_id === (usePage().props as any).auth?.user?.id)?.total_points ?? 0;
 
+    const stageClassificationLeaderboard = useMemo(() => {
+        const sorted = [...stage_classification].sort((a, b) => b.total_points - a.total_points);
+        const topPoints = sorted[0]?.total_points ?? 0;
+        const currentUserId = (usePage().props as any).auth?.user?.id;
+        return sorted.map((entry, i) => ({
+            rank: i + 1,
+            user_id: entry.user_id,
+            user_name: entry.user_name,
+            points: entry.total_points,
+            behind_leader: topPoints - entry.total_points,
+            is_current_user: entry.user_id === currentUserId,
+            previous_rank: null,
+            rank_change: null,
+        }));
+    }, [stage_classification]);
+
     return (
         <AppLayout>
             <Head title={`Etapa ${stage.number} — ${stage.name}`} />
@@ -463,37 +480,11 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                 )}
 
                 {is_finished && stage_classification.length > 0 && (
-                    <Card className="border-0">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2">
-                                <Users className="h-5 w-5 text-accent-500" />
-                                Clasificación de la liga — Etapa {stage.number}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <div className="divide-y">
-                                {stage_classification.map((entry, i) => (
-                                    <div key={entry.user_id} className={cn(
-                                        'flex items-center gap-3 px-6 py-2.5',
-                                        entry.user_id === (usePage().props as any).auth?.user?.id && 'bg-accent/5',
-                                    )}>
-                                        <span className={cn(
-                                            'flex h-6 w-6 shrink-0 items-center justify-center text-xs font-bold',
-                                            i < 3 ? '' : 'text-muted-foreground',
-                                        )}>
-                                            {i < 3 ? (
-                                                <Medal className={cn('h-4 w-4', MEDAL_COLORS[i])} />
-                                            ) : (
-                                                `#${i + 1}`
-                                            )}
-                                        </span>
-                                        <span className="flex-1 text-sm font-medium">{entry.user_name}</span>
-                                        <span className="text-sm font-semibold tabular-nums">{entry.total_points} pts</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <StageLeaderboard
+                        league_id={league_id}
+                        title={`Clasificación de la liga — Etapa ${stage.number}`}
+                        leaderboard={stageClassificationLeaderboard}
+                    />
                 )}
 
                 <Card className="overflow-visible">
