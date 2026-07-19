@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Str;
 
 class CompetitionModel extends Model
 {
@@ -28,6 +29,16 @@ class CompetitionModel extends Model
         'logo_image',
         'pcs_slug',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::creating(function (self $competition): void {
+            if (empty($competition->id)) {
+                $competition->id = Str::uuid()->toString();
+            }
+        });
+    }
 
     public function country(): BelongsTo
     {

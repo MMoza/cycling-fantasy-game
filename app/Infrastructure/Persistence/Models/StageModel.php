@@ -8,6 +8,7 @@ use App\Domain\ValueObjects\StageStatus;
 use App\Domain\ValueObjects\StageType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class StageModel extends Model
 {
@@ -34,6 +35,16 @@ class StageModel extends Model
         'difficulty',
         'live_stream_url',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::creating(function (self $stage): void {
+            if (empty($stage->id)) {
+                $stage->id = Str::uuid()->toString();
+            }
+        });
+    }
 
     protected $casts = [
         'number' => 'integer',

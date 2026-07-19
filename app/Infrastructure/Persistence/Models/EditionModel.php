@@ -8,6 +8,7 @@ use App\Domain\ValueObjects\EditionStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class EditionModel extends Model
 {
@@ -25,6 +26,16 @@ class EditionModel extends Model
         'end_date',
         'status',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::creating(function (self $edition): void {
+            if (empty($edition->id)) {
+                $edition->id = Str::uuid()->toString();
+            }
+        });
+    }
 
     protected $casts = [
         'year' => 'integer',
