@@ -44,7 +44,7 @@ export function CompetitionEndedModal({
             <div className="px-5 pt-5 pb-3 text-center">
                 <p className="text-2xl mb-1">🏁</p>
                 <p className="text-base font-bold text-gray-900">
-                    La {data.competition_name} {data.competition_year} ha terminado
+                    {data.competition_name} {data.competition_year} ha terminado
                 </p>
                 <p className="text-sm text-gray-500 mt-0.5">
                     Mira los resultados de la clasificación final
