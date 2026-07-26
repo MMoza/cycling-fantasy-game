@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers\Admin;
 
+use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\Admin\FinalClassification\GetFinalClassificationsUseCase;
 use App\Application\UseCases\Admin\FinalClassification\UpdateFinalClassificationsUseCase;
 use App\Presentation\Http\Controllers\Controller;
@@ -47,11 +48,17 @@ class FinalClassificationController extends Controller
             'classifications.super_combativo' => 'nullable|string|exists:riders,id',
         ]);
 
-        $this->updateFinalClassificationsUseCase->execute(
-            $editionId,
-            $validated['classifications'],
-        );
+        try {
+            $result = $this->updateFinalClassificationsUseCase->execute(
+                $editionId,
+                $validated['classifications'],
+            );
 
-        return redirect()->back()->with('success', 'Clasificaciones guardadas correctamente');
+            $message = "Clasificaciones guardadas. Puntuación pre-carrera: {$result['scored']} eventos en {$result['leagues']} liga(s)";
+
+            return redirect()->back()->with('success', $message);
+        } catch (ApplicationException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

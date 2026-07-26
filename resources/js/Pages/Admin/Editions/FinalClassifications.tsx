@@ -97,6 +97,10 @@ export default function FinalClassifications({ edition, riders, teams, classific
                     <p className="text-sm text-green-600">{flash.success}</p>
                 )}
 
+                {flash?.error && (
+                    <p className="text-sm text-red-600">{flash.error}</p>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {CATEGORIES.map((cat) => (
                         <Card key={cat.key}>

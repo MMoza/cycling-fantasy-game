@@ -343,6 +343,142 @@ Seeder completo que genera datos de prueba realistas llamando al motor de puntua
 
 **stage_id faltante** — No persistía `stage_id` al insertar score events de etapa. Añadido `'stage_id' => $scoreEvent->stageId`.
 
+## PreRaceScoringService
+
+Servicio de aplicación reutilizable que extrae y centraliza toda la lógica de puntuación de predicciones pre-carrera.
+
+### Responsabilidad
+Calcular los `ScoreEvent` de las predicciones pre-race (Top 5 General, maillots, equipos, supercombativo) comparándolas con las `FinalClassification` reales de una edición.
+
+### Método principal
+```php
+PreRaceScoringService::scoreEdition(string $editionId, bool $force = false): array
+```
+
+Retorna:
+```php
+['scored' => int, 'leagues' => int, 'skipped' => int]
+```
+
+### Flujo
+1. Carga `FinalClassificationModel` de la edición y agrupa por categoría
+2. Construye mapas de posición para `gc_top_5`, `points_winner`, `mountains_winner`, `youth_winner`
+3. Extrae `teams_winner` (team_id) y `super_combativo` (rider_id)
+4. Itera todas las ligas de la edición:
+   - Si ya hay score events pre-race y `force=false` → skip
+   - Si `force=true` → borra score events pre-race existentes y recalcula
+   - Carga el `ScoringSystem` de la liga con sus reglas
+   - Para cada predicción `pre_race` de la liga, calcula puntos según categoría usando `ScoringEngine`
+   - Persiste score events con `points > 0`
+   - Loguea `competition_start` en el activity log si no existe
+5. Retorna totales
+
+### Consumidores
+| Consumidor | Cuándo llama |
+|---|---|
+| `UpdateFinalClassificationsUseCase` | Automáticamente al guardar clasificaciones finales (con `force: true`) |
+| `ScorePreRaceCommand` (`race:score-pre-race`) | Manualmente desde CLI, con o sin `--force` |
+
+### Archivo
+`app/Application/Services/PreRaceScoringService.php`
+
+## UpdateFinalClassificationsUseCase
+
+Use case que guarda las clasificaciones finales de una edición y dispara el scoring pre-carrera automáticamente.
+
+### Flujo completo
+```
+Admin guarda clasificaciones finales
+  → Valida que no queden etapas sin finalizar (excluye tipo "rest")
+    → Si hay etapas pendientes: lanza ApplicationException
+  → Transacción DB:
+    1. Borra FinalClassificationModel existentes de la edición
+    2. Inserta las nuevas clasificaciones por categoría
+    3. Marca la edición como EditionStatus::Finished (si no lo estaba)
+  → Llama a PreRaceScoringService::scoreEdition(editionId, force: true)
+  → Retorna array con resultado del scoring
+```
+
+### Guard de etapas pendientes
+Antes de guardar, cuenta etapas con `type != 'rest'` y `status != 'finished'`. Si el conteo > 0, lanza:
+```
+ApplicationException: "No se pueden guardar las clasificaciones finales: quedan {N} etapas sin finalizar"
+```
+
+Las etapas de descanso (`type = rest`) se ignoran en esta validación.
+
+### Retorno
+```php
+['scored' => int, 'leagues' => int, 'skipped' => int]
+```
+
+### Archivo
+`app/Application/UseCases/Admin/FinalClassification/UpdateFinalClassificationsUseCase.php`
+
+## ScorePreRaceCommand (`race:score-pre-race`)
+
+Comando CLI para calcular puntuaciones pre-carrera. Tras la extracción de `PreRaceScoringService`, el comando es un thin wrapper.
+
+### Uso
+```bash
+# Todas las ediciones finished
+php artisan race:score-pre-race
+
+# Una edición concreta
+php artisan race:score-pre-race {edition_id}
+
+# Forzar recálculo
+php artisan race:score-pre-race --force
+```
+
+### Comportamiento
+- Sin `edition_id`: procesa todas las ediciones con `status = finished`
+- Con `edition_id`: procesa solo esa edición
+- `--force`: borra score events pre-race existentes antes de recalcular
+- Muestra output con score events creados, ligas procesadas y saltadas
+
+### Archivo
+`app/Presentation/Console/ScorePreRaceCommand.php`
+
+## FinalClassificationController
+
+### update()
+- Envuelve la llamada al use case en `try/catch` para capturar `ApplicationException`
+- En éxito: flash con mensaje incluyendo score events y ligas procesadas
+- En error: flash con el mensaje de la excepción (ej: etapas pendientes)
+
+### Archivo
+`app/Presentation/Http/Controllers/Admin/FinalClassificationController.php`
+
+## UI: FinalClassifications.tsx
+
+### Cambios
+- Añadido renderizado de `flash.error` (texto rojo) junto al existente `flash.success` (texto verde)
+- Permite mostrar errores de validación del use case (ej: etapas sin finalizar)
+
+### Archivo
+`resources/js/Pages/Admin/Editions/FinalClassifications.tsx`
+
+## Tests: UpdateFinalClassificationsUseCaseTest
+
+### Archivo
+`tests/Feature/UpdateFinalClassificationsUseCaseTest.php`
+
+### Casos de prueba
+| Test | Qué verifica |
+|---|---|
+| `throws exception when stages are not finished` | Bloquea con `ApplicationException` si quedan etapas sin finalizar |
+| `saves classifications and triggers pre-race scoring` | Guarda clasificaciones + crea score events correctamente |
+| `marks edition as finished after saving` | La edición pasa a `EditionStatus::Finished` tras guardar |
+| `allows saving when no stages exist` | Funciona si la edición no tiene etapas creadas |
+| `ignores rest stages when checking finished status` | Las etapas `type=rest` no bloquean el guardado |
+| `re-scores when classifications already existed` | Recalcula correctamente si ya había clasificaciones previas |
+
+### Setup del test
+- Crea competición, edición (status: ongoing), scoring system con regla `super_combativo` (30 pts)
+- Crea liga, usuario, rider y team de prueba
+- Instancia `UpdateFinalClassificationsUseCase` con `PreRaceScoringService` real
+
 ## Ligas Oficiales y Restricciones por Plan (v1)
 
 ### Reglas de negocio
