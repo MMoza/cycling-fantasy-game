@@ -251,14 +251,22 @@ class LeagueController extends Controller
 
         $userEntry = $leaderboard->firstWhere('is_current_user', true);
 
-        $activityLogs = $leagueModel->activityLogs->map(fn ($log) => [
-            'id' => $log->id,
-            'type' => $log->type->value,
-            'title' => $log->title,
-            'description' => $log->description,
-            'data' => $log->data,
-            'created_at' => $log->created_at->diffForHumans(),
-        ]);
+        $activityLogs = $leagueModel->activityLogs->map(function ($log) {
+            $data = $log->data;
+
+            if ($log->type->value === 'league_winner' && isset($data['winner_avatar'])) {
+                $data['winner_avatar'] = $this->resolveAvatarUrl($data['winner_avatar']);
+            }
+
+            return [
+                'id' => $log->id,
+                'type' => $log->type->value,
+                'title' => $log->title,
+                'description' => $log->description,
+                'data' => $data,
+                'created_at' => $log->created_at->diffForHumans(),
+            ];
+        });
 
         return Inertia::render('Leagues/Show', [
             'league_id' => $leagueModel->id,

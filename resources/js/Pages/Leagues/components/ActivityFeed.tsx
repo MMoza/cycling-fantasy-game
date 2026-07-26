@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flag, Play, CheckCheck, Award, Activity, Info, ChevronDown, Lock } from 'lucide-react';
+import { Flag, Play, CheckCheck, Award, Activity, Info, ChevronDown, Lock, Crown, Share2 } from 'lucide-react';
+import confetti from 'canvas-confetti';
+import html2canvas from 'html2canvas';
+import PedalesLogo from '@/components/PedalesLogo';
 import type { ActivityLog } from './types';
 
 interface ActivityFeedProps {
     activity_logs: ActivityLog[];
+    is_official?: boolean;
 }
 
 interface TopRider {
@@ -13,11 +17,26 @@ interface TopRider {
     count: number;
 }
 
+interface WinnerData {
+    winner_name: string;
+    winner_avatar: string | null;
+    winner_points: number;
+    stages_won: number;
+    competition_name: string;
+    competition_year: number;
+    best_stage: {
+        number: number;
+        name: string;
+        points: number;
+    } | null;
+}
+
 const activityIcons: Record<string, React.ReactNode> = {
     competition_start: <Flag className="h-4 w-4" />,
     stage_start: <Play className="h-4 w-4" />,
     stage_end: <CheckCheck className="h-4 w-4" />,
     competition_end: <Award className="h-4 w-4" />,
+    league_winner: <Crown className="h-4 w-4" />,
     predictions_locked: <Lock className="h-4 w-4" />,
 };
 
@@ -26,6 +45,7 @@ const activityColors: Record<string, string> = {
     stage_start: 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400',
     stage_end: 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400',
     competition_end: 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
+    league_winner: 'bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400',
     predictions_locked: 'bg-slate-100 text-slate-600 dark:bg-slate-900/20 dark:text-slate-400',
 };
 
@@ -80,7 +100,185 @@ function PredictionsLockedContent({ topRiders }: { topRiders: TopRider[] }) {
     );
 }
 
-export function ActivityFeed({ activity_logs }: ActivityFeedProps) {
+function LeagueWinnerContent({ data, isOfficial }: { data: WinnerData; isOfficial?: boolean }) {
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [isSharing, setIsSharing] = useState(false);
+
+    const fireConfetti = useCallback((clientX: number, clientY: number) => {
+        const x = clientX / window.innerWidth;
+        const y = clientY / window.innerHeight;
+
+        confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { x, y },
+            colors: ['#f59e0b', '#eab308', '#fbbf24', '#fcd34d', '#a855f7', '#22c55e'],
+        });
+    }, []);
+
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        fireConfetti(e.clientX, e.clientY);
+    }, [fireConfetti]);
+
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+        const touch = e.changedTouches[0];
+        if (touch) {
+            fireConfetti(touch.clientX, touch.clientY);
+        }
+    }, [fireConfetti]);
+
+    const handleShare = useCallback(async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!cardRef.current || isSharing) return;
+
+        setIsSharing(true);
+        try {
+            const canvas = await html2canvas(cardRef.current, {
+                backgroundColor: null,
+                scale: 2,
+                logging: false,
+                useCORS: true,
+            });
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    setIsSharing(false);
+                    return;
+                }
+
+                const file = new File([blob], `ganador-${data.winner_name.toLowerCase().replace(/\s+/g, '-')}.png`, {
+                    type: 'image/png',
+                });
+
+                if (navigator.share && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: `${data.winner_name} - Ganador`,
+                            text: `${data.winner_name} ganó con ${data.winner_points} puntos`,
+                        });
+                    } catch (err) {
+                        if ((err as Error).name !== 'AbortError') {
+                            console.error('Error sharing:', err);
+                        }
+                    }
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = file.name;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }
+
+                setIsSharing(false);
+            }, 'image/png');
+        } catch (err) {
+            console.error('Error capturing card:', err);
+            setIsSharing(false);
+        }
+    }, [data.winner_name, data.winner_points, isSharing]);
+
+    return (
+        <div className="mt-4 w-full rounded-xl bg-card border border-border shadow-sm overflow-hidden">
+            <button
+                type="button"
+                onClick={handleClick}
+                onTouchEnd={handleTouchEnd}
+                className="w-full cursor-pointer active:scale-[0.98] transition-transform"
+            >
+                <div ref={cardRef}>
+                    <div className="relative h-56 bg-muted flex items-center justify-center">
+                        {data.winner_avatar ? (
+                            <img
+                                src={data.winner_avatar}
+                                alt={data.winner_name}
+                                className="h-full w-full object-cover"
+                            />
+                        ) : (
+                            <div className="h-32 w-32 rounded-full bg-primary/10 flex items-center justify-center text-primary text-5xl font-bold">
+                                {data.winner_name.split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase()}
+                            </div>
+                        )}
+
+                        {false && isOfficial && (
+                            <div className="absolute top-3 left-3 px-2.5 py-1 text-[10px] font-semibold bg-primary text-primary-foreground rounded-full uppercase shadow-sm">
+                                Oficial
+                            </div>
+                        )}
+
+                        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
+
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <div className="flex items-end justify-between gap-3">
+                                <div className="flex-1 min-w-0 text-left">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <Crown className="h-4 w-4 text-yellow-400" />
+                                        <span className="text-[10px] font-semibold text-yellow-400 uppercase tracking-wide">
+                                            Ganador
+                                        </span>
+                                    </div>
+                                    <p className="text-lg font-bold text-white truncate text-left">
+                                        {data.winner_name}
+                                    </p>
+                                    <p className="text-sm text-white/90 mt-0.5 text-left">
+                                        {data.competition_name} {data.competition_year}
+                                    </p>
+                                </div>
+                                <PedalesLogo className="h-10 w-10 opacity-40 shrink-0" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="px-4 py-3 bg-card">
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="text-center">
+                                <p className="text-xl font-bold text-foreground">
+                                    {data.winner_points}
+                                </p>
+                                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mt-0.5">
+                                    Puntos
+                                </p>
+                            </div>
+                            <div className="text-center border-x border-border">
+                                <p className="text-xl font-bold text-foreground">
+                                    {data.stages_won > 0 ? data.stages_won : '-'}
+                                </p>
+                                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mt-0.5">
+                                    Victorias
+                                </p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-xl font-bold text-foreground">
+                                    {data.best_stage ? `Etapa ${data.best_stage.number}` : '-'}
+                                </p>
+                                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mt-0.5">
+                                    {data.best_stage ? `${data.best_stage.points} pts` : 'Mejor etapa'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </button>
+
+            <div className="px-4 py-2 border-t border-border bg-card">
+                <button
+                    type="button"
+                    onClick={handleShare}
+                    disabled={isSharing}
+                    className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                    <Share2 className="h-4 w-4" />
+                    {isSharing ? 'Compartiendo...' : 'Compartir'}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+export function ActivityFeed({ activity_logs, is_official }: ActivityFeedProps) {
     const [collapsed, setCollapsed] = useState(false);
     const [showAll, setShowAll] = useState(false);
 
@@ -121,6 +319,8 @@ export function ActivityFeed({ activity_logs }: ActivityFeedProps) {
                                     <p className="text-sm font-medium">{log.title}</p>
                                     {log.type === 'predictions_locked' && log.data?.top_riders ? (
                                         <PredictionsLockedContent topRiders={log.data.top_riders as TopRider[]} />
+                                    ) : log.type === 'league_winner' && log.data?.winner_name ? (
+                                        <LeagueWinnerContent data={log.data as unknown as WinnerData} isOfficial={is_official} />
                                     ) : log.description ? (
                                         <p className="text-xs text-muted-foreground mt-0.5">{log.description}</p>
                                     ) : null}

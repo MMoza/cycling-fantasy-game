@@ -120,6 +120,14 @@ class PreRaceScoringService
                 $this->activityLog->logCompetitionStart($league);
             }
 
+            if (! $this->activityLog->hasTypeForLeague($league, ActivityLogType::CompetitionEnd)) {
+                $this->activityLog->logCompetitionEnd($league);
+            }
+
+            if (! $this->activityLog->hasLeagueWinnerForLeague($league)) {
+                $this->logLeagueWinner($league);
+            }
+
             $leaguesScored++;
         }
 
@@ -128,6 +136,55 @@ class PreRaceScoringService
             'leagues' => $leaguesScored,
             'skipped' => $leaguesSkipped,
         ];
+    }
+
+    private function logLeagueWinner(LeagueModel $league): void
+    {
+        $winner = DB::table('score_events')
+            ->where('league_id', $league->id)
+            ->join('users', 'users.id', '=', 'score_events.user_id')
+            ->selectRaw('users.id, users.name, users.avatar, SUM(score_events.points) as total_points')
+            ->groupBy('users.id', 'users.name', 'users.avatar')
+            ->orderByDesc('total_points')
+            ->first();
+
+        if (! $winner) {
+            return;
+        }
+
+        $stagesWon = DB::table('predictions')
+            ->join('stage_results', function ($join) {
+                $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
+                    ->where('stage_results.position', '=', 1);
+            })
+            ->where('predictions.league_id', $league->id)
+            ->where('predictions.user_id', $winner->id)
+            ->where('predictions.category', 'stage_winner')
+            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
+            ->count();
+
+        $bestStage = DB::table('score_events')
+            ->join('stages', 'stages.id', '=', 'score_events.stage_id')
+            ->where('score_events.user_id', $winner->id)
+            ->where('score_events.league_id', $league->id)
+            ->whereNotNull('score_events.stage_id')
+            ->selectRaw('stages.id, stages.number, stages.name, SUM(score_events.points) as stage_points')
+            ->groupBy('stages.id', 'stages.number', 'stages.name')
+            ->orderByDesc('stage_points')
+            ->first();
+
+        $this->activityLog->logLeagueWinner(
+            league: $league,
+            winnerName: $winner->name,
+            winnerAvatar: $winner->avatar,
+            winnerPoints: (int) $winner->total_points,
+            stagesWon: $stagesWon,
+            bestStage: $bestStage ? [
+                'number' => $bestStage->number,
+                'name' => $bestStage->name,
+                'points' => (int) $bestStage->stage_points,
+            ] : null,
+        );
     }
 
     private function persistScoreEvent(ScoreEvent $event): void

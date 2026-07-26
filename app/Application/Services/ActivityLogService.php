@@ -109,6 +109,42 @@ class ActivityLogService
         ]);
     }
 
+    public function logLeagueWinner(
+        LeagueModel $league,
+        string $winnerName,
+        ?string $winnerAvatar,
+        int $winnerPoints,
+        int $stagesWon = 0,
+        ?array $bestStage = null,
+    ): void {
+        $edition = $league->edition;
+
+        $log = ActivityLog::create(
+            leagueId: $league->id,
+            type: ActivityLogType::LeagueWinner,
+            title: "¡{$winnerName} gana la liga!",
+            description: "Ganador de {$league->name} — {$edition->competition->name} {$edition->year} con {$winnerPoints} puntos.",
+            data: [
+                'winner_name' => $winnerName,
+                'winner_avatar' => $winnerAvatar,
+                'winner_points' => $winnerPoints,
+                'stages_won' => $stagesWon,
+                'competition_name' => $edition->competition->name,
+                'competition_year' => $edition->year,
+                'best_stage' => $bestStage,
+            ],
+        );
+
+        ActivityLogModel::create([
+            'id' => $log->id,
+            'league_id' => $log->leagueId,
+            'type' => $log->type,
+            'title' => $log->title,
+            'description' => $log->description,
+            'data' => $log->data,
+        ]);
+    }
+
     public function hasTypeForLeague(LeagueModel $league, ActivityLogType $type): bool
     {
         return ActivityLogModel::where('league_id', $league->id)
@@ -165,6 +201,13 @@ class ActivityLogService
         return ActivityLogModel::where('league_id', $league->id)
             ->where('type', ActivityLogType::PredictionsLocked->value)
             ->where('data->stage_id', $stageId)
+            ->exists();
+    }
+
+    public function hasLeagueWinnerForLeague(LeagueModel $league): bool
+    {
+        return ActivityLogModel::where('league_id', $league->id)
+            ->where('type', ActivityLogType::LeagueWinner->value)
             ->exists();
     }
 }

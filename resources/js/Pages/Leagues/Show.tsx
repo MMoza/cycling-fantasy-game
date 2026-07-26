@@ -206,7 +206,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     leaderboard={leaderboard}
                 />
 
-                <ActivityFeed activity_logs={activity_logs} />
+                <ActivityFeed activity_logs={activity_logs} is_official={league.is_official} />
             </div>
         </AppLayout>
     );

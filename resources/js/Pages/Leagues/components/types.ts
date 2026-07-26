@@ -59,7 +59,7 @@ export interface LeaderboardEntry {
 
 export interface ActivityLog {
     id: string;
-    type: 'competition_start' | 'stage_start' | 'stage_end' | 'competition_end' | 'predictions_locked';
+    type: 'competition_start' | 'stage_start' | 'stage_end' | 'competition_end' | 'league_winner' | 'predictions_locked';
     title: string;
     description: string | null;
     data: Record<string, unknown> | null;
