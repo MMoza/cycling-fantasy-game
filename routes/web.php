@@ -15,6 +15,7 @@ use App\Presentation\Http\Controllers\CompetitionController as UserCompetitionCo
 use App\Presentation\Http\Controllers\DashboardController;
 use App\Presentation\Http\Controllers\LandingController;
 use App\Presentation\Http\Controllers\LeagueController;
+use App\Presentation\Http\Controllers\NotificationController;
 use App\Presentation\Http\Controllers\PedalesController;
 use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
@@ -69,6 +70,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/push/vapid-key', [PushSubscriptionController::class, 'vapidKey'])->name('push.vapid-key');
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
     Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
     Route::get('/competitions', [UserCompetitionController::class, 'index'])->name('competitions.index');
     Route::get('/competitions/{year?}', [UserCompetitionController::class, 'index'])->name('competitions.year');

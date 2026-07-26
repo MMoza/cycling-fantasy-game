@@ -27,6 +27,7 @@ export interface League {
     max_players: number;
     member_count: number;
     is_owner: boolean;
+    edition_status: 'upcoming' | 'ongoing' | 'finished';
     progress: {
         current_stage: number;
         total_stages: number;

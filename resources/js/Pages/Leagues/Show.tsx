@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Trophy, Route, ChevronRight, Target, Settings, ShieldCheck, Calendar, Users, Shield } from 'lucide-react';
 import { LeagueSettingsModal } from './components/LeagueSettingsModal';
 import { ScoringInfoModal } from './components/ScoringInfoModal';
 import { LeagueStatsCards } from './components/LeagueStatsCards';
 import { LeagueLeaderboard } from './components/LeagueLeaderboard';
 import { ActivityFeed } from './components/ActivityFeed';
+import { CompetitionEndedModal } from '@/components/CompetitionEndedModal';
 import type { League, NextStage, UserPosition, Stage, LeaderboardEntry, ActivityLog } from './components/types';
 
 interface SeasonSummary {
@@ -31,8 +33,10 @@ export default function Show({ league, next_stage, user_position, stages, leader
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [scoringInfoOpen, setScoringInfoOpen] = useState(false);
     const [countdownExpired, setCountdownExpired] = useState(false);
+    const [finishedOpen, setFinishedOpen] = useState(false);
 
     const isOngoing = next_stage?.status === 'ongoing' || (next_stage?.status === 'upcoming' && countdownExpired);
+    const isFinished = league.edition_status === 'finished';
 
     return (
         <AppLayout>
@@ -147,8 +151,33 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     next_stage={next_stage}
                     user_position={user_position}
                     isOngoing={isOngoing}
+                    isFinished={isFinished}
                     onCountdownExpired={() => setCountdownExpired(true)}
+                    onFinishedClick={() => setFinishedOpen(true)}
                 />
+
+                {isFinished && (
+                    <Dialog open={finishedOpen} onOpenChange={setFinishedOpen}>
+                        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden max-h-[90vh] overflow-y-auto" showCloseButton={true}>
+                            <CompetitionEndedModal
+                                data={{
+                                    competition_name: league.competition.name,
+                                    competition_year: league.competition.year,
+                                    user_name: (usePage().props as any)?.auth?.user?.name ?? 'Tú',
+                                    user_avatar: (usePage().props as any)?.auth?.user?.avatar ?? null,
+                                    position: parseInt(user_position.rank) || 0,
+                                    total_points: parseInt(user_position.points) || 0,
+                                    stages_won: 0,
+                                    best_stage: null,
+                                    is_official: league.is_official,
+                                    league_id: league.id,
+                                    leaderboard,
+                                }}
+                                onDismiss={() => setFinishedOpen(false)}
+                            />
+                        </DialogContent>
+                    </Dialog>
+                )}
 
                 <Link href={route('predictions.pre-race', league.id)} className="block">
                     <Card className="cursor-pointer border-amber-200/60 bg-gradient-to-br from-amber-50 to-white transition-colors hover:from-amber-100/70 dark:border-amber-800/30 dark:from-amber-950/20 dark:to-transparent dark:hover:from-amber-950/30">

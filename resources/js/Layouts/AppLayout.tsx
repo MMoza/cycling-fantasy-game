@@ -1,4 +1,5 @@
 import PedalesLogo from '@/components/PedalesLogo';
+import { NotificationModal } from '@/components/NotificationModal';
 import { Link, usePage } from '@inertiajs/react';
 import { LayoutDashboard, Route, Trophy, Shield, Bell, BellOff, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -151,6 +152,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <main className="relative z-10 mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 {children}
             </main>
+
+            <NotificationModal />
         </div>
     );
 }

@@ -300,6 +300,7 @@ class LeagueController extends Controller
                 'invite_code' => $leagueModel->invite_code,
                 'member_count' => $members->count(),
                 'is_owner' => $leagueModel->owner_id === $userId,
+                'edition_status' => $leagueModel->edition->status->value,
                 'progress' => [
                     'current_stage' => $completedStages + 1,
                     'total_stages' => $totalStages,

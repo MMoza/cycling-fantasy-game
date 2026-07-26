@@ -24,6 +24,7 @@ class PreRaceScoringService
 {
     public function __construct(
         private readonly ActivityLogService $activityLog,
+        private readonly NotificationService $notificationService,
     ) {}
 
     public function scoreEdition(string $editionId, bool $force = false): array
@@ -127,6 +128,8 @@ class PreRaceScoringService
             if (! $this->activityLog->hasLeagueWinnerForLeague($league)) {
                 $this->logLeagueWinner($league);
             }
+
+            $this->notificationService->notifyCompetitionEnded($league->id);
 
             $leaguesScored++;
         }
