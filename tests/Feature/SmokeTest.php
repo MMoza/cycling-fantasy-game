@@ -26,15 +26,12 @@ test('guest is redirected to login when accessing dashboard', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated user can access dashboard', function () {
+test('authenticated user with no leagues is redirected to season', function () {
     $user = User::factory()->create();
 
     $response = $this->actingAs($user)->get(route('dashboard'));
 
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->component('Dashboard')
-    );
+    $response->assertRedirect(route('season.index'));
 });
 
 test('authenticated user can logout', function () {
