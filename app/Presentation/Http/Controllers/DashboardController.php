@@ -6,7 +6,6 @@ namespace App\Presentation\Http\Controllers;
 
 use App\Application\UseCases\Dashboard\ShowDashboardUseCase;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
