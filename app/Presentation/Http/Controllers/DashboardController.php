@@ -24,6 +24,6 @@ class DashboardController extends Controller
             return redirect()->route('leagues.show', $leagueId);
         }
 
-        return Inertia::render('Dashboard');
+        return redirect()->route('season.index');
     }
 }
