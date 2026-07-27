@@ -86,7 +86,7 @@ export function InviteFriend() {
             </Card>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="sm:!max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Invita a tus amigos</DialogTitle>
                     </DialogHeader>
@@ -94,11 +94,9 @@ export function InviteFriend() {
                         <div className="rounded-lg bg-muted p-4">
                             <p className="text-sm text-muted-foreground mb-2">Tu enlace de invitación:</p>
                             <div className="flex items-center gap-2">
-                                <div className="flex-1 min-w-0">
-                                    <code className="block text-xs bg-background px-3 py-2 rounded border border-border truncate">
-                                        {invitation.invite_url}
-                                    </code>
-                                </div>
+                                <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap rounded border border-border bg-background px-3 py-2 text-xs">
+                                    {invitation.invite_url}
+                                </code>
                                 <Button
                                     size="sm"
                                     variant="outline"
