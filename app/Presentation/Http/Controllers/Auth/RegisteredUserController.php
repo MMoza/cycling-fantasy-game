@@ -28,7 +28,7 @@ class RegisteredUserController extends Controller
     public function create(Request $request): Response
     {
         return Inertia::render('Auth/Register', [
-            'ref' => $request->query('ref'),
+            'invitationRef' => $request->query('ref'),
         ]);
     }
 

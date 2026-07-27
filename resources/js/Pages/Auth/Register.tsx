@@ -6,13 +6,13 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
-export default function Register({ ref }: { ref?: string | null }) {
+export default function Register({ invitationRef }: { invitationRef?: string | null }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
-        ref: ref ?? '',
+        ref: invitationRef ?? '',
     });
 
     const submit: FormEventHandler = (e) => {
