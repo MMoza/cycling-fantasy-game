@@ -86,15 +86,15 @@ export function InviteFriend() {
             </Card>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="max-w-lg">
                     <DialogHeader>
                         <DialogTitle>Invita a tus amigos</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <div className="rounded-lg bg-muted p-4">
+                        <div className="rounded-lg bg-muted p-4 overflow-hidden">
                             <p className="text-sm text-muted-foreground mb-2">Tu enlace de invitación:</p>
-                            <div className="flex items-center gap-2 min-w-0">
-                                <code className="flex-1 text-xs bg-background px-3 py-2 rounded border border-border truncate min-w-0">
+                            <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                                <code className="flex-1 min-w-0 text-xs bg-background px-3 py-2 rounded border border-border overflow-hidden text-ellipsis whitespace-nowrap">
                                     {invitation.invite_url}
                                 </code>
                                 <Button
@@ -112,11 +112,11 @@ export function InviteFriend() {
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-wrap gap-2">
                             <Button
                                 variant="outline"
                                 onClick={handleWhatsApp}
-                                className="gap-2 flex-1 min-w-[140px]"
+                                className="gap-2 flex-1 min-w-[120px]"
                             >
                                 <MessageCircle className="h-4 w-4" />
                                 WhatsApp
@@ -124,7 +124,7 @@ export function InviteFriend() {
                             <Button
                                 variant="outline"
                                 onClick={handleEmail}
-                                className="gap-2 flex-1 min-w-[140px]"
+                                className="gap-2 flex-1 min-w-[120px]"
                             >
                                 <Mail className="h-4 w-4" />
                                 Email
