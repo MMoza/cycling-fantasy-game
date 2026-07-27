@@ -90,18 +90,20 @@ export function InviteFriend() {
                     <DialogHeader>
                         <DialogTitle>Invita a tus amigos</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="rounded-lg bg-muted p-4">
-                            <p className="text-sm text-muted-foreground mb-2">Tu enlace de invitación:</p>
+                    <div className="space-y-4 overflow-hidden">
+                        <div className="overflow-hidden rounded-lg bg-muted p-4">
+                            <p className="mb-2 text-sm text-muted-foreground">Tu enlace de invitación:</p>
                             <div className="flex items-center gap-2">
-                                <code className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap rounded border border-border bg-background px-3 py-2 text-xs">
-                                    {invitation.invite_url}
-                                </code>
+                                <div className="min-w-0 flex-1">
+                                    <code className="block w-full truncate rounded border border-border bg-background px-3 py-2 text-xs">
+                                        {invitation.invite_url}
+                                    </code>
+                                </div>
                                 <Button
-                                    size="sm"
+                                    size="icon"
                                     variant="outline"
                                     onClick={handleCopy}
-                                    className="shrink-0"
+                                    className="h-8 w-8 shrink-0"
                                 >
                                     {copied ? (
                                         <Check className="h-4 w-4 text-green-600" />
@@ -112,22 +114,22 @@ export function InviteFriend() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid min-w-0 grid-cols-2 gap-2">
                             <Button
                                 variant="outline"
                                 onClick={handleWhatsApp}
-                                className="gap-2"
+                                className="min-w-0 gap-2"
                             >
-                                <MessageCircle className="h-4 w-4" />
-                                WhatsApp
+                                <MessageCircle className="h-4 w-4 shrink-0" />
+                                <span className="truncate">WhatsApp</span>
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={handleEmail}
-                                className="gap-2"
+                                className="min-w-0 gap-2"
                             >
-                                <Mail className="h-4 w-4" />
-                                Email
+                                <Mail className="h-4 w-4 shrink-0" />
+                                <span className="truncate">Email</span>
                             </Button>
                         </div>
 
