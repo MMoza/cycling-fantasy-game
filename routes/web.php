@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Presentation\Http\Controllers\Admin\CompetitionController;
 use App\Presentation\Http\Controllers\Admin\CompetitionSetupController;
 use App\Presentation\Http\Controllers\Admin\EditionController;
+use App\Presentation\Http\Controllers\Admin\EmailController;
 use App\Presentation\Http\Controllers\Admin\FinalClassificationController;
 use App\Presentation\Http\Controllers\Admin\RiderController;
 use App\Presentation\Http\Controllers\Admin\TeamController;
@@ -13,6 +14,7 @@ use App\Presentation\Http\Controllers\Auth\SocialiteController;
 use App\Presentation\Http\Controllers\ClassificationController;
 use App\Presentation\Http\Controllers\CompetitionController as UserCompetitionController;
 use App\Presentation\Http\Controllers\DashboardController;
+use App\Presentation\Http\Controllers\InvitationController;
 use App\Presentation\Http\Controllers\LandingController;
 use App\Presentation\Http\Controllers\LeagueController;
 use App\Presentation\Http\Controllers\NotificationController;
@@ -74,7 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
-    Route::get('/invitation', [App\Presentation\Http\Controllers\InvitationController::class, 'show'])->name('invitation.show');
+    Route::get('/invitation', [InvitationController::class, 'show'])->name('invitation.show');
 
     Route::get('/competitions', [UserCompetitionController::class, 'index'])->name('competitions.index');
     Route::get('/competitions/{year?}', [UserCompetitionController::class, 'index'])->name('competitions.year');
@@ -145,13 +147,13 @@ Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->gro
     Route::post('/users/{id}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
 
     // Emails
-    Route::get('/emails', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'index'])->name('emails.index');
-    Route::get('/emails/create', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'create'])->name('emails.create');
-    Route::post('/emails', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'store'])->name('emails.store');
-    Route::get('/emails/{email}/edit', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'edit'])->name('emails.edit');
-    Route::patch('/emails/{email}', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'update'])->name('emails.update');
-    Route::delete('/emails/{email}', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'destroy'])->name('emails.destroy');
-    Route::post('/emails/{email}/send-now', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'sendNow'])->name('emails.send-now');
+    Route::get('/emails', [EmailController::class, 'index'])->name('emails.index');
+    Route::get('/emails/create', [EmailController::class, 'create'])->name('emails.create');
+    Route::post('/emails', [EmailController::class, 'store'])->name('emails.store');
+    Route::get('/emails/{email}/edit', [EmailController::class, 'edit'])->name('emails.edit');
+    Route::patch('/emails/{email}', [EmailController::class, 'update'])->name('emails.update');
+    Route::delete('/emails/{email}', [EmailController::class, 'destroy'])->name('emails.destroy');
+    Route::post('/emails/{email}/send-now', [EmailController::class, 'sendNow'])->name('emails.send-now');
 });
 
 Route::get('/auth/{provider}/redirect', [SocialiteController::class, 'redirect'])->name('socialite.redirect');

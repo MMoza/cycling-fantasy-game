@@ -7,7 +7,6 @@ namespace App\Infrastructure\Persistence\Models;
 use App\Domain\Entities\Invitation;
 use App\Domain\ValueObjects\InvitationCode;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

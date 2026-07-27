@@ -645,3 +645,137 @@ Admin guarda resultados
 3. Generar service account key (JSON)
 4. Añadir `FIREBASE_CREDENTIALS` en Railway (el JSON completo)
 5. Copiar `firebase-messaging-sw.js` a `/public/`
+
+## Sistema de Invitaciones
+
+### Objetivo
+Permitir a los usuarios invitar amigos mediante enlaces personalizados, trackear el número de registros exitosos y preparar la base para un sistema de badges/recompensas futuro.
+
+### Arquitectura
+
+#### Tablas
+```sql
+-- invitations
+id (uuid PK)
+user_id (uuid FK -> users) -- quien invita
+code (string 12 chars, unique) -- código de invitación
+accepted_count (int, default 0) -- registros exitosos
+timestamps
+
+-- users (nueva columna)
+invited_by (uuid FK -> users, nullable) -- quien invitó a este usuario
+```
+
+#### Entidades y Value Objects
+- `Invitation` (entidad): representa una invitación con código único por usuario
+- `InvitationCode` (value object): código alfanumérico de 12 caracteres, auto-generado
+
+#### Use Cases
+- `GetOrCreateInvitationUseCase`: obtiene o crea la invitación del usuario autenticado
+- `IncrementInvitationCountUseCase`: incrementa el contador cuando alguien se registra con el código
+
+#### Controller
+- `InvitationController::show()`: retorna código, contador y URL de invitación (JSON)
+- Ruta: `GET /invitation` (protegida por auth)
+
+### Flujo de invitación
+
+```
+1. Usuario hace click en "Invita a un amigo" en dashboard de liga
+   → Frontend llama a GET /invitation
+   → Backend retorna: { code, accepted_count, invite_url }
+
+2. Usuario comparte enlace (email, WhatsApp, copiar)
+   → URL: https://app.com/register?ref=ABC123DEF456
+
+3. Nuevo usuario se registra con el enlace
+   → Register.tsx captura ?ref= de la URL
+   → RegisteredUserController::store() valida el código
+   → Si existe: guarda invited_by en users + incrementa accepted_count
+   → Login automático del nuevo usuario
+
+4. Contador se actualiza en tiempo real
+   → InviteFriend component refresca datos al abrir dialog
+```
+
+### Opciones de compartir
+- **Email**: abre cliente de correo con asunto y cuerpo pre-rellenados
+- **WhatsApp**: abre WhatsApp Web/App con mensaje pre-rellenado
+- **Copiar enlace**: copia URL al portapapeles con feedback visual (check icon)
+
+### Frontend
+
+#### Componente `InviteFriend`
+- Ubicación: `resources/js/Pages/Leagues/components/InviteFriend.tsx`
+- Reemplaza la card de "Temporada" en el dashboard de liga
+- Muestra contador de invitaciones aceptadas
+- Al hacer click abre dialog con opciones de compartir
+- Fetch automático de datos al montar
+
+#### Integración en `Leagues/Show.tsx`
+- Importado como `<InviteFriend />`
+- Posicionado entre "Equipos" y `LeagueLeaderboard`
+- Card con gradiente púrpura, icono UserPlus, contador destacado
+
+### Backend
+
+#### Registro modificado
+- `RegisteredUserController::create()`: acepta `?ref=` query param
+- `RegisteredUserController::store()`: valida `ref` (nullable, size:12)
+- Si `ref` válido: guarda `invited_by` en user + incrementa contador
+- Si `ref` inválido: registro normal sin tracking
+
+#### Modelo User actualizado
+- Nueva columna `invited_by` (nullable, FK -> users)
+- Añadido a `$fillable` para mass assignment
+
+### Plan futuro: Sistema de Badges
+
+#### Badges propuestos
+| Badge | Requisito | Recompensa |
+|-------|-----------|------------|
+| Embajador | 5 invitaciones aceptadas | Avatar especial |
+| Influencer | 20 invitaciones aceptadas | Plan Premium 1 mes |
+| Leyenda | 50 invitaciones aceptadas | Badge permanente + mención |
+
+#### Implementación futura
+- Tabla `user_badges` (user_id, badge_type, awarded_at)
+- Job `AwardInvitationBadgesJob` que corre diariamente
+- Notificación in-app cuando se desbloquea un badge
+- Sección "Mis logros" en perfil de usuario
+
+### Archivos creados/modificados
+
+#### Backend
+| Archivo | Descripción |
+|---------|-------------|
+| `database/migrations/2026_07_27_114327_create_invitations_table.php` | Tabla invitations |
+| `database/migrations/2026_07_27_114424_add_invited_by_to_users_table.php` | Columna invited_by en users |
+| `app/Domain/Entities/Invitation.php` | Entidad de dominio |
+| `app/Domain/ValueObjects/InvitationCode.php` | Value object para código |
+| `app/Infrastructure/Persistence/Models/InvitationModel.php` | Modelo Eloquent |
+| `app/Application/UseCases/Invitation/GetOrCreateInvitationUseCase.php` | Obtener/crear invitación |
+| `app/Application/UseCases/Invitation/IncrementInvitationCountUseCase.php` | Incrementar contador |
+| `app/Presentation/Http/Controllers/InvitationController.php` | Endpoint JSON |
+| `app/Presentation/Http/Controllers/Auth/RegisteredUserController.php` | Procesar ref en registro |
+| `app/Models/User.php` | Añadir invited_by a fillable |
+| `routes/web.php` | Ruta GET /invitation |
+
+#### Frontend
+| Archivo | Descripción |
+|---------|-------------|
+| `resources/js/Pages/Leagues/components/InviteFriend.tsx` | Componente con dialog y share options |
+| `resources/js/Pages/Leagues/Show.tsx` | Reemplazar Temporada con InviteFriend |
+| `resources/js/Pages/Auth/Register.tsx` | Capturar ?ref= y enviar al backend |
+
+### Testing
+- 153 tests pasando
+- 0 errores TypeScript
+- Migraciones ejecutadas correctamente
+
+### Consideraciones de seguridad
+- Código de invitación: 12 caracteres alfanuméricos (suficiente entropía)
+- Validación en backend: código debe existir en DB
+- No hay límite de invitaciones por usuario (preparado para badges)
+- `invited_by` es nullable (usuarios existentes no tienen invitador)
+- No se puede invitar a uno mismo (validación implícita: código único por user)
