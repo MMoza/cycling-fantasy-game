@@ -4,20 +4,15 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Trophy, Route, ChevronRight, Target, Settings, ShieldCheck, Calendar, Users, Shield } from 'lucide-react';
+import { Trophy, Route, ChevronRight, Target, Settings, ShieldCheck, Users, Shield } from 'lucide-react';
 import { LeagueSettingsModal } from './components/LeagueSettingsModal';
 import { ScoringInfoModal } from './components/ScoringInfoModal';
 import { LeagueStatsCards } from './components/LeagueStatsCards';
 import { LeagueLeaderboard } from './components/LeagueLeaderboard';
 import { ActivityFeed } from './components/ActivityFeed';
 import { CompetitionEndedModal } from '@/components/CompetitionEndedModal';
+import { InviteFriend } from './components/InviteFriend';
 import type { League, NextStage, UserPosition, Stage, LeaderboardEntry, ActivityLog } from './components/types';
-
-interface SeasonSummary {
-    year: number;
-    joined_count: number;
-    total_competitions: number;
-}
 
 interface ShowProps {
     league: League;
@@ -26,10 +21,9 @@ interface ShowProps {
     stages: Stage[];
     leaderboard: LeaderboardEntry[];
     activity_logs: ActivityLog[];
-    season: SeasonSummary;
 }
 
-export default function Show({ league, next_stage, user_position, stages, leaderboard, activity_logs, season }: ShowProps) {
+export default function Show({ league, next_stage, user_position, stages, leaderboard, activity_logs }: ShowProps) {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [scoringInfoOpen, setScoringInfoOpen] = useState(false);
     const [countdownExpired, setCountdownExpired] = useState(false);
@@ -213,22 +207,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </Card>
                 </Link>
 
-                <Link href={route('season.index')} className="block">
-                    <Card className="cursor-pointer border-blue-200/60 bg-gradient-to-br from-blue-50 to-white transition-colors hover:from-blue-100/70 dark:border-blue-800/30 dark:from-blue-950/20 dark:to-transparent dark:hover:from-blue-950/30">
-                        <CardContent className="flex items-center gap-3 p-4">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium">Temporada {season.year}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    {season.joined_count} de {season.total_competitions} competiciones oficiales
-                                </p>
-                            </div>
-                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                        </CardContent>
-                    </Card>
-                </Link>
+                <InviteFriend />
 
                 <LeagueLeaderboard
                     league_id={league.id}

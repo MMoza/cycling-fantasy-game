@@ -74,6 +74,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
 
+    Route::get('/invitation', [App\Presentation\Http\Controllers\InvitationController::class, 'show'])->name('invitation.show');
+
     Route::get('/competitions', [UserCompetitionController::class, 'index'])->name('competitions.index');
     Route::get('/competitions/{year?}', [UserCompetitionController::class, 'index'])->name('competitions.year');
     Route::get('/competitions/e/{edition}', [UserCompetitionController::class, 'show'])->name('competitions.show');

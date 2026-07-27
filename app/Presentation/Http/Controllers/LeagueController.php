@@ -346,7 +346,6 @@ class LeagueController extends Controller
                 ]),
             'leaderboard' => $leaderboard->values(),
             'activity_logs' => $activityLogs,
-            'season' => $this->getSeasonSummary($request->user()),
         ]);
     }
 

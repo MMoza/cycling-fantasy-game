@@ -24,6 +24,7 @@ class User extends Authenticatable
         'is_admin',
         'plan',
         'last_visited_league_id',
+        'invited_by',
     ];
 
     protected $hidden = [
