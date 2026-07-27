@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Trophy, Users, Bike, Shield, Menu, X, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Trophy, Users, Bike, Shield, Menu, X, ArrowLeft, Mail } from 'lucide-react';
 import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { cn } from '@/lib/utils';
 import UserMenu from '@/components/UserMenu';
@@ -17,6 +17,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { href: '/admin/teams', label: 'Equipos', icon: Users },
         { href: '/admin/riders', label: 'Corredores', icon: Bike },
         { href: '/admin/users', label: 'Usuarios', icon: Shield },
+        { href: '/admin/emails', label: 'Mailing', icon: Mail },
     ];
 
     const topNavItems = [

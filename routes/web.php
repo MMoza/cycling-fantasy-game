@@ -141,6 +141,15 @@ Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->gro
     // Users
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users/{id}/toggle-admin', [UserController::class, 'toggleAdmin'])->name('users.toggle-admin');
+
+    // Emails
+    Route::get('/emails', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'index'])->name('emails.index');
+    Route::get('/emails/create', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'create'])->name('emails.create');
+    Route::post('/emails', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'store'])->name('emails.store');
+    Route::get('/emails/{email}/edit', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'edit'])->name('emails.edit');
+    Route::patch('/emails/{email}', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'update'])->name('emails.update');
+    Route::delete('/emails/{email}', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'destroy'])->name('emails.destroy');
+    Route::post('/emails/{email}/send-now', [App\Presentation\Http\Controllers\Admin\EmailController::class, 'sendNow'])->name('emails.send-now');
 });
 
 Route::get('/auth/{provider}/redirect', [SocialiteController::class, 'redirect'])->name('socialite.redirect');
