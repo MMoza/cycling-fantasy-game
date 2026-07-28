@@ -135,9 +135,9 @@ export default function Index({ year, competitions, user_joined_count, total_com
                                 <span className="text-sm text-muted-foreground">({comps.length})</span>
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
                                 {comps.map((comp) => (
-                                    <Card key={comp.editionId} className="overflow-hidden">
+                                    <Card key={comp.editionId} className="min-w-[280px] max-w-[320px] shrink-0 overflow-hidden">
                                         <div className="relative flex h-36 items-end bg-muted">
                                             {comp.coverImageUrl ? (
                                                 <img
