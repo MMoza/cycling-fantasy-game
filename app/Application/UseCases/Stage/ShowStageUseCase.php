@@ -92,6 +92,7 @@ class ShowStageUseCase
         $stageRules = $scoringSystem->rules
             ->filter(fn ($rule) => $rule->context === ScoringRuleContext::PreStage)
             ->filter(fn ($rule) => ! str_starts_with($rule->type->value, 'stage_partial_pos_'))
+            ->filter(fn ($rule) => $rule->type->value !== 'stage_top_3_partial')
             ->filter(fn ($rule) => $rule->difficulty === null || $rule->difficulty === $stage->difficulty)
             ->map(fn ($rule) => [
                 'category' => $this->mapRuleTypeToCategory($rule->type->value),
