@@ -271,6 +271,28 @@ Mikel Landa, Carlos Rodríguez, David Gaudu, Giulio Ciccone, Kaden Groves, Stefa
 ### To update startlist
 Replace the `$ridersByTeam` array in `createRosters()` keeping format: `['first' => '...', 'last' => '...', 'country' => 'XX']`.
 
+## Seeder: Vuelta a España 2026 (VueltaEspana2026Seeder)
+
+### Source
+https://www.procyclingstats.com/race/vuelta-a-espana/2026/startlist/startlist
+
+### Stats
+- 65 riders (22 teams, preliminary startlist — many teams have fewer than 8 riders)
+- Fields: `first_name`, `last_name`, `country_id` (ISO 3166-1 alpha-2)
+
+### Route
+- 21 stages: Monaco → Granada (3310.6km)
+- Start: 2026-08-22, End: 2026-09-13
+- 2 rest days: Aug 31, Sep 7
+- Key stages: ITT Monaco (9km), ITT Jerez (32.5km), High mountain stages to Font Romeu, Valdelinares, Aitana, Calar Alto, Sierra de la Pandera, Collado del Alguacil
+
+### Teams (23)
+WT: Alpecin-PT, Bahrain-Victorious, Decathlon-CMA CGM, EF-EasyPost, Groupama-FDJ, INEOS, Lidl-Trek, Lotto-Intermarché, Movistar, NSN, Red Bull-BORA, Soudal-QS, Jayco-AlUla, Picnic-PostNL, Visma-LAB, UAE-XRG, Uno-X, XDS-Astana
+PRT: Burgos-BB, Cofidis, Kern Pharma, Pinarello-Q36.5, Tudor
+
+### To update startlist
+Replace the `$ridersByTeam` array in `createRosters()` keeping format: `['first' => '...', 'last' => '...', 'country' => 'XX']`.
+
 ## RiderSeeder
 
 Seeder independiente que solo añade riders a la tabla `riders`. Sin equipos, rosters, participantes ni etapas.
