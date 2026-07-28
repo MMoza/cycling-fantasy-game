@@ -91,9 +91,6 @@ class TourDeFrance2026Seeder extends Seeder
                 CompetitionParticipantModel::where('edition_id', $edition->id)->delete();
             }
         }
-        TeamRosterModel::where('year', self::YEAR)
-            ->whereIn('team_id', array_values($this->teamIds))
-            ->delete();
 
         $ridersByTeam = [
             'ADC' => [
