@@ -43,16 +43,19 @@ class ScoringSystemSeeder extends Seeder
             ['type' => ScoringRuleType::StageWinner, 'points' => 10, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageSecond, 'points' => 6, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageThird, 'points' => 4, 'difficulty' => 1, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 5, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 3, 'difficulty' => 1, 'position' => null],
             // Stage scoring — 2 stars
             ['type' => ScoringRuleType::StageWinner, 'points' => 18, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageSecond, 'points' => 12, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageThird, 'points' => 8, 'difficulty' => 2, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 8, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 5, 'difficulty' => 2, 'position' => null],
             // Stage scoring — 3 stars
             ['type' => ScoringRuleType::StageWinner, 'points' => 25, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageSecond, 'points' => 18, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageThird, 'points' => 12, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 10, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 8, 'difficulty' => 3, 'position' => null],
             // Stage leader
             ['type' => ScoringRuleType::StageLeader, 'points' => 8, 'difficulty' => null, 'position' => null],
@@ -106,10 +109,15 @@ class ScoringSystemSeeder extends Seeder
 
         $this->insertRules($systemId, [
             ['type' => ScoringRuleType::StageWinner, 'points' => 15, 'difficulty' => 1, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 5, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 1, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageWinner, 'points' => 30, 'difficulty' => 2, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 10, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 2, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageWinner, 'points' => 45, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageSecond, 'points' => 15, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageThird, 'points' => 10, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 15, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 3, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageSecond, 'points' => 15, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageThird, 'points' => 10, 'difficulty' => 3, 'position' => null],
@@ -161,12 +169,15 @@ class ScoringSystemSeeder extends Seeder
 
         $this->insertRules($systemId, [
             ['type' => ScoringRuleType::StageWinner, 'points' => 8, 'difficulty' => 1, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 4, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 3, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageWinner, 'points' => 16, 'difficulty' => 2, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 8, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 5, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageWinner, 'points' => 25, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageSecond, 'points' => 18, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageThird, 'points' => 12, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 10, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 8, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageLeader, 'points' => 8, 'difficulty' => null, 'position' => null],
 
@@ -219,16 +230,19 @@ class ScoringSystemSeeder extends Seeder
             ['type' => ScoringRuleType::StageWinner, 'points' => 8, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageSecond, 'points' => 5, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageThird, 'points' => 3, 'difficulty' => 1, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 4, 'difficulty' => 1, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 2, 'difficulty' => 1, 'position' => null],
             // Stage scoring — 2 stars
             ['type' => ScoringRuleType::StageWinner, 'points' => 14, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageSecond, 'points' => 9, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageThird, 'points' => 6, 'difficulty' => 2, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 7, 'difficulty' => 2, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 4, 'difficulty' => 2, 'position' => null],
             // Stage scoring — 3 stars
             ['type' => ScoringRuleType::StageWinner, 'points' => 20, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageSecond, 'points' => 14, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageThird, 'points' => 9, 'difficulty' => 3, 'position' => null],
+            ['type' => ScoringRuleType::StageTop3Partial, 'points' => 10, 'difficulty' => 3, 'position' => null],
             ['type' => ScoringRuleType::StageCombativo, 'points' => 6, 'difficulty' => 3, 'position' => null],
             // Stage leader
             ['type' => ScoringRuleType::StageLeader, 'points' => 6, 'difficulty' => null, 'position' => null],

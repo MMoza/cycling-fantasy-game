@@ -36,10 +36,15 @@ class ScoringEngine
 
         $rule = $this->findRule($ruleType, $stageDifficulty);
 
-        if (! $isCorrect && $predictedRider !== null && $this->isPositionCategory($prediction->category)) {
-            $partialRuleType = $this->getPartialRuleTypeForPosition($prediction->category);
-            if ($partialRuleType !== null && $this->isRiderInResults($predictedRider, $actualResult)) {
-                $rule = $this->findRule($partialRuleType, $stageDifficulty);
+        if (! $isCorrect && $predictedRider !== null) {
+            if ($this->isPositionCategory($prediction->category)) {
+                $partialRuleType = $this->getPartialRuleTypeForPosition($prediction->category);
+                if ($partialRuleType !== null && $this->isRiderInResults($predictedRider, $actualResult)) {
+                    $rule = $this->findRule($partialRuleType, $stageDifficulty);
+                    $isCorrect = true;
+                }
+            } elseif ($this->isStageTop3Category($prediction->category) && $this->isRiderInTop3($predictedRider, $actualResult)) {
+                $rule = $this->findRule(ScoringRuleType::StageTop3Partial, $stageDifficulty);
                 $isCorrect = true;
             }
         }
@@ -361,6 +366,20 @@ class ScoringEngine
             PredictionCategory::StagePosition9,
             PredictionCategory::StagePosition10,
         ], true);
+    }
+
+    private function isStageTop3Category(PredictionCategory $category): bool
+    {
+        return in_array($category, [
+            PredictionCategory::StageWinner,
+            PredictionCategory::StageSecond,
+            PredictionCategory::StageThird,
+        ], true);
+    }
+
+    private function isRiderInTop3(?string $riderId, StageResult $actualResult): bool
+    {
+        return $riderId === $actualResult->riderId && $actualResult->position <= 3;
     }
 
     private function getPartialRuleTypeForPosition(PredictionCategory $category): ?ScoringRuleType

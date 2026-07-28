@@ -22,6 +22,8 @@ const POSITION_LABELS: Record<number, string> = {
     10: '10º clasificado',
 };
 
+const STAGE_RULE_ORDER = ['stage_winner', 'stage_second', 'stage_third', 'stage_top_3_partial', 'stage_combativo'];
+
 function findRule(rules: League['scoring_system']['rules'], type: string, position?: number) {
     return rules.find((r) => r.type === type && (position === undefined || r.position === position));
 }
@@ -124,9 +126,9 @@ function OneWeekTemplate({ league }: { league: League }) {
                 </h3>
 
                 {[1, 2, 3].map((diff) => {
-                    const stageRules = rules.filter(
-                        (r) => r.context === 'pre_stage' && r.difficulty === diff && r.type !== 'stage_leader'
-                    );
+                    const stageRules = rules
+                        .filter((r) => r.context === 'pre_stage' && r.difficulty === diff && r.type !== 'stage_leader')
+                        .sort((a, b) => STAGE_RULE_ORDER.indexOf(a.type) - STAGE_RULE_ORDER.indexOf(b.type));
                     if (stageRules.length === 0) return null;
                     const stars = '★'.repeat(diff) + '☆'.repeat(3 - diff);
                     return (
@@ -264,9 +266,9 @@ function GrandTourTemplate({ league }: { league: League }) {
                 </h3>
 
                 {[1, 2, 3].map((diff) => {
-                    const stageRules = rules.filter(
-                        (r) => r.context === 'pre_stage' && r.difficulty === diff && r.type !== 'stage_leader'
-                    );
+                    const stageRules = rules
+                        .filter((r) => r.context === 'pre_stage' && r.difficulty === diff && r.type !== 'stage_leader')
+                        .sort((a, b) => STAGE_RULE_ORDER.indexOf(a.type) - STAGE_RULE_ORDER.indexOf(b.type));
                     if (stageRules.length === 0) return null;
                     const stars = '★'.repeat(diff) + '☆'.repeat(3 - diff);
                     return (

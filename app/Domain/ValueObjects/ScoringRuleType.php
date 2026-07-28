@@ -11,6 +11,7 @@ enum ScoringRuleType: string
     case StageThird = 'stage_third';
     case StageLeader = 'stage_leader';
     case StageCombativo = 'stage_combativo';
+    case StageTop3Partial = 'stage_top_3_partial';
     case StageExactPos1 = 'stage_exact_pos_1';
     case StageExactPos2 = 'stage_exact_pos_2';
     case StageExactPos3 = 'stage_exact_pos_3';
@@ -50,6 +51,7 @@ enum ScoringRuleType: string
             self::StageThird => '3º clasificado etapa',
             self::StageLeader => 'Líder GC tras etapa',
             self::StageCombativo => 'Combativo del día',
+            self::StageTop3Partial => 'Acierto parcial top 3',
             self::StageExactPos1 => '1º clasificado (exacto)',
             self::StageExactPos2 => '2º clasificado (exacto)',
             self::StageExactPos3 => '3º clasificado (exacto)',
@@ -91,6 +93,7 @@ enum ScoringRuleType: string
             self::StageThird,
             self::StageLeader,
             self::StageCombativo,
+            self::StageTop3Partial,
             self::StageExactPos1,
             self::StageExactPos2,
             self::StageExactPos3,
