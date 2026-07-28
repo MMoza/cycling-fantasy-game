@@ -6,6 +6,7 @@ export interface League {
     competition: {
         name: string;
         year: number;
+        type: string;
         coverImageUrl?: string | null;
         logoImageUrl?: string | null;
     };

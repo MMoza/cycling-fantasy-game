@@ -31,6 +31,7 @@ export default function Show({ league, next_stage, user_position, stages, leader
 
     const isOngoing = next_stage?.status === 'ongoing' || (next_stage?.status === 'upcoming' && countdownExpired);
     const isFinished = league.edition_status === 'finished';
+    const isOneDayRace = ['monument', 'championship', 'classic'].includes(league.competition.type);
 
     return (
         <AppLayout>
@@ -173,22 +174,24 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     </Dialog>
                 )}
 
-                <Link href={route('predictions.pre-race', league.id)} className="block">
-                    <Card className="cursor-pointer border-amber-200/60 bg-gradient-to-br from-amber-50 to-white transition-colors hover:from-amber-100/70 dark:border-amber-800/30 dark:from-amber-950/20 dark:to-transparent dark:hover:from-amber-950/30">
-                        <CardContent className="flex items-center gap-3 p-4">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                                <Target className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                            </div>
-                            <div className="flex-1">
-                                <p className="font-medium">PREDICTOR</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Predicción de la clasificación general
-                                </p>
-                            </div>
-                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                        </CardContent>
-                    </Card>
-                </Link>
+                {!isOneDayRace && (
+                    <Link href={route('predictions.pre-race', league.id)} className="block">
+                        <Card className="cursor-pointer border-amber-200/60 bg-gradient-to-br from-amber-50 to-white transition-colors hover:from-amber-100/70 dark:border-amber-800/30 dark:from-amber-950/20 dark:to-transparent dark:hover:from-amber-950/30">
+                            <CardContent className="flex items-center gap-3 p-4">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                                    <Target className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium">PREDICTOR</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Predicción de la clasificación general
+                                    </p>
+                                </div>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </CardContent>
+                        </Card>
+                    </Link>
+                )}
 
                 <Link href={route('leagues.teams', league.id)} className="block">
                     <Card className="cursor-pointer border-teal-200/60 bg-gradient-to-br from-teal-50 to-white transition-colors hover:from-teal-100/70 dark:border-teal-800/30 dark:from-teal-950/20 dark:to-transparent dark:hover:from-teal-950/30">

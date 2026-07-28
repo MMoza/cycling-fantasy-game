@@ -21,6 +21,11 @@ class ShowPreRaceFormUseCase
             abort(404);
         }
 
+        $competitionType = $league->edition->competition->type->value;
+        if (in_array($competitionType, ['monument', 'championship', 'classic'], true)) {
+            abort(404);
+        }
+
         $user->update(['last_visited_league_id' => $leagueId]);
 
         $edition = $league->edition;

@@ -8,6 +8,7 @@ use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\Prediction\ShowPreRaceFormUseCase;
 use App\Application\UseCases\Prediction\StorePreRacePredictionUseCase;
 use App\Application\UseCases\Prediction\StoreStagePredictionUseCase;
+use App\Infrastructure\Persistence\Models\LeagueModel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -84,6 +85,12 @@ class PredictionController extends Controller
 
     public function storePreRace(Request $request, string $league)
     {
+        $leagueModel = LeagueModel::with('edition.competition')->findOrFail($league);
+        $competitionType = $leagueModel->edition->competition->type->value;
+        if (in_array($competitionType, ['monument', 'championship', 'classic'], true)) {
+            abort(404);
+        }
+
         $validated = $request->validate([
             'predictions' => ['required', 'array'],
             'predictions.*.category' => ['required', 'string', 'in:'.implode(',', self::PRE_RACE_CATEGORIES)],
