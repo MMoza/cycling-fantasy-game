@@ -32,9 +32,9 @@ test('admin creating edition auto-creates official league', function () {
 
     ScoringSystemModel::create([
         'id' => Str::uuid()->toString(),
-        'name' => 'Conservador',
-        'type' => ScoringSystemType::Conservative,
-        'description' => 'Puntuación más repartida',
+        'name' => 'Estándar',
+        'type' => ScoringSystemType::Standard,
+        'description' => 'Puntuación equilibrada',
     ]);
 
     $useCase = new StoreEditionUseCase;

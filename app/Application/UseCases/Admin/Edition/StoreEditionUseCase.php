@@ -6,6 +6,7 @@ namespace App\Application\UseCases\Admin\Edition;
 
 use App\Application\Exceptions\ApplicationException;
 use App\Domain\Entities\League;
+use App\Domain\ValueObjects\CompetitionType;
 use App\Domain\ValueObjects\ScoringSystemType;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
@@ -28,23 +29,28 @@ class StoreEditionUseCase
             'status' => 'upcoming',
         ]);
 
-        $this->createOfficialLeague($edition, $competition->name, $data['year'], $adminUserId);
+        $this->createOfficialLeague($edition, $competition, $data['year'], $adminUserId);
 
         return $edition;
     }
 
-    private function createOfficialLeague(EditionModel $edition, string $competitionName, int $year, string $adminUserId): void
+    private function createOfficialLeague(EditionModel $edition, CompetitionModel $competition, int $year, string $adminUserId): void
     {
-        $conservative = ScoringSystemModel::where('type', ScoringSystemType::Conservative)->first();
+        $scoringType = match ($competition->type) {
+            CompetitionType::Monument, CompetitionType::Championship, CompetitionType::Classic => ScoringSystemType::OneDay,
+            default => ScoringSystemType::Standard,
+        };
 
-        if ($conservative === null) {
-            throw new ApplicationException('No se encontró el sistema de puntuación Conservador.');
+        $scoringSystem = ScoringSystemModel::where('type', $scoringType)->first();
+
+        if ($scoringSystem === null) {
+            throw new ApplicationException("No se encontró el sistema de puntuación {$scoringType->label()}.");
         }
 
         $league = League::create(
-            name: "Liga Oficial {$competitionName} {$year}",
+            name: "Liga Oficial {$competition->name} {$year}",
             editionId: $edition->id,
-            scoringSystemId: $conservative->id,
+            scoringSystemId: $scoringSystem->id,
             ownerId: $adminUserId,
             isOfficial: true,
         );

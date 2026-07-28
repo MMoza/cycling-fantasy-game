@@ -87,7 +87,7 @@ interface ShowProps {
     total_possible_points: number;
 }
 
-const PREDICTION_ORDER = ['stage_winner', 'stage_second', 'stage_third', 'stage_leader', 'stage_combativo'];
+const PREDICTION_ORDER = ['stage_winner', 'stage_second', 'stage_third', 'stage_leader', 'stage_combativo', 'stage_position_1', 'stage_position_2', 'stage_position_3', 'stage_position_4', 'stage_position_5', 'stage_position_6', 'stage_position_7', 'stage_position_8', 'stage_position_9', 'stage_position_10'];
 
 const MEDAL_COLORS = ['text-yellow-500', 'text-gray-400', 'text-amber-700'];
 

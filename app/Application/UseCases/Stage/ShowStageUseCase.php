@@ -91,9 +91,10 @@ class ShowStageUseCase
 
         $stageRules = $scoringSystem->rules
             ->filter(fn ($rule) => $rule->context === ScoringRuleContext::PreStage)
+            ->filter(fn ($rule) => ! str_starts_with($rule->type->value, 'stage_partial_pos_'))
             ->filter(fn ($rule) => $rule->difficulty === null || $rule->difficulty === $stage->difficulty)
             ->map(fn ($rule) => [
-                'category' => $rule->type->value,
+                'category' => $this->mapRuleTypeToCategory($rule->type->value),
                 'label' => $rule->type->label(),
                 'points' => $rule->points,
             ])
@@ -193,5 +194,22 @@ class ShowStageUseCase
             'stageRules' => $stageRules,
             'totalPossiblePoints' => $totalPossiblePoints,
         ];
+    }
+
+    private function mapRuleTypeToCategory(string $ruleTypeValue): string
+    {
+        return match ($ruleTypeValue) {
+            'stage_exact_pos_1' => 'stage_position_1',
+            'stage_exact_pos_2' => 'stage_position_2',
+            'stage_exact_pos_3' => 'stage_position_3',
+            'stage_exact_pos_4' => 'stage_position_4',
+            'stage_exact_pos_5' => 'stage_position_5',
+            'stage_exact_pos_6' => 'stage_position_6',
+            'stage_exact_pos_7' => 'stage_position_7',
+            'stage_exact_pos_8' => 'stage_position_8',
+            'stage_exact_pos_9' => 'stage_position_9',
+            'stage_exact_pos_10' => 'stage_position_10',
+            default => $ruleTypeValue,
+        };
     }
 }

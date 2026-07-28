@@ -29,6 +29,16 @@ class PredictionController extends Controller
         'stage_third',
         'stage_leader',
         'stage_combativo',
+        'stage_position_1',
+        'stage_position_2',
+        'stage_position_3',
+        'stage_position_4',
+        'stage_position_5',
+        'stage_position_6',
+        'stage_position_7',
+        'stage_position_8',
+        'stage_position_9',
+        'stage_position_10',
     ];
 
     public function __construct(

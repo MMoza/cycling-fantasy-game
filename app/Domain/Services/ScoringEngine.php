@@ -35,6 +35,15 @@ class ScoringEngine
             : $this->matchRiderPrediction($prediction, $actualResult, $predictedRider);
 
         $rule = $this->findRule($ruleType, $stageDifficulty);
+
+        if (! $isCorrect && $predictedRider !== null && $this->isPositionCategory($prediction->category)) {
+            $partialRuleType = $this->getPartialRuleTypeForPosition($prediction->category);
+            if ($partialRuleType !== null && $this->isRiderInResults($predictedRider, $actualResult)) {
+                $rule = $this->findRule($partialRuleType, $stageDifficulty);
+                $isCorrect = true;
+            }
+        }
+
         $finalPoints = $isCorrect && $rule ? $rule->points : 0;
 
         $description = sprintf(
@@ -53,6 +62,61 @@ class ScoringEngine
             context: $prediction->category->value,
             stageId: $stageId,
         );
+    }
+
+    public function calculatePositionScores(
+        array $predictedRiders,
+        array $actualResults,
+        string $userId,
+        string $leagueId,
+        ?string $stageId = null,
+    ): array {
+        $events = [];
+        $actualRiderIds = array_column($actualResults, 'rider_id');
+        $actualRiderIdSet = array_flip($actualRiderIds);
+
+        foreach ($predictedRiders as $position => $predictedRiderId) {
+            if ($predictedRiderId === null || $predictedRiderId === '') {
+                continue;
+            }
+
+            $dbPosition = $position + 1;
+            $actualRiderId = $actualRiderIds[$position] ?? null;
+            $isExact = $predictedRiderId === $actualRiderId;
+
+            if ($isExact) {
+                $ruleType = ScoringRuleType::from("stage_exact_pos_{$dbPosition}");
+                $rule = $this->findRule($ruleType);
+            } else {
+                $isInTop10 = isset($actualRiderIdSet[$predictedRiderId]);
+                if (! $isInTop10) {
+                    continue;
+                }
+                $ruleType = ScoringRuleType::from("stage_partial_pos_{$dbPosition}");
+                $rule = $this->findRule($ruleType);
+            }
+
+            if (! $rule) {
+                continue;
+            }
+
+            $events[] = ScoreEvent::create(
+                userId: $userId,
+                leagueId: $leagueId,
+                scoringRuleId: $rule->id,
+                points: $rule->points,
+                description: sprintf(
+                    '%s: %s (Posición %d)',
+                    $isExact ? 'Acierto exacto' : 'Acierto parcial',
+                    "{$dbPosition}º clasificado",
+                    $dbPosition,
+                ),
+                context: "stage_position_{$dbPosition}",
+                stageId: $stageId,
+            );
+        }
+
+        return $events;
     }
 
     public function calculateGcTop5Score(
@@ -191,6 +255,16 @@ class ScoringEngine
             PredictionCategory::StageThird => ScoringRuleType::StageThird,
             PredictionCategory::StageLeader => ScoringRuleType::StageLeader,
             PredictionCategory::StageCombativo => ScoringRuleType::StageCombativo,
+            PredictionCategory::StagePosition1 => ScoringRuleType::StageExactPos1,
+            PredictionCategory::StagePosition2 => ScoringRuleType::StageExactPos2,
+            PredictionCategory::StagePosition3 => ScoringRuleType::StageExactPos3,
+            PredictionCategory::StagePosition4 => ScoringRuleType::StageExactPos4,
+            PredictionCategory::StagePosition5 => ScoringRuleType::StageExactPos5,
+            PredictionCategory::StagePosition6 => ScoringRuleType::StageExactPos6,
+            PredictionCategory::StagePosition7 => ScoringRuleType::StageExactPos7,
+            PredictionCategory::StagePosition8 => ScoringRuleType::StageExactPos8,
+            PredictionCategory::StagePosition9 => ScoringRuleType::StageExactPos9,
+            PredictionCategory::StagePosition10 => ScoringRuleType::StageExactPos10,
         };
     }
 
@@ -271,5 +345,43 @@ class ScoringEngine
         }
 
         return in_array($riderId, $riders, true);
+    }
+
+    private function isPositionCategory(PredictionCategory $category): bool
+    {
+        return in_array($category, [
+            PredictionCategory::StagePosition1,
+            PredictionCategory::StagePosition2,
+            PredictionCategory::StagePosition3,
+            PredictionCategory::StagePosition4,
+            PredictionCategory::StagePosition5,
+            PredictionCategory::StagePosition6,
+            PredictionCategory::StagePosition7,
+            PredictionCategory::StagePosition8,
+            PredictionCategory::StagePosition9,
+            PredictionCategory::StagePosition10,
+        ], true);
+    }
+
+    private function getPartialRuleTypeForPosition(PredictionCategory $category): ?ScoringRuleType
+    {
+        return match ($category) {
+            PredictionCategory::StagePosition1 => ScoringRuleType::StagePartialPos1,
+            PredictionCategory::StagePosition2 => ScoringRuleType::StagePartialPos2,
+            PredictionCategory::StagePosition3 => ScoringRuleType::StagePartialPos3,
+            PredictionCategory::StagePosition4 => ScoringRuleType::StagePartialPos4,
+            PredictionCategory::StagePosition5 => ScoringRuleType::StagePartialPos5,
+            PredictionCategory::StagePosition6 => ScoringRuleType::StagePartialPos6,
+            PredictionCategory::StagePosition7 => ScoringRuleType::StagePartialPos7,
+            PredictionCategory::StagePosition8 => ScoringRuleType::StagePartialPos8,
+            PredictionCategory::StagePosition9 => ScoringRuleType::StagePartialPos9,
+            PredictionCategory::StagePosition10 => ScoringRuleType::StagePartialPos10,
+            default => null,
+        };
+    }
+
+    private function isRiderInResults(string $riderId, StageResult $actualResult): bool
+    {
+        return $riderId === $actualResult->riderId && $actualResult->position <= 10;
     }
 }

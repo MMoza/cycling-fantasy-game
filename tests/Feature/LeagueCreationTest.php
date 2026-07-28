@@ -46,7 +46,7 @@ test('authenticated user can access league creation page', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('Leagues/Create')
         ->has('editions', 1)
-        ->has('scoringSystems', 1)
+        ->has('scoringSystems', 3)
     );
 });
 
