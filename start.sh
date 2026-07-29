@@ -75,20 +75,5 @@ php artisan view:cache
 # Run migrations
 php artisan migrate --force
 
-# Start queue worker in background
-php artisan queue:work --sleep=3 --tries=3 --max-time=3600 &
-WORKER_PID=$!
-
-# Start PHP built-in server in background
-php artisan serve --host=0.0.0.0 --port="${PORT:-8000}" &
-SERVER_PID=$!
-
-# Trap signals to gracefully stop both processes
-cleanup() {
-    kill $WORKER_PID $SERVER_PID 2>/dev/null
-    wait $WORKER_PID $SERVER_PID 2>/dev/null
-}
-trap cleanup SIGTERM SIGINT
-
-# Wait for both processes
-wait
+# Start PHP built-in server (or use php-fpm + nginx in production)
+exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
