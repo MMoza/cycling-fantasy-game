@@ -75,5 +75,8 @@ php artisan view:cache
 # Run migrations
 php artisan migrate --force
 
+# Start queue worker in background
+php artisan queue:work --sleep=3 --tries=3 --max-time=3600 &
+
 # Start PHP built-in server (or use php-fpm + nginx in production)
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
