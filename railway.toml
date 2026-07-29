@@ -16,3 +16,9 @@ restartPolicyMaxRetries = 3
 startCommand = "/app/start-scheduler.sh"
 restartPolicyType = "never"
 # healthcheckPath = "/up"  # not applicable to cron jobs
+
+# queue-worker: processes queued jobs (emails, notifications, etc.)
+[services.queue-worker.deploy]
+startCommand = "php artisan queue:work --sleep=3 --tries=3 --max-time=3600"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
