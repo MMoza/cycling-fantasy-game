@@ -52,7 +52,7 @@ RUN chmod -R 775 storage bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 # Make startup scripts executable
-RUN chmod +x /app/start.sh /app/start-scheduler.sh
+RUN chmod +x /app/start.sh /app/start-scheduler.sh /app/start-worker.sh
 
 # Default script to run (can be overridden via startCommand in railway.toml)
 ARG START_SCRIPT=/app/start.sh
