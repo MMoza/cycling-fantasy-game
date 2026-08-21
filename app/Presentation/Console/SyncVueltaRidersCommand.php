@@ -171,24 +171,36 @@ class SyncVueltaRidersCommand extends Command
             $this->info("Participants reset: {$deleted} removed");
         }
 
-        $rosters = TeamRosterModel::where('year', self::YEAR)
-            ->whereIn('team_id', array_values($this->teamIds))
-            ->get();
-
+        $startlist = $this->getStartlistByTeam();
         $created = 0;
 
-        foreach ($rosters as $roster) {
-            $participant = CompetitionParticipantModel::firstOrCreate([
-                'competition_id' => $competitionId,
-                'edition_id' => $editionId,
-                'team_id' => $roster->team_id,
-                'rider_id' => $roster->rider_id,
-            ], [
-                'id' => Str::uuid()->toString(),
-            ]);
+        foreach ($startlist as $abbr => $riders) {
+            $teamId = $this->teamIds[$abbr] ?? null;
+            if (! $teamId) {
+                continue;
+            }
 
-            if ($participant->wasRecentlyCreated) {
-                $created++;
+            foreach ($riders as $r) {
+                $rider = RiderModel::where('first_name', $r['first'])
+                    ->where('last_name', $r['last'])
+                    ->first();
+
+                if (! $rider) {
+                    continue;
+                }
+
+                $participant = CompetitionParticipantModel::firstOrCreate([
+                    'competition_id' => $competitionId,
+                    'edition_id' => $editionId,
+                    'team_id' => $teamId,
+                    'rider_id' => $rider->id,
+                ], [
+                    'id' => Str::uuid()->toString(),
+                ]);
+
+                if ($participant->wasRecentlyCreated) {
+                    $created++;
+                }
             }
         }
 
