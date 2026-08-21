@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 
 class SyncVueltaRidersCommand extends Command
 {
-    protected $signature = 'race:sync-vuelta-riders';
+    protected $signature = 'race:sync-vuelta-riders {--force : Reset participants to official startlist}';
 
     protected $description = 'Sync Vuelta a España 2026 startlist: riders, teams, rosters and competition participants.';
 
@@ -164,6 +164,13 @@ class SyncVueltaRidersCommand extends Command
 
     private function syncParticipants(string $competitionId, string $editionId): void
     {
+        if ($this->option('force')) {
+            $deleted = CompetitionParticipantModel::where('competition_id', $competitionId)
+                ->where('edition_id', $editionId)
+                ->delete();
+            $this->info("Participants reset: {$deleted} removed");
+        }
+
         $rosters = TeamRosterModel::where('year', self::YEAR)
             ->whereIn('team_id', array_values($this->teamIds))
             ->get();
