@@ -15,6 +15,7 @@ use App\Presentation\Console\LockPredictionsCommand;
 use App\Presentation\Console\RebuildScoresCommand;
 use App\Presentation\Console\ScorePreRaceCommand;
 use App\Presentation\Console\ScoreStageCommand;
+use App\Presentation\Console\SyncVueltaRidersCommand;
 use App\Presentation\Console\TestPushNotificationCommand;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
@@ -56,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
             LockPredictionsCommand::class,
             CleanPushSubscriptionsCommand::class,
             TestPushNotificationCommand::class,
+            SyncVueltaRidersCommand::class,
         ]);
     }
 }

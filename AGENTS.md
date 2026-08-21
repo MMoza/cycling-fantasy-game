@@ -224,6 +224,8 @@ Crear: CyclingApiClientInterface
 -   race:update-classifications
 -   race:score-stage
 -   race:rebuild-scores
+-   race:sync-riders (TDF 2026)
+-   race:sync-vuelta-riders (Vuelta 2026)
 
 Todos reutilizan Application Services.
 
