@@ -161,6 +161,202 @@ test('calculates gc top 5 partial match', function () {
     expect($events[1]->description)->toContain('exacto');
 });
 
+test('calculates stage top 3 partial when winner prediction rider finishes 2nd', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StageWinner, 25, difficulty: 3))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StageTop3Partial, 10, difficulty: 3));
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreStage,
+        category: PredictionCategory::StageWinner,
+        predictionValue: ['rider_id' => 'rider-pogacar'],
+        stageId: 'stage-uuid',
+    );
+
+    $result = StageResult::create('stage-uuid', 'rider-pogacar', 2, '4:30:00');
+
+    $event = $engine->calculateStageScore($prediction, $result, stageDifficulty: 3);
+
+    expect($event->points)->toBe(10);
+    expect($event->description)->toContain('Acierto');
+});
+
+test('calculates zero points when winner prediction rider finishes outside top 3', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StageWinner, 25, difficulty: 3))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StageTop3Partial, 10, difficulty: 3));
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreStage,
+        category: PredictionCategory::StageWinner,
+        predictionValue: ['rider_id' => 'rider-pogacar'],
+        stageId: 'stage-uuid',
+    );
+
+    $result = StageResult::create('stage-uuid', 'rider-pogacar', 4, '4:30:00');
+
+    $event = $engine->calculateStageScore($prediction, $result, stageDifficulty: 3);
+
+    expect($event->points)->toBe(0);
+    expect($event->description)->toContain('Fallo');
+});
+
+test('calculates exact position score for stage_position_3', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StageExactPos3, 50))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StagePartialPos3, 15));
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreStage,
+        category: PredictionCategory::StagePosition3,
+        predictionValue: ['rider_id' => 'rider-1'],
+        stageId: 'stage-uuid',
+    );
+
+    $result = StageResult::create('stage-uuid', 'rider-1', 3, '4:35:00');
+
+    $event = $engine->calculateStageScore($prediction, $result, stageDifficulty: 1);
+
+    expect($event->points)->toBe(50);
+    expect($event->description)->toContain('Acierto');
+});
+
+test('calculates partial position score when rider is in top 10 but wrong position', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StageExactPos3, 50))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StagePartialPos3, 15));
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreStage,
+        category: PredictionCategory::StagePosition3,
+        predictionValue: ['rider_id' => 'rider-1'],
+        stageId: 'stage-uuid',
+    );
+
+    $result = StageResult::create('stage-uuid', 'rider-1', 1, '4:28:00');
+
+    $event = $engine->calculateStageScore($prediction, $result, stageDifficulty: 1);
+
+    expect($event->points)->toBe(15);
+    expect($event->description)->toContain('Acierto');
+});
+
+test('calculates partial position score when rider finishes 5th but predicted 3rd', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StageExactPos3, 50))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StagePartialPos3, 15));
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreStage,
+        category: PredictionCategory::StagePosition3,
+        predictionValue: ['rider_id' => 'rider-1'],
+        stageId: 'stage-uuid',
+    );
+
+    $result = StageResult::create('stage-uuid', 'rider-1', 5, '4:32:00');
+
+    $event = $engine->calculateStageScore($prediction, $result, stageDifficulty: 1);
+
+    expect($event->points)->toBe(15);
+    expect($event->description)->toContain('Acierto');
+});
+
+test('calculates zero points when predicted rider finishes outside top 10', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StageExactPos3, 50))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::StagePartialPos3, 15));
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreStage,
+        category: PredictionCategory::StagePosition3,
+        predictionValue: ['rider_id' => 'rider-1'],
+        stageId: 'stage-uuid',
+    );
+
+    $result = StageResult::create('stage-uuid', 'rider-1', 11, '4:40:00');
+
+    $event = $engine->calculateStageScore($prediction, $result, stageDifficulty: 1);
+
+    expect($event->points)->toBe(0);
+    expect($event->description)->toContain('Fallo');
+});
+
+test('calculates jersey exact match for points winner', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::PointsWinner, 40, position: 1))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::PointsWinnerPartial, 10));
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreRace,
+        category: PredictionCategory::PointsWinner,
+        predictionValue: ['rider_ids' => [0 => 'rider-bennett']],
+    );
+
+    $events = $engine->calculateJerseyScore($prediction, [0 => 'rider-bennett'], ScoringRuleType::PointsWinner, ScoringRuleType::PointsWinnerPartial);
+
+    expect($events)->toHaveCount(1);
+    expect($events[0]->points)->toBe(40);
+    expect($events[0]->description)->toContain('exacto');
+});
+
+test('calculates jersey partial match when rider is in podium but wrong position', function () {
+    $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
+    $system = $system
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::PointsWinner, 40, position: 1))
+        ->addRule(ScoringRule::create($system->id, ScoringRuleType::PointsWinnerPartial, 10));
+
+    $engine = new ScoringEngine($system);
+
+    $prediction = Prediction::create(
+        userId: 'user-uuid',
+        leagueId: 'league-uuid',
+        type: PredictionType::PreRace,
+        category: PredictionCategory::PointsWinner,
+        predictionValue: ['rider_ids' => [0 => 'rider-bennett']],
+    );
+
+    $events = $engine->calculateJerseyScore($prediction, [0 => 'rider-groenewegen', 1 => 'rider-bennett'], ScoringRuleType::PointsWinner, ScoringRuleType::PointsWinnerPartial);
+
+    expect($events)->toHaveCount(1);
+    expect($events[0]->points)->toBe(10);
+    expect($events[0]->description)->toContain('parcial');
+});
+
 test('calculates simple prediction score', function () {
     $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
     $rule = ScoringRule::create($system->id, ScoringRuleType::SuperCombativo, 30);

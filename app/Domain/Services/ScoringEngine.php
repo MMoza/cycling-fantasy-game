@@ -285,7 +285,16 @@ class ScoringEngine
             PredictionCategory::StageThird => $actualResult->position === 3 && $predictedRider === $actualResult->riderId,
             PredictionCategory::StageLeader => $predictedRider === $actualResult->riderId && $actualResult->isGcLeader,
             PredictionCategory::StageCombativo => $predictedRider === $actualResult->riderId && $actualResult->isCombativo,
-            default => $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition1 => $actualResult->position === 1 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition2 => $actualResult->position === 2 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition3 => $actualResult->position === 3 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition4 => $actualResult->position === 4 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition5 => $actualResult->position === 5 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition6 => $actualResult->position === 6 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition7 => $actualResult->position === 7 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition8 => $actualResult->position === 8 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition9 => $actualResult->position === 9 && $predictedRider === $actualResult->riderId,
+            PredictionCategory::StagePosition10 => $actualResult->position === 10 && $predictedRider === $actualResult->riderId,
         };
     }
 
