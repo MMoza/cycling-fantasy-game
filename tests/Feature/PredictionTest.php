@@ -74,12 +74,25 @@ beforeEach(function () {
         'destination' => 'Paris',
         'status' => StageStatus::Upcoming,
     ]);
+
+    $this->team = createTestTeam('Team Test', 'TST');
+    $this->riders = [
+        createTestRider('Rider', 'A'),
+        createTestRider('Rider', 'B'),
+        createTestRider('Rider', 'C'),
+        createTestRider('Rider', 'D'),
+        createTestRider('Rider', 'E'),
+    ];
+
+    foreach ($this->riders as $rider) {
+        createTestParticipant($competition->id, $this->edition->id, $this->team->id, $rider->id);
+    }
 });
 
 test('guest cannot save predictions', function () {
     $response = $this->post(route('predictions.store', [$this->league->id, $this->stage->id]), [
         'predictions' => [
-            ['category' => 'stage_winner', 'value' => 'Rider A'],
+            ['category' => 'stage_winner', 'value' => $this->riders[0]->id],
         ],
     ]);
 
@@ -91,7 +104,7 @@ test('user not in league cannot save predictions', function () {
 
     $response = $this->actingAs($otherUser)->post(route('predictions.store', [$this->league->id, $this->stage->id]), [
         'predictions' => [
-            ['category' => 'stage_winner', 'value' => 'Rider A'],
+            ['category' => 'stage_winner', 'value' => $this->riders[0]->id],
         ],
     ]);
 
@@ -101,11 +114,11 @@ test('user not in league cannot save predictions', function () {
 test('user can save predictions for unlocked stage', function () {
     $response = $this->actingAs($this->user)->post(route('predictions.store', [$this->league->id, $this->stage->id]), [
         'predictions' => [
-            ['category' => 'stage_winner', 'value' => 'Rider A'],
-            ['category' => 'stage_second', 'value' => 'Rider B'],
-            ['category' => 'stage_third', 'value' => 'Rider C'],
-            ['category' => 'stage_leader', 'value' => 'Rider A'],
-            ['category' => 'stage_combativo', 'value' => 'Rider D'],
+            ['category' => 'stage_winner', 'value' => $this->riders[0]->id],
+            ['category' => 'stage_second', 'value' => $this->riders[1]->id],
+            ['category' => 'stage_third', 'value' => $this->riders[2]->id],
+            ['category' => 'stage_leader', 'value' => $this->riders[0]->id],
+            ['category' => 'stage_combativo', 'value' => $this->riders[3]->id],
         ],
     ]);
 
@@ -134,12 +147,12 @@ test('user can update existing predictions', function () {
         'stage_id' => $this->stage->id,
         'type' => 'pre_stage',
         'category' => 'stage_winner',
-        'prediction_value' => 'Old Rider',
+        'prediction_value' => ['rider_id' => $this->riders[0]->id],
     ]);
 
     $response = $this->actingAs($this->user)->post(route('predictions.store', [$this->league->id, $this->stage->id]), [
         'predictions' => [
-            ['category' => 'stage_winner', 'value' => 'New Rider'],
+            ['category' => 'stage_winner', 'value' => $this->riders[1]->id],
         ],
     ]);
 
@@ -150,7 +163,7 @@ test('user can update existing predictions', function () {
         'stage_id' => $this->stage->id,
         'user_id' => $this->user->id,
         'category' => 'stage_winner',
-        'prediction_value' => '{"rider_id":"New Rider"}',
+        'prediction_value' => json_encode(['rider_id' => $this->riders[1]->id]),
     ]);
 
     expect(PredictionModel::where('league_id', $this->league->id)
@@ -168,7 +181,7 @@ test('user cannot save predictions for locked stage', function () {
 
     $response = $this->actingAs($this->user)->post(route('predictions.store', [$this->league->id, $this->stage->id]), [
         'predictions' => [
-            ['category' => 'stage_winner', 'value' => 'Rider A'],
+            ['category' => 'stage_winner', 'value' => $this->riders[0]->id],
         ],
     ]);
 
@@ -184,7 +197,7 @@ test('user cannot save predictions for locked stage', function () {
 test('validates required prediction categories', function () {
     $response = $this->actingAs($this->user)->post(route('predictions.store', [$this->league->id, $this->stage->id]), [
         'predictions' => [
-            ['category' => 'invalid_category', 'value' => 'Rider A'],
+            ['category' => 'invalid_category', 'value' => $this->riders[0]->id],
         ],
     ]);
 
@@ -195,4 +208,22 @@ test('validates predictions is required', function () {
     $response = $this->actingAs($this->user)->post(route('predictions.store', [$this->league->id, $this->stage->id]), []);
 
     $response->assertSessionHasErrors('predictions');
+});
+
+test('rejects rider not in edition participants', function () {
+    $otherRider = createTestRider('Other', 'Rider');
+
+    $response = $this->actingAs($this->user)->post(route('predictions.store', [$this->league->id, $this->stage->id]), [
+        'predictions' => [
+            ['category' => 'stage_winner', 'value' => $otherRider->id],
+        ],
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors();
+
+    expect(PredictionModel::where('league_id', $this->league->id)
+        ->where('stage_id', $this->stage->id)
+        ->count()
+    )->toBe(0);
 });

@@ -63,7 +63,9 @@ class ShowPreRaceFormUseCase
             ->get()
             ->map(fn ($r) => ['value' => $r->id, 'label' => trim("{$r->last_name} {$r->first_name}")]);
 
-        $availableTeams = TeamModel::whereHas('rosters', fn ($q) => $q->where('year', $edition->year))
+        $availableTeams = TeamModel::whereHas('competitionParticipants', fn ($q) => $q
+            ->where('competition_id', $edition->competition_id)
+            ->where('edition_id', $edition->id))
             ->orderBy('name')
             ->get()
             ->map(fn ($t) => ['value' => $t->id, 'label' => $t->name]);

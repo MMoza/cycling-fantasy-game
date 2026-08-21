@@ -9,6 +9,7 @@ use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class StorePreRacePredictionUseCase
@@ -37,6 +38,8 @@ class StorePreRacePredictionUseCase
 
         $user->update(['last_visited_league_id' => $leagueId]);
 
+        $riderCategories = ['gc_top_5', 'points_winner', 'mountains_winner', 'youth_winner', 'super_combativo'];
+
         foreach ($predictions as $prediction) {
             $rawValue = $prediction['value'] ?? '';
             $value = $rawValue;
@@ -60,6 +63,12 @@ class StorePreRacePredictionUseCase
                 $value = ['rider_id' => $rawValue];
             }
 
+            if (in_array($prediction['category'], $riderCategories, true)) {
+                $this->validateRiders($value, $edition->id);
+            } elseif ($prediction['category'] === 'teams_winner') {
+                $this->validateTeam($value['team_id'] ?? null, $edition->id);
+            }
+
             PredictionModel::updateOrCreate(
                 [
                     'user_id' => $user->id,
@@ -73,6 +82,34 @@ class StorePreRacePredictionUseCase
                     'prediction_value' => $value,
                 ]
             );
+        }
+    }
+
+    private function validateRiders(array $riderIds, string $editionId): void
+    {
+        $validCount = DB::table('competition_participants')
+            ->where('edition_id', $editionId)
+            ->whereIn('rider_id', $riderIds)
+            ->count('rider_id');
+
+        if ($validCount !== count($riderIds)) {
+            throw new ApplicationException('Uno o más corredores seleccionados no participan en esta edición');
+        }
+    }
+
+    private function validateTeam(?string $teamId, string $editionId): void
+    {
+        if (! $teamId) {
+            throw new ApplicationException('Debes seleccionar un equipo');
+        }
+
+        $exists = DB::table('competition_participants')
+            ->where('edition_id', $editionId)
+            ->where('team_id', $teamId)
+            ->exists();
+
+        if (! $exists) {
+            throw new ApplicationException('El equipo seleccionado no participa en esta edición');
         }
     }
 }
