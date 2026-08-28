@@ -177,7 +177,7 @@ export default function Classification({ year, aggregated_leaderboard, per_compe
         <AppLayout>
             <Head title={`Clasificación Temporada ${year}`} />
 
-            <div className="space-y-6">
+            <div className="space-y-6 px-4 sm:px-6">
                 <div>
                     <div className="flex items-center gap-2">
                         <Calendar className="h-6 w-6 text-accent-500" />
