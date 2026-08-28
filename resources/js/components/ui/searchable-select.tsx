@@ -30,7 +30,7 @@ export default function SearchableSelect({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = options.filter((o) =>
-    o.label.toLowerCase().includes(search.toLowerCase())
+    (o.label ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   const selected = options.find((o) => o.value === value);

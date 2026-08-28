@@ -245,7 +245,7 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 }
 
 export default function Show({ league_id, league_name, stage, is_finished, is_locked, predictions, stage_results, stage_classification, navigation, availableRiders, availableTeams, pcs_slug, edition_year, stage_rules, total_possible_points }: ShowProps) {
-    const { errors } = usePage().props as any;
+    const { errors, auth } = usePage().props as any;
     const isTimeTrial = stage.type_value === 'time_trial' || stage.type_value === 'team_time_trial';
     const isTTT = stage.type_value === 'team_time_trial';
 
@@ -366,12 +366,12 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
         });
     };
 
-    const myStagePoints = stage_classification.find((e) => e.user_id === (usePage().props as any).auth?.user?.id)?.total_points ?? 0;
+    const myStagePoints = stage_classification.find((e) => e.user_id === auth?.user?.id)?.total_points ?? 0;
 
     const stageClassificationLeaderboard = useMemo(() => {
         const sorted = [...stage_classification].sort((a, b) => b.total_points - a.total_points);
         const topPoints = sorted[0]?.total_points ?? 0;
-        const currentUserId = (usePage().props as any).auth?.user?.id;
+        const currentUserId = auth?.user?.id;
         return sorted.map((entry, i) => ({
             rank: i + 1,
             user_id: entry.user_id,
