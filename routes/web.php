@@ -21,6 +21,7 @@ use App\Presentation\Http\Controllers\NotificationController;
 use App\Presentation\Http\Controllers\PedalesController;
 use App\Presentation\Http\Controllers\PredictionController;
 use App\Presentation\Http\Controllers\ProfileController;
+use App\Presentation\Http\Controllers\PublicSeasonClassificationController;
 use App\Presentation\Http\Controllers\PushSubscriptionController;
 use App\Presentation\Http\Controllers\RiderController as LeagueRiderController;
 use App\Presentation\Http\Controllers\SearchController;
@@ -31,6 +32,7 @@ use App\Presentation\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('landing');
+Route::get('/api/public/season-classification', PublicSeasonClassificationController::class)->name('api.public.season-classification');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth'])
