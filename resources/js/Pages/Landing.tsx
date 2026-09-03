@@ -8,23 +8,26 @@ import SeasonLeaderboard from '@/components/SeasonLeaderboard';
 import Footer from '@/components/Footer';
 import ScrollReveal from '@/components/ScrollReveal';
 
-function MountainIcon({ fill }: { fill: string }) {
-    return (
-        <svg viewBox="0 0 24 16" className="h-6 w-9" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M0 16L8 2L12 8L16 0L24 16H0Z"
-                fill={fill}
-                className="drop-shadow-sm"
-            />
-        </svg>
-    );
+interface SeasonRace {
+    editionId: string;
+    name: string;
+    year: number;
+    status: string;
+    startDate: string;
+    endDate: string;
+    countryId: string | null;
+    countryName: string | null;
+    logoImageUrl: string | null;
+    coverImageUrl: string | null;
+    officialLeagueId: string | null;
 }
 
-const grandTours = [
-    { name: 'Tour de Francia', textColor: 'text-yellow-600', fill: '#FACC15' },
-    { name: 'Giro de Italia', textColor: 'text-rose-600', fill: '#F43F5E' },
-    { name: 'La Vuelta', textColor: 'text-red-600', fill: '#EF4444' },
-];
+interface CurrentStage {
+    number: number;
+    name: string;
+    distance: number;
+    date: string;
+}
 
 interface LandingProps {
     auth?: {
@@ -33,17 +36,12 @@ interface LandingProps {
             name: string;
         } | null;
     } | null;
-    activeEdition?: {
-        name: string;
-        status: string;
-    } | null;
-    nextEdition?: {
-        name: string;
-        startDate: string;
-    } | null;
+    seasonRaces: SeasonRace[];
+    activeRaceId: string | null;
+    currentStage: CurrentStage | null;
 }
 
-export default function Landing({ auth, activeEdition, nextEdition }: LandingProps) {
+export default function Landing({ auth, seasonRaces, activeRaceId, currentStage }: LandingProps) {
     return (
         <LandingLayout auth={auth}>
             <Head title="Pedales — Fantasy Cycling">
@@ -54,22 +52,8 @@ export default function Landing({ auth, activeEdition, nextEdition }: LandingPro
                 <link rel="preload" as="image" href="/portada-landing.avif" />
             </Head>
 
-            {/* Hero */}
-            <LandingHero activeEdition={activeEdition} nextEdition={nextEdition} auth={auth} />
-
-            {/* Grandes Vueltas — Infinite Carousel */}
-            <section className="overflow-hidden border-b bg-muted/30 py-8">
-                <div className="marquee-track flex w-max items-center gap-16">
-                    {[...grandTours, ...grandTours].map((tour, i) => (
-                        <div key={`${tour.name}-${i}`} className="flex items-center gap-3 px-8">
-                            <MountainIcon fill={tour.fill} />
-                            <span className={`text-xl font-bold tracking-wide ${tour.textColor}`}>
-                                {tour.name}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </section>
+            {/* Hero with embedded carousel */}
+            <LandingHero auth={auth} seasonRaces={seasonRaces} activeRaceId={activeRaceId} currentStage={currentStage} />
 
             {/* Cómo funciona */}
             <HowItWorks />

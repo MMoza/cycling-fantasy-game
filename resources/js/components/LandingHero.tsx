@@ -1,19 +1,35 @@
 import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Zap } from 'lucide-react';
-import Countdown from '@/components/Countdown';
+import { ArrowRight } from 'lucide-react';
 import PedalesLogo from '@/components/PedalesLogo';
+import RaceCarousel from '@/components/RaceCarousel';
+
+interface SeasonRace {
+    editionId: string;
+    name: string;
+    year: number;
+    status: string;
+    startDate: string;
+    endDate: string;
+    countryId: string | null;
+    countryName: string | null;
+    logoImageUrl: string | null;
+    coverImageUrl: string | null;
+    officialLeagueId: string | null;
+}
+
+interface CurrentStage {
+    number: number;
+    name: string;
+    distance: number;
+    date: string;
+}
 
 interface LandingHeroProps {
-    activeEdition?: {
-        name: string;
-        status: string;
-    } | null;
-    nextEdition?: {
-        name: string;
-        startDate: string;
-    } | null;
+    seasonRaces: SeasonRace[];
+    activeRaceId: string | null;
+    currentStage: CurrentStage | null;
     auth?: {
         user?: {
             id: string;
@@ -22,7 +38,7 @@ interface LandingHeroProps {
     } | null;
 }
 
-export default function LandingHero({ activeEdition, nextEdition, auth }: LandingHeroProps) {
+export default function LandingHero({ seasonRaces, activeRaceId, currentStage, auth }: LandingHeroProps) {
     const user = auth?.user;
     const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -32,19 +48,19 @@ export default function LandingHero({ activeEdition, nextEdition, auth }: Landin
                 className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: 'url(/portada-landing.avif)' }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30" />
 
-            {/* Centered logo + CTA */}
+            {/* Logo — centered */}
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pt-14 sm:px-6 lg:px-8">
                 <motion.div
-                    className="relative h-36 w-36 sm:h-44 sm:w-44"
+                    className="relative h-32 w-32 sm:h-40 sm:w-40"
                     initial={{ opacity: 0, scale: 0.8, rotate: -180 }}
                     animate={{ opacity: 1, scale: 1, rotate: 0 }}
                     transition={{ duration: 0.8, ease: 'easeOut' }}
                 >
                     <div className="absolute inset-0 rounded-full ring-4 ring-white/20 shadow-2xl" />
                     <div className={`absolute inset-0 flex items-center justify-center rounded-full bg-black/30 transition-opacity duration-500 ${imageLoaded ? 'opacity-0' : 'opacity-100'}`}>
-                        <PedalesLogo className="h-24 w-24 sm:h-32 sm:w-32" />
+                        <PedalesLogo className="h-20 w-20 sm:h-28 sm:w-28" />
                     </div>
                     <img
                         src="/logo-pedales.png"
@@ -53,72 +69,34 @@ export default function LandingHero({ activeEdition, nextEdition, auth }: Landin
                         onLoad={() => setImageLoaded(true)}
                     />
                 </motion.div>
-
-                <motion.div
-                    className="mt-10 flex items-center justify-center gap-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.4, ease: 'easeOut' }}
-                >
-                    {user ? (
-                        <Link
-                            href={route('dashboard')}
-                            className="inline-flex h-12 items-center justify-center rounded-md bg-accent-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30"
-                        >
-                            Jugar
-                            <ArrowRight className="ml-2 h-5 w-5" />
-                        </Link>
-                    ) : (
-                        <>
-                            <Link
-                                href={route('register')}
-                                className="inline-flex h-12 items-center justify-center rounded-md bg-accent-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-accent-500/25 transition-all hover:bg-accent-600 hover:shadow-xl hover:shadow-accent-500/30"
-                            >
-                                Registrarse
-                                <ArrowRight className="ml-2 h-5 w-5" />
-                            </Link>
-                            <Link
-                                href={route('login')}
-                                className="inline-flex h-12 items-center justify-center rounded-md border border-white/20 px-8 py-3 text-base font-semibold text-white/90 transition-all hover:border-white/40 hover:text-white"
-                            >
-                                Iniciar sesión
-                            </Link>
-                        </>
-                    )}
-                </motion.div>
             </div>
 
-            {/* Bottom — badge + tagline (darker gradient zone) */}
-            <div className="relative z-10 px-4 pb-8 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-3xl text-center">
-                    {(activeEdition || nextEdition) && (
-                        <motion.div
-                            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-                        >
-                            <Zap className="h-4 w-4 text-accent-500" />
-                            {activeEdition ? (
-                                <span className="text-sm text-white/90">
-                                    <span className="text-green-400">En curso</span> — {activeEdition.name}
-                                </span>
-                            ) : nextEdition ? (
-                                <span className="text-sm text-white/90">
-                                    Próximo: {nextEdition.name} —{' '}
-                                    <Countdown targetDate={nextEdition.startDate} className="text-accent-500" />
-                                </span>
-                            ) : null}
-                        </motion.div>
-                    )}
+            {/* Carousel + tagline — bottom of hero */}
+            <div className="relative z-10 pb-8">
+                <RaceCarousel
+                    races={seasonRaces}
+                    activeRaceId={activeRaceId}
+                    currentStage={currentStage}
+                />
 
+                {/* Tagline */}
+                <div className="px-4 text-center sm:px-6">
                     <motion.p
-                        className="mt-4 text-sm text-gray-300 sm:text-base"
+                        className="text-base font-semibold text-white sm:text-lg"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4, ease: 'easeOut' }}
+                        transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
                     >
-                        El fantasy de ciclismo para Grandes Vueltas. Pronósticos sellados, ligas privadas y emoción hasta el último metro.
+                        El fantasy de ciclismo para{' '}
+                        <span className="text-accent-500">Grandes Vueltas.</span>
+                    </motion.p>
+                    <motion.p
+                        className="mt-2 text-sm text-gray-300 sm:text-base"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
+                    >
+                        Pronósticos sellados · Ligas privadas · Emoción hasta el último metro.
                     </motion.p>
                 </div>
             </div>

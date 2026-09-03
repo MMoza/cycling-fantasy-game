@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Presentation\Http\Controllers\AboutController;
 use App\Presentation\Http\Controllers\Admin\CompetitionController;
 use App\Presentation\Http\Controllers\Admin\CompetitionSetupController;
 use App\Presentation\Http\Controllers\Admin\EditionController;
@@ -13,6 +14,8 @@ use App\Presentation\Http\Controllers\Admin\UserController;
 use App\Presentation\Http\Controllers\Auth\SocialiteController;
 use App\Presentation\Http\Controllers\ClassificationController;
 use App\Presentation\Http\Controllers\CompetitionController as UserCompetitionController;
+use App\Presentation\Http\Controllers\ContactController;
+use App\Presentation\Http\Controllers\CookiePolicyController;
 use App\Presentation\Http\Controllers\DashboardController;
 use App\Presentation\Http\Controllers\InvitationController;
 use App\Presentation\Http\Controllers\LandingController;
@@ -25,6 +28,7 @@ use App\Presentation\Http\Controllers\PublicSeasonClassificationController;
 use App\Presentation\Http\Controllers\PushSubscriptionController;
 use App\Presentation\Http\Controllers\RiderController as LeagueRiderController;
 use App\Presentation\Http\Controllers\SearchController;
+use App\Presentation\Http\Controllers\SeasonClassificationController;
 use App\Presentation\Http\Controllers\SeasonController;
 use App\Presentation\Http\Controllers\StageController;
 use App\Presentation\Http\Controllers\TeamController as LeagueTeamController;
@@ -41,6 +45,11 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::get('/pedales', [PedalesController::class, 'index'])
     ->middleware(['auth'])
     ->name('pedales');
+
+Route::get('/temporada', [SeasonClassificationController::class, 'index'])->name('season-classification');
+Route::get('/sobre-nosotros', [AboutController::class, 'index'])->name('about');
+Route::get('/contacto', [ContactController::class, 'index'])->name('contact');
+Route::get('/politica-cookies', [CookiePolicyController::class, 'index'])->name('cookie-policy');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
