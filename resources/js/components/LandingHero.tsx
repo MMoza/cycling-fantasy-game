@@ -27,7 +27,7 @@ export default function LandingHero({ activeEdition, nextEdition, auth }: Landin
     const [imageLoaded, setImageLoaded] = useState(false);
 
     return (
-        <section className="relative flex min-h-screen flex-col overflow-hidden">
+        <section className="relative flex min-h-[calc(100vh-3.5rem)] flex-col overflow-hidden">
             <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: 'url(/portada-landing.avif)' }}
@@ -35,7 +35,7 @@ export default function LandingHero({ activeEdition, nextEdition, auth }: Landin
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
 
             {/* Centered logo + CTA */}
-            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pt-20 sm:px-6 lg:px-8">
+            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pt-14 sm:px-6 lg:px-8">
                 <motion.div
                     className="relative h-36 w-36 sm:h-44 sm:w-44"
                     initial={{ opacity: 0, scale: 0.8, rotate: -180 }}
