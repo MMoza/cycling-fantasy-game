@@ -5,6 +5,7 @@ import CompetitionCalendar from '@/components/CompetitionCalendar';
 import ClassificationCarousel from '@/components/ClassificationCarousel';
 import SpecialtyCarousel from '@/components/SpecialtyCarousel';
 import SeasonCarousel from '@/components/SeasonCarousel';
+import ComingSoonCards from '@/components/ComingSoonCards';
 
 const features = [
     {
@@ -174,6 +175,13 @@ function FeaturePanel({
                         style={{ opacity: contentOpacity, y: contentY }}
                     >
                         <SeasonCarousel staggerProgress={calendarStagger} />
+                    </motion.div>
+                ) : feature.number === '05' ? (
+                    <motion.div
+                        className="flex min-h-0 w-full flex-1 overflow-hidden bg-muted/30 mb-4"
+                        style={{ opacity: contentOpacity, y: contentY }}
+                    >
+                        <ComingSoonCards />
                     </motion.div>
                 ) : (
                     <motion.div
