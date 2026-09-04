@@ -11,7 +11,7 @@ const features = [
     {
         number: '01',
         title: 'Todo el calendario World Tour',
-        description: 'Grandes Vueltas, clásicas, championships. Todo el ciclismo profesional en un solo sitio.',
+        description: 'Grandes Vueltas, clásicas, monumentos... Todo el ciclismo profesional en un solo sitio.',
     },
     {
         number: '02',
@@ -30,8 +30,8 @@ const features = [
     },
     {
         number: '05',
-        title: 'Próximamente: Ligas privadas',
-        description: 'Crea tu liga con amigos, elige tu sistema de puntuación y compite con tu grupo.',
+        title: 'Próximamente',
+        description: 'Pedales sigue creciendo e incorporando novedades.',
         badge: 'Próximamente',
     },
 ];
