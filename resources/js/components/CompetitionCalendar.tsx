@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, MotionValue, useTransform } from 'framer-motion';
+import { ChevronRight } from 'lucide-react';
 import { FlagIcon } from '@/components/ui/flag-icon';
 import { getCalendarCategories, CalendarCategory, CalendarRace, UciColor } from '@/services/competitionCalendarService';
 
@@ -29,9 +30,9 @@ function RaceCard({ race, color }: { race: CalendarRace; color: UciColor }) {
     const [hovered, setHovered] = useState(false);
     const colors = UCI_COLORS[color];
 
-    const frontBg = hovered ? colors.solid : 'bg-background/40';
-    const frontText = hovered ? colors.solidText : 'text-foreground/80';
-    const frontBorder = hovered ? 'border-transparent' : 'border-border/30';
+    const frontBg = hovered ? colors.solid : 'bg-background/80';
+    const frontText = hovered ? colors.solidText : 'text-foreground';
+    const frontBorder = hovered ? 'border-transparent' : 'border-border/40';
     const rotate = hovered ? 'rotateY(180deg)' : 'rotateY(0deg)';
 
     return (
@@ -46,8 +47,10 @@ function RaceCard({ race, color }: { race: CalendarRace; color: UciColor }) {
                 className="relative h-10 w-[140px] lg:hidden [transform-style:preserve-3d] transition-transform duration-500"
                 style={{ transform: rotate }}
             >
-                <div className={`absolute inset-0 flex items-center justify-center border px-3 text-xs font-medium backdrop-blur-sm [backface-visibility:hidden] transition-colors duration-300 ${frontBg} ${frontText} ${frontBorder}`}>
-                    {race.name}
+                <div className={`absolute inset-0 flex items-center gap-1.5 border px-2.5 text-[11px] font-medium [backface-visibility:hidden] transition-colors duration-300 ${frontBg} ${frontText} ${frontBorder}`}>
+                    <FlagIcon code={race.countryId} className="h-3 w-4 shrink-0" />
+                    <span className="truncate flex-1">{race.name}</span>
+                    <ChevronRight className="h-3 w-3 shrink-0 opacity-50" />
                 </div>
                 <div className={`absolute inset-0 flex items-center justify-center border border-transparent [backface-visibility:hidden] [transform:rotateY(180deg)] ${colors.solid} ${colors.solidText}`}>
                     <span className="text-xs font-semibold">Ver competición</span>
