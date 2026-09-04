@@ -8,21 +8,25 @@ const steps = [
         number: '01',
         title: 'Regístrate',
         description: 'Crea tu cuenta gratis en segundos con Google o email. Sin complicaciones, sin formularios interminables.',
+        image: '/images/02-how-it-work/01-register.png',
     },
     {
         number: '02',
         title: 'Únete a la competición',
         description: 'Entra en la liga oficial del Tour, la Vuelta o cualquier clásica del World Tour. Una liga abierta para todos.',
+        image: null,
     },
     {
         number: '03',
         title: 'Pronostica',
         description: 'Antes de cada carrera y etapa elige ganador, podio y líder. Tus pronósticos se sellan — nadie los ve hasta el cierre.',
+        image: null,
     },
     {
         number: '04',
         title: 'Compite',
         description: 'Sube en la clasificación, desafía a tus amigos y demuestra tu conocimiento del ciclismo profesional.',
+        image: null,
     },
 ];
 
@@ -62,15 +66,19 @@ function StepPanel({ step, index }: { step: (typeof steps)[number]; index: numbe
                     <p className="max-w-md text-lg text-muted-foreground">{step.description}</p>
                 </motion.div>
 
-                {/* Image placeholder */}
+                {/* Image */}
                 <motion.div
-                    className="flex h-64 items-center justify-center rounded-2xl bg-muted/50 lg:h-[28rem]"
+                    className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-muted/50 lg:h-[28rem]"
                     initial={{ opacity: 0, x: 80 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: false, amount: 0.4 }}
                     transition={{ duration: 0.5, delay: 0.12, ease: 'easeOut' }}
                 >
-                    <ImageIcon className="h-16 w-16 text-muted-foreground/20" />
+                    {step.image ? (
+                        <img src={step.image} alt={step.title} className="h-full w-full object-cover" />
+                    ) : (
+                        <ImageIcon className="h-16 w-16 text-muted-foreground/20" />
+                    )}
                 </motion.div>
             </div>
         </div>
