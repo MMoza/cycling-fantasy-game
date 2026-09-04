@@ -4,12 +4,12 @@ import { ChevronRight } from 'lucide-react';
 import { FlagIcon } from '@/components/ui/flag-icon';
 import { getCalendarCategories, CalendarCategory, CalendarRace, UciColor } from '@/services/competitionCalendarService';
 
-const UCI_COLORS: Record<UciColor, { bg: string; gradient: string; text: string; solid: string; solidText: string }> = {
-    blue: { bg: 'bg-blue-500/10', gradient: 'from-blue-500/10', text: 'text-blue-500', solid: 'bg-blue-500', solidText: 'text-white' },
-    red: { bg: 'bg-red-500/10', gradient: 'from-red-500/10', text: 'text-red-500', solid: 'bg-red-500', solidText: 'text-white' },
-    black: { bg: 'bg-neutral-500/10', gradient: 'from-neutral-500/10', text: 'text-neutral-400', solid: 'bg-neutral-800', solidText: 'text-white' },
-    yellow: { bg: 'bg-yellow-500/10', gradient: 'from-yellow-500/10', text: 'text-yellow-500', solid: 'bg-yellow-500', solidText: 'text-black' },
-    green: { bg: 'bg-green-500/10', gradient: 'from-green-500/10', text: 'text-green-500', solid: 'bg-green-500', solidText: 'text-white' },
+const UCI_COLORS: Record<UciColor, { bg: string; gradient: string; text: string; solid: string; solidText: string; border: string }> = {
+    blue: { bg: 'bg-blue-500/10', gradient: 'from-blue-500/10', text: 'text-blue-500', solid: 'bg-blue-500', solidText: 'text-white', border: 'border-l-blue-500' },
+    red: { bg: 'bg-red-500/10', gradient: 'from-red-500/10', text: 'text-red-500', solid: 'bg-red-500', solidText: 'text-white', border: 'border-l-red-500' },
+    black: { bg: 'bg-neutral-500/10', gradient: 'from-neutral-500/10', text: 'text-neutral-400', solid: 'bg-neutral-800', solidText: 'text-white', border: 'border-l-neutral-800' },
+    yellow: { bg: 'bg-yellow-500/10', gradient: 'from-yellow-500/10', text: 'text-yellow-500', solid: 'bg-yellow-500', solidText: 'text-black', border: 'border-l-yellow-500' },
+    green: { bg: 'bg-green-500/10', gradient: 'from-green-500/10', text: 'text-green-500', solid: 'bg-green-500', solidText: 'text-white', border: 'border-l-green-500' },
 };
 
 function formatDates(start: string, end: string): string {
@@ -104,7 +104,7 @@ function CategoryRow({
             <h4 className={`mb-1 px-4 text-xs font-bold uppercase tracking-wider ${colors.text}`}>{category.name}</h4>
             <div className="relative w-full min-w-0">
                 <div className={`pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r ${colors.gradient} to-transparent`} />
-                <div className={`flex w-full min-w-0 gap-2 overflow-x-auto scroll-smooth px-4 py-2 ${colors.bg} scrollbar-hide lg:gap-3 lg:py-3`} style={{ scrollbarWidth: 'none' }}>
+                <div className={`flex w-full min-w-0 gap-2 overflow-x-auto scroll-smooth border-l-4 py-2 ${colors.bg} ${colors.border} scrollbar-hide lg:gap-3 lg:py-3`} style={{ scrollbarWidth: 'none' }}>
                     {category.races.map((race) => (
                         <RaceCard key={race.name} race={race} color={category.color} />
                     ))}
