@@ -1,32 +1,37 @@
 import { useRef, useState, useEffect } from 'react';
+import { Link } from '@inertiajs/react';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
-import { ImageIcon } from 'lucide-react';
+import { ArrowRight, ImageIcon } from 'lucide-react';
 import PedalesLogo from '@/components/PedalesLogo';
 
 const steps = [
     {
         number: '01',
         title: 'Regístrate',
-        description: 'Crea tu cuenta gratis en segundos con Google o email. Sin complicaciones, sin formularios interminables.',
+        description: 'Crea tu cuenta gratis en segundos con Google o registrate con un email. Sin complicaciones, sin formularios interminables.',
         image: '/images/02-how-it-work/01-register.png',
+        href: '/register',
     },
     {
         number: '02',
         title: 'Únete a la competición',
         description: 'Entra en la liga oficial del Tour, la Vuelta o cualquier clásica del World Tour. Una liga abierta para todos.',
         image: null,
+        href: null,
     },
     {
         number: '03',
         title: 'Pronostica',
         description: 'Antes de cada carrera y etapa elige ganador, podio y líder. Tus pronósticos se sellan — nadie los ve hasta el cierre.',
         image: null,
+        href: null,
     },
     {
         number: '04',
         title: 'Compite',
         description: 'Sube en la clasificación, desafía a tus amigos y demuestra tu conocimiento del ciclismo profesional.',
         image: null,
+        href: null,
     },
 ];
 
@@ -50,6 +55,13 @@ function IntroPanel() {
 }
 
 function StepPanel({ step, index }: { step: (typeof steps)[number]; index: number }) {
+    const titleContent = (
+        <>
+            {step.title}
+            {step.href && <ArrowRight className="ml-2 h-5 w-5 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100" />}
+        </>
+    );
+
     return (
         <div className="flex w-screen flex-shrink-0 items-center justify-center">
             <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
@@ -62,7 +74,21 @@ function StepPanel({ step, index }: { step: (typeof steps)[number]; index: numbe
                     transition={{ duration: 0.5, ease: 'easeOut' }}
                 >
                     <span className="text-8xl font-black tracking-tighter text-foreground/10 sm:text-9xl">{step.number}</span>
-                    <h3 className="text-4xl font-black uppercase tracking-tight text-foreground sm:text-5xl">{step.title}</h3>
+
+                    {step.href ? (
+                        <Link
+                            href={step.href}
+                            className="group relative inline-flex w-fit"
+                        >
+                            <h3 className="text-4xl font-black uppercase tracking-tight text-foreground transition-colors duration-300 group-hover:text-accent-500 sm:text-5xl">
+                                {titleContent}
+                            </h3>
+                            <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-accent-500 transition-all duration-300 group-hover:w-full" />
+                        </Link>
+                    ) : (
+                        <h3 className="text-4xl font-black uppercase tracking-tight text-foreground sm:text-5xl">{step.title}</h3>
+                    )}
+
                     <p className="max-w-md text-lg text-muted-foreground">{step.description}</p>
                 </motion.div>
 
@@ -142,27 +168,23 @@ export default function HowItWorks() {
                 {/* Tab bar */}
                 <div className="absolute bottom-0 left-0 right-0 z-10 border-t bg-background/80 backdrop-blur-md">
                     <div className="mx-auto flex max-w-7xl">
-                        {steps.map((step, index) => (
-                            <button
-                                key={step.number}
-                                onClick={() => scrollTo(index + 1)}
-                                className={`relative flex-1 px-4 py-4 text-center text-sm font-medium transition-colors ${
-                                    index + 1 === activeIndex
-                                        ? 'text-accent-500'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                            >
-                                <span className="hidden sm:inline">{step.title}</span>
-                                <span className="sm:hidden">{step.number}</span>
-                                {index + 1 === activeIndex && (
-                                    <motion.div
-                                        layoutId="activeTab"
-                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-500"
-                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                    />
-                                )}
-                            </button>
-                        ))}
+                        {steps.map((step, index) => {
+                            const isActive = index + 1 === activeIndex;
+                            return (
+                                <button
+                                    key={step.number}
+                                    onClick={() => scrollTo(index + 1)}
+                                    className={`relative flex-1 px-4 py-4 text-center text-sm font-semibold uppercase transition-colors ${
+                                        isActive
+                                            ? 'bg-accent-500 text-white'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    }`}
+                                >
+                                    <span className="hidden sm:inline">{step.title}</span>
+                                    <span className="sm:hidden">{step.number}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
