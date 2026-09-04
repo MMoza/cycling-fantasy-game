@@ -1,86 +1,112 @@
+import { useState, useEffect } from 'react';
 import { motion, MotionValue, useTransform } from 'framer-motion';
+import { FlagIcon } from '@/components/ui/flag-icon';
+import { getCalendarCategories, CalendarCategory, CalendarRace, UciColor } from '@/services/competitionCalendarService';
 
-const categories = [
-    {
-        name: 'Grand Tours',
-        races: ['Tour de France', "Giro d'Italia", 'Vuelta a España'],
-    },
-    {
-        name: 'Major Tours',
-        races: [
-            'Paris-Nice',
-            'Tirreno-Adriatico',
-            'Volta a Catalunya',
-            'Itzulia Basque Country',
-            'Tour de Romandie',
-            'Tour de Suisse',
-            'Tour Auvergne-Rhône-Alpes',
-        ],
-    },
-    {
-        name: 'Monuments',
-        races: ['Milano-SanRemo', 'Ronde van Vlaanderen', 'Paris-Roubaix', 'Liège-Bastogne-Liège', 'Il Lombardia'],
-    },
-    {
-        name: 'Championships',
-        races: ['World Championships', 'European Championships'],
-    },
-    {
-        name: 'Top Classics',
-        races: [
-            'Omloop Het Nieuwsblad',
-            'Strade Bianche',
-            'E3 Classic',
-            'Gent-Wevelgem',
-            'Dwars door Vlaanderen',
-            'Eschborn-Frankfurt',
-            'Amstel Gold Race',
-            'La Flèche Wallonne',
-            'San Sebastian',
-            'Bretagne Classic',
-            'GP Québec',
-            'GP Montréal',
-        ],
-    },
-];
+const UCI_COLORS: Record<UciColor, { bg: string; gradient: string; text: string; solid: string; solidText: string }> = {
+    blue: { bg: 'bg-blue-500/10', gradient: 'from-blue-500/10', text: 'text-blue-500', solid: 'bg-blue-500', solidText: 'text-white' },
+    red: { bg: 'bg-red-500/10', gradient: 'from-red-500/10', text: 'text-red-500', solid: 'bg-red-500', solidText: 'text-white' },
+    black: { bg: 'bg-neutral-500/10', gradient: 'from-neutral-500/10', text: 'text-neutral-400', solid: 'bg-neutral-800', solidText: 'text-white' },
+    yellow: { bg: 'bg-yellow-500/10', gradient: 'from-yellow-500/10', text: 'text-yellow-500', solid: 'bg-yellow-500', solidText: 'text-black' },
+    green: { bg: 'bg-green-500/10', gradient: 'from-green-500/10', text: 'text-green-500', solid: 'bg-green-500', solidText: 'text-white' },
+};
 
-function AnimatedCategoryCard({ category, progress }: { category: (typeof categories)[number]; progress: MotionValue<number> }) {
-    const opacity = useTransform(progress, [0, 1], [0, 1]);
-    const y = useTransform(progress, [0, 1], [20, 0]);
+function formatDates(start: string, end: string): string {
+    const s = new Date(start + 'T00:00:00');
+    const e = new Date(end + 'T00:00:00');
+    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+    if (start === end) {
+        return `${s.getDate()} ${months[s.getMonth()]} ${s.getFullYear()}`;
+    }
+    if (s.getMonth() === e.getMonth()) {
+        return `${s.getDate()}–${e.getDate()} ${months[s.getMonth()]}`;
+    }
+    return `${s.getDate()} ${months[s.getMonth()]} – ${e.getDate()} ${months[e.getMonth()]}`;
+}
+
+function RaceCard({ race, color }: { race: CalendarRace; color: UciColor }) {
+    const [hovered, setHovered] = useState(false);
+    const colors = UCI_COLORS[color];
+
+    const frontBg = hovered ? colors.solid : 'bg-background/40';
+    const frontText = hovered ? colors.solidText : 'text-foreground/80';
+    const frontBorder = hovered ? 'border-transparent' : 'border-border/30';
+    const rotate = hovered ? 'rotateY(180deg)' : 'rotateY(0deg)';
 
     return (
-        <motion.div
-            className="rounded-xl border border-border/50 bg-background/60 p-4 backdrop-blur-sm"
-            style={{ opacity, y }}
+        <div
+            className="shrink-0 [perspective:600px]"
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            onClick={() => setHovered((prev) => !prev)}
         >
-            <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-accent-500">{category.name}</h4>
-            <ul className="space-y-1.5">
-                {category.races.map((race) => (
-                    <li key={race} className="text-sm text-foreground/80">
-                        {race}
-                    </li>
-                ))}
-            </ul>
-        </motion.div>
+            {/* Mobile card */}
+            <div
+                className="relative h-10 w-auto lg:hidden [transform-style:preserve-3d] transition-transform duration-500"
+                style={{ transform: rotate }}
+            >
+                <div className={`absolute inset-0 flex items-center justify-center border px-3 text-xs font-medium backdrop-blur-sm [backface-visibility:hidden] transition-colors duration-300 ${frontBg} ${frontText} ${frontBorder}`}>
+                    {race.name}
+                </div>
+                <div className={`absolute inset-0 flex items-center justify-center border border-transparent [backface-visibility:hidden] [transform:rotateY(180deg)] ${colors.solid} ${colors.solidText}`}>
+                    <span className="text-xs font-semibold">Ver competición</span>
+                </div>
+            </div>
+
+            {/* Desktop card */}
+            <div
+                className="hidden h-[80px] w-[200px] lg:block [transform-style:preserve-3d] transition-transform duration-500"
+                style={{ transform: rotate }}
+            >
+                <div className={`absolute inset-0 flex flex-col justify-end border p-3 backdrop-blur-sm [backface-visibility:hidden] transition-colors duration-300 ${frontBg} ${frontText} ${frontBorder}`}>
+                    <h5 className="text-sm font-semibold leading-tight">{race.name}</h5>
+                    <div className="mt-1.5 flex items-center gap-2 text-[10px] opacity-60">
+                        <FlagIcon code={race.countryId} className="h-3 w-4" />
+                        <span>{formatDates(race.startDate, race.endDate)}</span>
+                    </div>
+                </div>
+                <div className={`absolute inset-0 flex flex-col items-center justify-center border border-transparent [backface-visibility:hidden] [transform:rotateY(180deg)] ${colors.solid} ${colors.solidText}`}>
+                    <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/30 bg-white/10">
+                        <span className="text-[8px] font-bold opacity-70">Logo</span>
+                    </div>
+                    <span className="text-[11px] font-semibold">Ver competición</span>
+                </div>
+            </div>
+        </div>
     );
 }
 
-function AnimatedCategoryCarousel({ category, progress }: { category: (typeof categories)[number]; progress: MotionValue<number> }) {
+function CategoryRow({
+    category,
+    index,
+    total,
+    staggerProgress,
+}: {
+    category: CalendarCategory;
+    index: number;
+    total: number;
+    staggerProgress: MotionValue<number>;
+}) {
+    const start = index / total;
+    const end = (index + 1) / total;
+    const progress = useTransform(staggerProgress, [start, end], [0, 1]);
     const opacity = useTransform(progress, [0, 1], [0, 1]);
-    const y = useTransform(progress, [0, 1], [16, 0]);
+    const y = useTransform(progress, [0, 1], [20, 0]);
+
+    const colors = UCI_COLORS[category.color];
 
     return (
-        <motion.div className="flex flex-col gap-2" style={{ opacity, y }}>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-accent-500">{category.name}</h4>
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {category.races.map((race) => (
-                    <span
-                        key={race}
-                        className="shrink-0 rounded-lg border border-border/50 bg-background/60 px-3 py-2 text-xs font-medium text-foreground/80 backdrop-blur-sm"
-                    >
-                        {race}
-                    </span>
-                ))}
+        <motion.div style={{ opacity, y }} className="w-full min-w-0">
+            <h4 className={`mb-1 px-4 text-xs font-bold uppercase tracking-wider ${colors.text}`}>{category.name}</h4>
+            <div className="relative w-full min-w-0">
+                <div className={`pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r ${colors.gradient} to-transparent`} />
+                <div className={`flex w-full min-w-0 gap-2 overflow-x-auto scroll-smooth px-4 py-2 ${colors.bg} scrollbar-hide lg:gap-3 lg:py-3`} style={{ scrollbarWidth: 'none' }}>
+                    {category.races.map((race) => (
+                        <RaceCard key={race.name} race={race} color={category.color} />
+                    ))}
+                </div>
+                <div className={`pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l ${colors.gradient} to-transparent`} />
             </div>
         </motion.div>
     );
@@ -91,29 +117,27 @@ interface CompetitionCalendarProps {
 }
 
 export default function CompetitionCalendar({ staggerProgress }: CompetitionCalendarProps) {
+    const [categories, setCategories] = useState<CalendarCategory[]>([]);
+
+    useEffect(() => {
+        getCalendarCategories().then(setCategories);
+    }, []);
+
     const total = categories.length;
 
-    return (
-        <>
-            {/* Desktop: grid */}
-            <div className="hidden h-full grid-cols-5 gap-3 overflow-hidden p-4 lg:grid">
-                {categories.map((category, index) => {
-                    const start = index / total;
-                    const end = (index + 1) / total;
-                    const catProgress = useTransform(staggerProgress, [start, end], [0, 1]);
-                    return <AnimatedCategoryCard key={category.name} category={category} progress={catProgress} />;
-                })}
-            </div>
+    if (total === 0) return null;
 
-            {/* Mobile: carousels */}
-            <div className="flex h-full flex-col justify-center gap-4 overflow-hidden px-4 py-6 lg:hidden">
-                {categories.map((category, index) => {
-                    const start = index / total;
-                    const end = (index + 1) / total;
-                    const catProgress = useTransform(staggerProgress, [start, end], [0, 1]);
-                    return <AnimatedCategoryCarousel key={category.name} category={category} progress={catProgress} />;
-                })}
-            </div>
-        </>
+    return (
+        <div className="flex h-full w-full min-w-0 flex-col justify-center gap-3 py-4 lg:gap-4">
+            {categories.map((category, index) => (
+                <CategoryRow
+                    key={category.name}
+                    category={category}
+                    index={index}
+                    total={total}
+                    staggerProgress={staggerProgress}
+                />
+            ))}
+        </div>
     );
 }
