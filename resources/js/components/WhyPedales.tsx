@@ -82,6 +82,9 @@ function FeaturePanel({
     const calendarOpacity = useTransform(panelProgress, [0.55, 0.85], [0, 1]);
     const calendarX = useTransform(panelProgress, [0.55, 0.85], [60, 0]);
 
+    // Calendar categories stagger: 0 → 1 during 0.65 → 1.0
+    const calendarStagger = useTransform(panelProgress, [0.65, 1], [0, 1]);
+
     const isStep01 = feature.number === '01';
 
     return (
@@ -132,7 +135,7 @@ function FeaturePanel({
                         className="flex h-64 overflow-hidden rounded-2xl bg-muted/30 lg:h-[28rem]"
                         style={{ opacity: calendarOpacity, x: calendarX }}
                     >
-                        <CompetitionCalendar />
+                        <CompetitionCalendar staggerProgress={calendarStagger} />
                     </motion.div>
                 ) : (
                     <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-muted/50 lg:h-[28rem]">
