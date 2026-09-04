@@ -32,6 +32,8 @@ const features = [
     },
 ];
 
+const breakpoints = [0, 0.125, 0.625, 0.75, 0.875, 1.0];
+
 function IntroPanel() {
     return (
         <div className="flex w-screen flex-shrink-0 items-center justify-center px-6">
@@ -48,42 +50,34 @@ function IntroPanel() {
 function FeaturePanel({
     feature,
     panelIndex,
-    totalPanels,
     scrollYProgress,
 }: {
     feature: (typeof features)[number];
     panelIndex: number;
-    totalPanels: number;
     scrollYProgress: MotionValue<number>;
 }) {
     const Icon = feature.icon;
 
-    const vCenter = (totalPanels - 1 - panelIndex) / (totalPanels - 1);
-    const vHalf = 1 / (totalPanels - 1) / 2;
-
-    // Full panel progress: 0 when entering, 1 when centered, continues until next panel
-    const vStart = vCenter - vHalf;
-    const vEnd = vCenter + vHalf;
+    const vStart = breakpoints[panelIndex];
+    const vEnd = breakpoints[panelIndex + 1];
     const panelProgress = useTransform(scrollYProgress, [vStart, vEnd], [0, 1]);
 
-    // Phase 1 (0 → 0.35): Number + title appear centered
-    const headerOpacity = useTransform(panelProgress, [0, 0.35], [0, 1]);
-    const headerY = useTransform(panelProgress, [0, 0.35], [40, 0]);
+    // Phase 1 (0 → 0.3): Number + title appear centered
+    const headerOpacity = useTransform(panelProgress, [0, 0.3], [0, 1]);
+    const headerY = useTransform(panelProgress, [0, 0.3], [40, 0]);
 
-    // Phase 2 (0.3 → 0.6): Description appears
-    const descOpacity = useTransform(panelProgress, [0.3, 0.6], [0, 1]);
-    const descY = useTransform(panelProgress, [0.3, 0.6], [20, 0]);
+    // Phase 2 (0.25 → 0.5): Description appears
+    const descOpacity = useTransform(panelProgress, [0.25, 0.5], [0, 1]);
+    const descY = useTransform(panelProgress, [0.25, 0.5], [20, 0]);
 
-    // Phase 3 (0.55 → 1.0): Text moves up+left, calendar appears
-    const textX = useTransform(panelProgress, [0.55, 1], ['0%', '-8%']);
-    const textY = useTransform(panelProgress, [0.55, 1], ['0%', '-12%']);
-    const textScale = useTransform(panelProgress, [0.55, 1], [1, 0.88]);
+    // Phase 3 (0.45 → 0.75): Text moves up, calendar appears
+    const textY = useTransform(panelProgress, [0.45, 0.75], ['0%', '-18%']);
 
-    const calendarOpacity = useTransform(panelProgress, [0.55, 0.85], [0, 1]);
-    const calendarX = useTransform(panelProgress, [0.55, 0.85], [60, 0]);
+    const calendarOpacity = useTransform(panelProgress, [0.5, 0.8], [0, 1]);
+    const calendarY = useTransform(panelProgress, [0.5, 0.8], [40, 0]);
 
-    // Calendar categories stagger: 0 → 1 during 0.65 → 1.0
-    const calendarStagger = useTransform(panelProgress, [0.65, 1], [0, 1]);
+    // Calendar categories stagger: 0 → 1 during 0.7 → 1.0
+    const calendarStagger = useTransform(panelProgress, [0.7, 1], [0, 1]);
 
     const isStep01 = feature.number === '01';
 
@@ -93,11 +87,7 @@ function FeaturePanel({
                 {/* Text side */}
                 <motion.div
                     className="flex flex-col gap-4"
-                    style={{
-                        x: isStep01 ? textX : 0,
-                        y: isStep01 ? textY : 0,
-                        scale: isStep01 ? textScale : 1,
-                    }}
+                    style={{ y: isStep01 ? textY : 0 }}
                 >
                     <motion.div
                         className="flex items-center gap-4"
@@ -133,7 +123,7 @@ function FeaturePanel({
                 {isStep01 ? (
                     <motion.div
                         className="flex h-64 overflow-hidden rounded-2xl bg-muted/30 lg:h-[28rem]"
-                        style={{ opacity: calendarOpacity, x: calendarX }}
+                        style={{ opacity: calendarOpacity, y: calendarY }}
                     >
                         <CompetitionCalendar staggerProgress={calendarStagger} />
                     </motion.div>
@@ -168,18 +158,23 @@ export default function WhyPedales() {
 
     useEffect(() => {
         const unsubscribe = scrollYProgress.on('change', (v) => {
-            const panelIdx = Math.round(v * (totalPanels - 1));
-            setActiveFeature(panelIdx === 0 ? null : panelIdx - 1);
+            for (let i = features.length - 1; i >= 0; i--) {
+                if (v >= breakpoints[i + 1] - 0.001) {
+                    setActiveFeature(i);
+                    return;
+                }
+            }
+            setActiveFeature(null);
         });
         return unsubscribe;
-    }, [scrollYProgress, totalPanels]);
+    }, [scrollYProgress]);
 
     const scrollToFeature = (featureIndex: number) => {
         const container = containerRef.current;
         if (!container) return;
         const totalScrollable = container.scrollHeight - window.innerHeight;
-        const target = ((featureIndex + 1) / totalPanels) * totalScrollable;
-        window.scrollTo({ top: container.offsetTop + target, behavior: 'smooth' });
+        const targetScroll = breakpoints[featureIndex + 1] * totalScrollable;
+        window.scrollTo({ top: container.offsetTop + targetScroll, behavior: 'smooth' });
     };
 
     const reversedFeatures = [...features].reverse();
@@ -208,7 +203,6 @@ export default function WhyPedales() {
                             key={feature.number}
                             feature={feature}
                             panelIndex={index}
-                            totalPanels={totalPanels}
                             scrollYProgress={scrollYProgress}
                         />
                     ))}
