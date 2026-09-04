@@ -2,6 +2,8 @@ import ApplicationLogo from '@/breeze/ApplicationLogo';
 import { Link } from '@inertiajs/react';
 
 export default function Footer() {
+    const year = new Date().getFullYear();
+
     return (
         <footer className="border-t bg-muted/50">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -11,13 +13,9 @@ export default function Footer() {
                         <span className="font-semibold">Pedales Fantasy Cycling</span>
                     </div>
 
-                    <p className="max-w-md text-sm text-muted-foreground">
-                        El fantasy de ciclismo para Grandes Vueltas y carreras del World Tour.
-                    </p>
-
                     <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                         <Link href={route('season-classification')} className="text-muted-foreground hover:text-foreground transition-colors">
-                            Clasificación temporada
+                            Temporada {year}
                         </Link>
                         <Link href={route('about')} className="text-muted-foreground hover:text-foreground transition-colors">
                             Sobre nosotros
