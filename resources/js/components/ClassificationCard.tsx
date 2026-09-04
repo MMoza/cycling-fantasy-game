@@ -1,4 +1,4 @@
-import { Trophy } from 'lucide-react';
+import { Trophy, ChevronUp, ChevronDown, Minus } from 'lucide-react';
 import { FlagIcon } from '@/components/ui/flag-icon';
 import PedalesLogo from '@/components/PedalesLogo';
 import { ClassificationCompetition, ClassificationEntry } from '@/services/classificationMockData';
@@ -46,12 +46,33 @@ function RankBadge({ rank }: { rank: number }) {
     return <span className="w-3.5 text-center text-[11px] font-bold text-muted-foreground">{rank}</span>;
 }
 
+function RankChange({ change }: { change: number | null }) {
+    if (change === null) {
+        return <Minus className="h-3 w-3 text-muted-foreground/40" />;
+    }
+    if (change > 0) {
+        return (
+            <span className="flex items-center text-[10px] font-bold text-green-600">
+                <ChevronUp className="h-3 w-3" />
+                {change}
+            </span>
+        );
+    }
+    return (
+        <span className="flex items-center text-[10px] font-bold text-red-500">
+            <ChevronDown className="h-3 w-3" />
+            {Math.abs(change)}
+        </span>
+    );
+}
+
 function LeaderboardRow({ entry }: { entry: ClassificationEntry }) {
     return (
         <div className="flex items-center gap-2 px-3 py-[7px] transition-colors hover:bg-muted/30">
             <RankBadge rank={entry.rank} />
             <Avatar name={entry.userName} rank={entry.rank} />
             <span className="flex-1 text-[13px] font-medium text-foreground truncate">{entry.userName}</span>
+            <RankChange change={entry.rankChange} />
             <span className="text-[13px] tabular-nums text-muted-foreground">{entry.points}</span>
         </div>
     );
