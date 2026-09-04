@@ -103,16 +103,11 @@ function FeaturePanel({
     const [start, end] = SCROLL_RANGES[visualIndex];
     const pp = useTransform(scrollYProgress, [start, end], [0, 1]);
 
-    // Phase 1 (0→0.15): title centered
-    const headerOpacity = useTransform(pp, [0, 0.15], [0, 1]);
-
-    // Phase 2 (0.12→0.3): description
-    const descOpacity = useTransform(pp, [0.12, 0.3], [0, 1]);
-
-    // Phase 3 (0.15→0.5): shrink + move from center to top-left
-    const textScale = useTransform(pp, [0, 0.15, 0.5], [1, 1, 0.6]);
-    const textX = useTransform(pp, [0, 0.15, 0.5], ['0%', '0%', '-3%']);
-    const textY = useTransform(pp, [0, 0.15, 0.5], ['35vh', '35vh', '5rem']);
+    const headerOpacity = useTransform(pp, [0, 0.08], [0, 1]);
+    const descOpacity = useTransform(pp, [0.05, 0.2], [0, 1]);
+    const textScale = useTransform(pp, [0, 0.5], [1, 0.6]);
+    const textX = useTransform(pp, [0, 0.5], ['0%', '-3%']);
+    const textY = useTransform(pp, [0, 0.5], ['35vh', '5rem']);
 
     // Phase 4 (0.45→0.85): content appears
     const contentOpacity = useTransform(pp, [0.45, 0.6], [0, 1]);
