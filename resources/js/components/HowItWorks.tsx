@@ -8,16 +8,17 @@ const steps = [
     {
         number: '01',
         title: 'Regístrate',
-        description: 'Crea tu cuenta gratis en segundos con Google o registrate con un email. Sin complicaciones, sin formularios interminables.',
+        description: 'Crea tu cuenta gratis en segundos con Google o email. Sin complicaciones, sin formularios interminables.',
         image: '/images/02-how-it-work/01-register.png',
         href: '/register',
     },
     {
         number: '02',
         title: 'Únete a la competición',
-        description: 'Entra en la liga oficial del Tour, la Vuelta o cualquier clásica del World Tour. Una liga abierta para todos.',
+        description: 'Entra en la competición oficial del Tour, la Vuelta, El Giro o cualquier clásica o major de la temporada UCI WT y compite con la comunidad de Pedales.',
         image: null,
         href: null,
+        highlights: ['Tour', 'Vuelta', 'Giro', 'clásica', 'major'],
     },
     {
         number: '03',
@@ -34,6 +35,27 @@ const steps = [
         href: null,
     },
 ];
+
+function renderDescription(text: string, highlights?: string[]) {
+    if (!highlights || highlights.length === 0) {
+        return <p className="max-w-md text-lg text-muted-foreground">{text}</p>;
+    }
+
+    const pattern = new RegExp(`(${highlights.map((h) => h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+    const parts = text.split(pattern);
+
+    return (
+        <p className="max-w-md text-lg text-muted-foreground">
+            {parts.map((part, i) =>
+                highlights.some((h) => h.toLowerCase() === part.toLowerCase()) ? (
+                    <span key={i} className="font-semibold text-accent-500">{part}</span>
+                ) : (
+                    <span key={i}>{part}</span>
+                )
+            )}
+        </p>
+    );
+}
 
 function IntroPanel() {
     return (
@@ -89,7 +111,7 @@ function StepPanel({ step, index }: { step: (typeof steps)[number]; index: numbe
                         <h3 className="text-4xl font-black uppercase tracking-tight text-foreground sm:text-5xl">{step.title}</h3>
                     )}
 
-                    <p className="max-w-md text-lg text-muted-foreground">{step.description}</p>
+                    {renderDescription(step.description, step.highlights)}
                 </motion.div>
 
                 {/* Image */}
