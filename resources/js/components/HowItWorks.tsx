@@ -23,16 +23,16 @@ const steps = [
     {
         number: '03',
         title: 'Pronostica',
-        description: 'Antes de cada carrera y etapa elige ganador, podio y líder. Tus pronósticos se sellan — nadie los ve hasta el cierre.',
-        image: null,
-        href: null,
+        description: 'Haz tus pronósticos antes del inicio de cada carrera. Tus pronósticos se sellan — nadie los ve hasta el inicio de la etapa.',
+        image: '/images/02-how-it-work/03-predictor.png',
+        href: '/dashboard',
     },
     {
         number: '04',
         title: 'Compite',
-        description: 'Sube en la clasificación, desafía a tus amigos y demuestra tu conocimiento del ciclismo profesional.',
-        image: null,
-        href: null,
+        description: 'Sube en la clasificación, desafía a tus amigos y demuestra todo lo que sabes de ciclismo.',
+        image: '/images/02-how-it-work/04-clasification.png',
+        href: '/season/classification',
     },
 ];
 
