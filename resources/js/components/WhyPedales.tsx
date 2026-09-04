@@ -58,36 +58,44 @@ function FeaturePanel({
 }) {
     const Icon = feature.icon;
 
-    // Each panel occupies its slice of scrollYProgress.
-    // Panels shown in order: Intro (DOM last) → F1 → F2 → F3 → F4
-    // DOM reversed: [F4, F3, F2, F1, Intro]
-    // panelIndex = position in reversedFeatures array (0=F4, 1=F3, 2=F2, 3=F1)
-    // The panel at DOM position `panelIndex` is visible centered at v = (totalPanels-1-panelIndex) / (totalPanels-1)
     const vCenter = (totalPanels - 1 - panelIndex) / (totalPanels - 1);
     const vHalf = 1 / (totalPanels - 1) / 2;
 
-    // Local progress: 0 when panel enters, 1 when fully centered
-    const localProgress = useTransform(scrollYProgress, [vCenter - vHalf, vCenter], [0, 1]);
-    // Clamp: 0 at enter, 1 at center, stays 1 until leaving
-    const clampedProgress = useTransform(localProgress, [0, 1], [0, 1]);
+    // Full panel progress: 0 when entering, 1 when centered, continues until next panel
+    const vStart = vCenter - vHalf;
+    const vEnd = vCenter + vHalf;
+    const panelProgress = useTransform(scrollYProgress, [vStart, vEnd], [0, 1]);
 
-    // Number + title: appear first (0 → 0.33)
-    const headerOpacity = useTransform(clampedProgress, [0, 0.3], [0, 1]);
-    const headerY = useTransform(clampedProgress, [0, 0.3], [30, 0]);
+    // Phase 1 (0 → 0.35): Number + title appear centered
+    const headerOpacity = useTransform(panelProgress, [0, 0.35], [0, 1]);
+    const headerY = useTransform(panelProgress, [0, 0.35], [40, 0]);
 
-    // Description: appear second (0.15 → 0.5)
-    const descOpacity = useTransform(clampedProgress, [0.15, 0.5], [0, 1]);
-    const descY = useTransform(clampedProgress, [0.15, 0.5], [20, 0]);
+    // Phase 2 (0.3 → 0.6): Description appears
+    const descOpacity = useTransform(panelProgress, [0.3, 0.6], [0, 1]);
+    const descY = useTransform(panelProgress, [0.3, 0.6], [20, 0]);
 
-    // Calendar / right panel: appear last (0.3 → 0.7)
-    const rightOpacity = useTransform(clampedProgress, [0.3, 0.7], [0, 1]);
-    const rightY = useTransform(clampedProgress, [0.3, 0.7], [40, 0]);
+    // Phase 3 (0.55 → 1.0): Text moves up+left, calendar appears
+    const textX = useTransform(panelProgress, [0.55, 1], ['0%', '-8%']);
+    const textY = useTransform(panelProgress, [0.55, 1], ['0%', '-12%']);
+    const textScale = useTransform(panelProgress, [0.55, 1], [1, 0.88]);
+
+    const calendarOpacity = useTransform(panelProgress, [0.55, 0.85], [0, 1]);
+    const calendarX = useTransform(panelProgress, [0.55, 0.85], [60, 0]);
+
+    const isStep01 = feature.number === '01';
 
     return (
         <div className="flex w-screen flex-shrink-0 items-center justify-center">
             <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
                 {/* Text side */}
-                <div className="flex flex-col gap-4">
+                <motion.div
+                    className="flex flex-col gap-4"
+                    style={{
+                        x: isStep01 ? textX : 0,
+                        y: isStep01 ? textY : 0,
+                        scale: isStep01 ? textScale : 1,
+                    }}
+                >
                     <motion.div
                         className="flex items-center gap-4"
                         style={{ opacity: headerOpacity, y: headerY }}
@@ -116,21 +124,23 @@ function FeaturePanel({
                     >
                         {feature.description}
                     </motion.p>
-                </div>
+                </motion.div>
 
                 {/* Right side */}
-                <motion.div
-                    className="flex h-64 overflow-hidden rounded-2xl bg-muted/30 lg:h-[28rem]"
-                    style={{ opacity: rightOpacity, y: rightY }}
-                >
-                    {feature.number === '01' ? (
+                {isStep01 ? (
+                    <motion.div
+                        className="flex h-64 overflow-hidden rounded-2xl bg-muted/30 lg:h-[28rem]"
+                        style={{ opacity: calendarOpacity, x: calendarX }}
+                    >
                         <CompetitionCalendar />
-                    ) : (
+                    </motion.div>
+                ) : (
+                    <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-muted/50 lg:h-[28rem]">
                         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40">
                             <Icon className="h-16 w-16 text-muted-foreground/20" />
                         </div>
-                    )}
-                </motion.div>
+                    </div>
+                )}
             </div>
         </div>
     );
