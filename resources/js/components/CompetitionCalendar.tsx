@@ -43,7 +43,7 @@ function RaceCard({ race, color }: { race: CalendarRace; color: UciColor }) {
         >
             {/* Mobile card */}
             <div
-                className="relative h-10 w-auto lg:hidden [transform-style:preserve-3d] transition-transform duration-500"
+                className="relative h-10 w-[140px] lg:hidden [transform-style:preserve-3d] transition-transform duration-500"
                 style={{ transform: rotate }}
             >
                 <div className={`absolute inset-0 flex items-center justify-center border px-3 text-xs font-medium backdrop-blur-sm [backface-visibility:hidden] transition-colors duration-300 ${frontBg} ${frontText} ${frontBorder}`}>

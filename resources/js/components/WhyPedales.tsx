@@ -141,14 +141,14 @@ function FeaturePanel({
 
                 {feature.number === '01' ? (
                     <motion.div
-                        className="flex min-h-0 w-full flex-1 overflow-hidden rounded-2xl bg-muted/30"
+                        className="flex min-h-0 w-full flex-1 overflow-hidden rounded-2xl bg-muted/30 mb-2"
                         style={{ opacity: contentOpacity, y: contentY }}
                     >
                         <CompetitionCalendar staggerProgress={calendarStagger} />
                     </motion.div>
                 ) : (
                     <motion.div
-                        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-muted/50"
+                        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-muted/50 mb-2"
                         style={{ opacity: contentOpacity, y: contentY }}
                     >
                         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40">
