@@ -15,14 +15,16 @@ function AnimatedCard({
 }) {
     const segmentSize = 1 / total;
     const segmentStart = index * segmentSize;
-    const segmentMid = segmentStart + segmentSize / 2;
+    const arrive = segmentStart + segmentSize * 0.25;
+    const holdEnd = segmentStart + segmentSize * 0.65;
     const segmentEnd = segmentStart + segmentSize;
 
-    const x = useTransform(staggerProgress, [segmentStart, segmentMid, segmentEnd], ['55%', '0%', '-55%']);
-    const scale = useTransform(staggerProgress, [segmentStart, segmentMid, segmentEnd], [0.88, 1, 0.88]);
-    const opacity = useTransform(staggerProgress, [segmentStart, segmentMid, segmentEnd], [0.4, 1, 0.4]);
-    const blur = useTransform(staggerProgress, [segmentStart, segmentMid, segmentEnd], [2, 0, 2]);
-    const zIndex = useTransform(staggerProgress, [segmentStart, segmentMid, segmentEnd], [0, 10, 0]);
+    const x = useTransform(staggerProgress, [segmentStart, arrive, holdEnd, segmentEnd], ['55%', '0%', '0%', '-55%']);
+    const scale = useTransform(staggerProgress, [segmentStart, arrive, holdEnd, segmentEnd], [0.88, 1, 1, 0.88]);
+    const opacity = useTransform(staggerProgress, [segmentStart, arrive, holdEnd, segmentEnd], [0.3, 1, 1, 0.3]);
+    const blur = useTransform(staggerProgress, [segmentStart, arrive, holdEnd, segmentEnd], [2, 0, 0, 2]);
+    const zIndex = useTransform(staggerProgress, [segmentStart, arrive, holdEnd, segmentEnd], [0, 10, 10, 0]);
+    const taglineOpacity = useTransform(staggerProgress, [arrive, arrive + 0.02, holdEnd - 0.02, holdEnd], [0, 1, 1, 0]);
 
     return (
         <motion.div
@@ -35,7 +37,7 @@ function AnimatedCard({
                     filter: useTransform(blur, (v) => `blur(${v}px)`),
                 }}
             >
-                <ClassificationCard competition={competition} />
+                <ClassificationCard competition={competition} taglineOpacity={taglineOpacity} />
             </motion.div>
         </motion.div>
     );

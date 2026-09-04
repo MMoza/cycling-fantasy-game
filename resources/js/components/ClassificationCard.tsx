@@ -1,4 +1,5 @@
 import { Trophy, ChevronUp, ChevronDown, Minus } from 'lucide-react';
+import { MotionValue, motion } from 'framer-motion';
 import { FlagIcon } from '@/components/ui/flag-icon';
 import PedalesLogo from '@/components/PedalesLogo';
 import { ClassificationCompetition, ClassificationEntry } from '@/services/classificationMockData';
@@ -78,7 +79,13 @@ function LeaderboardRow({ entry }: { entry: ClassificationEntry }) {
     );
 }
 
-export default function ClassificationCard({ competition }: { competition: ClassificationCompetition }) {
+export default function ClassificationCard({
+    competition,
+    taglineOpacity,
+}: {
+    competition: ClassificationCompetition;
+    taglineOpacity: MotionValue<number>;
+}) {
     const light = isLightColor(competition.brandColor);
     const headerText = light ? 'text-foreground' : 'text-white';
     const headerSubtext = light ? 'text-foreground/60' : 'text-white/60';
@@ -105,8 +112,15 @@ export default function ClassificationCard({ competition }: { competition: Class
                 ))}
             </div>
 
-            {/* Reserved space for tagline/images */}
-            <div className="flex-1 border-t border-border/20 px-4 py-3" />
+            {/* Tagline */}
+            <motion.div
+                className="flex-1 border-t border-border/20 px-4 py-3 flex items-center justify-center"
+                style={{ opacity: taglineOpacity }}
+            >
+                <p className="text-xl font-bold italic text-center" style={{ color: competition.brandColor }}>
+                    {competition.tagline}
+                </p>
+            </motion.div>
         </div>
     );
 }

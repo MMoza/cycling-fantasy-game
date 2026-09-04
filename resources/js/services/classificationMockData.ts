@@ -20,7 +20,7 @@ export const MOCK_CLASSIFICATIONS: ClassificationCompetition[] = [
         year: 2026,
         countryId: 'IT',
         brandColor: '#FFC0CB',
-        tagline: 'La carrera más bella del mundo',
+        tagline: 'La carrera más bella del mundo. Para los enamorados del ciclismo.',
         leaderboard: [
             { rank: 1, userName: 'el_chava', points: 342, rankChange: 2 },
             { rank: 2, userName: 'indurain_93', points: 289, rankChange: -1 },
@@ -39,7 +39,7 @@ export const MOCK_CLASSIFICATIONS: ClassificationCompetition[] = [
         year: 2026,
         countryId: 'FR',
         brandColor: '#1a1a1a',
-        tagline: 'El infierno del norte',
+        tagline: 'El infierno del norte. ¿Aguantarás el ritmo en los adoquines?',
         leaderboard: [
             { rank: 1, userName: 'MILON', points: 120, rankChange: 1 },
             { rank: 2, userName: 'el_chava', points: 98, rankChange: -1 },
@@ -58,7 +58,7 @@ export const MOCK_CLASSIFICATIONS: ClassificationCompetition[] = [
         year: 2026,
         countryId: 'FR',
         brandColor: '#FFD700',
-        tagline: 'La Grande Boucle',
+        tagline: 'La Gran Boucle. No puede faltar en tu calendario',
         leaderboard: [
             { rank: 1, userName: 'Armstrong7', points: 487, rankChange: null },
             { rank: 2, userName: 'el_chava', points: 412, rankChange: 1 },
@@ -77,7 +77,7 @@ export const MOCK_CLASSIFICATIONS: ClassificationCompetition[] = [
         year: 2026,
         countryId: 'IT',
         brandColor: '#C2956B',
-        tagline: 'Los caminos blancos de Toscana',
+        tagline: 'Inicia la temporada metiendo rueda en los caminos blandos de la Toscana.',
         leaderboard: [
             { rank: 1, userName: 'erto_bici', points: 85, rankChange: 3 },
             { rank: 2, userName: 'Armstrong7', points: 72, rankChange: -1 },
@@ -96,7 +96,7 @@ export const MOCK_CLASSIFICATIONS: ClassificationCompetition[] = [
         year: 2026,
         countryId: 'ES',
         brandColor: '#E10600',
-        tagline: 'La roja',
+        tagline: 'La vuelta. Para los especialistas en rampas de garage.',
         leaderboard: [
             { rank: 1, userName: 'pupuninhas', points: 398, rankChange: 2 },
             { rank: 2, userName: 'erto_bici', points: 367, rankChange: -1 },
