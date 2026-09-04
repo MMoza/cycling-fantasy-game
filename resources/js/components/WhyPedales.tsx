@@ -105,16 +105,14 @@ function FeaturePanel({
 
     // Phase 1 (0→0.15): title centered
     const headerOpacity = useTransform(pp, [0, 0.15], [0, 1]);
-    const headerY = useTransform(pp, [0, 0.15], [40, 0]);
 
     // Phase 2 (0.12→0.3): description
     const descOpacity = useTransform(pp, [0.12, 0.3], [0, 1]);
-    const descY = useTransform(pp, [0.12, 0.3], [20, 0]);
 
-    // Phase 3 (0.28→0.5): shrink + move from center to top-left
-    const textScale = useTransform(pp, [0, 0.28, 0.5], [1, 1, 0.6]);
-    const textX = useTransform(pp, [0, 0.28, 0.5], ['0%', '0%', '-3%']);
-    const textY = useTransform(pp, [0, 0.28, 0.5], ['35vh', '35vh', '0px']);
+    // Phase 3 (0.15→0.5): shrink + move from center to top-left
+    const textScale = useTransform(pp, [0, 0.15, 0.5], [1, 1, 0.6]);
+    const textX = useTransform(pp, [0, 0.15, 0.5], ['0%', '0%', '-3%']);
+    const textY = useTransform(pp, [0, 0.15, 0.5], ['35vh', '35vh', '5rem']);
 
     // Phase 4 (0.45→0.85): content appears
     const contentOpacity = useTransform(pp, [0.45, 0.6], [0, 1]);
@@ -128,11 +126,11 @@ function FeaturePanel({
                     className="flex flex-shrink-0 flex-col gap-4 origin-top-left"
                     style={{ scale: textScale, x: textX, y: textY }}
                 >
-                    <motion.div style={{ opacity: headerOpacity, y: headerY }}>
+                    <motion.div style={{ opacity: headerOpacity }}>
                         <span className="text-8xl font-black tracking-tighter text-foreground/10 sm:text-9xl">{feature.number}</span>
                     </motion.div>
 
-                    <motion.div className="flex items-center gap-3" style={{ opacity: headerOpacity, y: headerY }}>
+                    <motion.div className="flex items-center gap-3" style={{ opacity: headerOpacity }}>
                         <h3 className="text-4xl font-black uppercase tracking-tight text-foreground sm:text-5xl">{feature.title}</h3>
                         {feature.badge && (
                             <span className="shrink-0 rounded-full bg-accent-500/10 px-3 py-1 text-xs font-semibold text-accent-500">
@@ -141,7 +139,7 @@ function FeaturePanel({
                         )}
                     </motion.div>
 
-                    <motion.p className="max-w-md text-lg text-muted-foreground" style={{ opacity: descOpacity, y: descY }}>
+                    <motion.p className="max-w-md text-lg text-muted-foreground" style={{ opacity: descOpacity }}>
                         {feature.description}
                     </motion.p>
                 </motion.div>
