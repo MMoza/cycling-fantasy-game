@@ -96,6 +96,9 @@ export default function WhyPedales() {
     // x: -400% → 0% → panels slide LEFT to RIGHT, showing Intro → F1 → F2 → F3 → F4
     const x = useTransform(scrollYProgress, [0, 1], [`-${(totalPanels - 1) * 100}%`, '0%']);
 
+    // Background image moves with scroll — same distance in vw units
+    const bgX = useTransform(scrollYProgress, [0, 1], [`-${(totalPanels - 1) * 100}vw`, '0vw']);
+
     const [activeFeature, setActiveFeature] = useState<number | null>(null);
 
     useEffect(() => {
@@ -124,7 +127,22 @@ export default function WhyPedales() {
                     <PedalesLogo className="h-[40rem] w-[40rem] opacity-[0.03]" />
                 </div>
 
-                <motion.div className="flex h-full" style={{ x }}>
+                {/* Background image — spans all panels, moves with scroll */}
+                <motion.div
+                    className="pointer-events-none absolute inset-0 h-full"
+                    style={{
+                        x: bgX,
+                        width: `${totalPanels * 100}vw`,
+                    }}
+                >
+                    <img
+                        src="/images/03-why-pedales/background.png"
+                        alt=""
+                        className="h-full w-full object-cover opacity-[0.12]"
+                    />
+                </motion.div>
+
+                <motion.div className="relative flex h-full" style={{ x }}>
                     {reversedFeatures.map((feature) => (
                         <FeaturePanel key={feature.number} feature={feature} />
                     ))}
