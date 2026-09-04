@@ -143,7 +143,7 @@ export default function SeasonCarousel({ staggerProgress }: SeasonCarouselProps)
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
-                        className="bg-yellow-500/10 border-t border-yellow-500/30 px-4 py-3 text-center"
+                        className="bg-yellow-500/10 border-t border-yellow-500/30 px-4 py-3 text-center animate-pulse"
                     >
                         <p className="text-sm font-bold text-yellow-600">
                             <Crown className="inline h-4 w-4 mr-1" />

@@ -31,9 +31,9 @@ export const MOCK_SEASON: SeasonSnapshot[] = [
         leaderboard: [
             { rank: 1, userName: 'el_chava', points: 387, rankChange: 0 },
             { rank: 2, userName: 'indurain_93', points: 321, rankChange: 1 },
-            { rank: 3, userName: 'MILON', points: 298, rankChange: -1 },
-            { rank: 4, userName: 'Armstrong7', points: 267, rankChange: 0 },
-            { rank: 5, userName: 'Gepalgo', points: 234, rankChange: 0 },
+            { rank: 3, userName: 'Gepalgo', points: 298, rankChange: 2 },
+            { rank: 4, userName: 'MILON', points: 267, rankChange: -2 },
+            { rank: 5, userName: 'Armstrong7', points: 234, rankChange: -1 },
             { rank: 6, userName: 'M4nety', points: 198, rankChange: 0 },
             { rank: 7, userName: 'erto_bici', points: 176, rankChange: 0 },
             { rank: 8, userName: 'pedaleando23', points: 145, rankChange: 0 },
@@ -44,11 +44,11 @@ export const MOCK_SEASON: SeasonSnapshot[] = [
     {
         label: 'Tras el Tour',
         leaderboard: [
-            { rank: 1, userName: 'Armstrong7', points: 854, rankChange: 3 },
+            { rank: 1, userName: 'Gepalgo', points: 854, rankChange: 2 },
             { rank: 2, userName: 'el_chava', points: 812, rankChange: -1 },
             { rank: 3, userName: 'indurain_93', points: 756, rankChange: -1 },
-            { rank: 4, userName: 'Gepalgo', points: 698, rankChange: 1 },
-            { rank: 5, userName: 'MILON', points: 645, rankChange: -2 },
+            { rank: 4, userName: 'MILON', points: 698, rankChange: 0 },
+            { rank: 5, userName: 'Armstrong7', points: 645, rankChange: 0 },
             { rank: 6, userName: 'M4nety', points: 587, rankChange: 0 },
             { rank: 7, userName: 'erto_bici', points: 534, rankChange: 0 },
             { rank: 8, userName: 'pedaleando23', points: 478, rankChange: 0 },
@@ -59,11 +59,11 @@ export const MOCK_SEASON: SeasonSnapshot[] = [
     {
         label: 'Tras la Vuelta',
         leaderboard: [
-            { rank: 1, userName: 'MILON', points: 1245, rankChange: 4 },
+            { rank: 1, userName: 'Gepalgo', points: 1245, rankChange: 0 },
             { rank: 2, userName: 'el_chava', points: 1198, rankChange: 0 },
-            { rank: 3, userName: 'Armstrong7', points: 1134, rankChange: -2 },
+            { rank: 3, userName: 'MILON', points: 1134, rankChange: 1 },
             { rank: 4, userName: 'indurain_93', points: 1067, rankChange: -1 },
-            { rank: 5, userName: 'Gepalgo', points: 987, rankChange: -1 },
+            { rank: 5, userName: 'Armstrong7', points: 987, rankChange: 0 },
             { rank: 6, userName: 'M4nety', points: 923, rankChange: 0 },
             { rank: 7, userName: 'erto_bici', points: 856, rankChange: 0 },
             { rank: 8, userName: 'pedaleando23', points: 789, rankChange: 0 },
@@ -74,11 +74,11 @@ export const MOCK_SEASON: SeasonSnapshot[] = [
     {
         label: 'Final de temporada',
         leaderboard: [
-            { rank: 1, userName: 'MILON', points: 1456, rankChange: 0 },
-            { rank: 2, userName: 'el_chava', points: 1398, rankChange: 0 },
-            { rank: 3, userName: 'Armstrong7', points: 1312, rankChange: 0 },
+            { rank: 1, userName: 'MILON', points: 1456, rankChange: 2 },
+            { rank: 2, userName: 'Gepalgo', points: 1398, rankChange: -1 },
+            { rank: 3, userName: 'el_chava', points: 1312, rankChange: -1 },
             { rank: 4, userName: 'indurain_93', points: 1245, rankChange: 0 },
-            { rank: 5, userName: 'Gepalgo', points: 1167, rankChange: 0 },
+            { rank: 5, userName: 'Armstrong7', points: 1167, rankChange: 0 },
             { rank: 6, userName: 'M4nety', points: 1089, rankChange: 0 },
             { rank: 7, userName: 'erto_bici', points: 1012, rankChange: 0 },
             { rank: 8, userName: 'pedaleando23', points: 934, rankChange: 0 },
