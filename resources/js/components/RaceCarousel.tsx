@@ -65,7 +65,7 @@ export default function RaceCarousel({ races, activeRaceId, currentStage }: Race
                             href={route('competitions.show', race.editionId)}
                             data-race-card
                             data-race-id={race.editionId}
-                            className={`relative w-[280px] shrink-0 snap-center rounded-2xl border transition-all duration-300 hover:scale-[1.02] hover:border-white/20 ${
+                            className={`relative w-[280px] shrink-0 snap-center border transition-all duration-300 hover:scale-[1.02] hover:border-white/20 ${
                                 isActive
                                     ? 'border-accent-500/50 bg-black/60 shadow-2xl shadow-accent-500/20 backdrop-blur-md'
                                     : 'border-white/10 bg-black/30 backdrop-blur-sm opacity-70'
