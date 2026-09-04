@@ -20,7 +20,7 @@ self.addEventListener('fetch', (event) => {
 
     if (event.request.mode === 'navigate') {
         event.respondWith(
-            fetch(event.request).catch(() => caches.match('/offline')),
+            fetch(event.request).catch(() => caches.match('/offline').catch(() => new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } }))),
         );
         return;
     }
@@ -32,7 +32,7 @@ self.addEventListener('fetch', (event) => {
                 caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
             }
             return response;
-        }).catch(() => caches.match(event.request)),
+        }).catch(() => caches.match(event.request).catch(() => new Response('', { status: 504 }))),
     );
 });
 

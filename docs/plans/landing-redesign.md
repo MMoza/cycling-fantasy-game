@@ -21,7 +21,7 @@ Rediseñar la landing de Pedales con: hero animado + competición activa/conteo 
 | `resources/js/components/Footer.tsx` | Footer completo con calendario UCI, links, about/contact |
 | `resources/js/components/ScrollReveal.tsx` | Wrapper Framer Motion para animaciones on scroll |
 | `resources/js/components/LandingHero.tsx` | Hero animado con countdown |
-| `resources/js/components/HowItWorks.tsx` | Sección "Cómo funciona" (4 pasos) |
+| `resources/js/components/HowItWorks.tsx` | Sección "�Cómo funciona Pedales?" (4 pasos) |
 | `resources/js/components/WhyPedales.tsx` | Sección "Por qué Pedales" |
 | `resources/js/components/SeasonLeaderboard.tsx` | Clasificación pública temporada |
 | `app/Presentation/Http/Controllers/PublicSeasonClassificationController.php` | API pública classification |
