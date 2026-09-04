@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useInView, MotionValue } from 'framer-motion';
 import PedalesLogo from '@/components/PedalesLogo';
 import CompetitionCalendar from '@/components/CompetitionCalendar';
+import ClassificationCarousel from '@/components/ClassificationCarousel';
 
 const features = [
     {
@@ -12,7 +13,7 @@ const features = [
     {
         number: '02',
         title: 'Clasificación por competición',
-        description: 'Compite en cada carrera por separado. Maillots, etapas y clasificaciones.',
+        description: 'Compite sólo las competiciones que más te gusten, cada una tiene su propie clasificación.',
     },
     {
         number: '03',
@@ -141,10 +142,17 @@ function FeaturePanel({
 
                 {feature.number === '01' ? (
                     <motion.div
-                        className="flex min-h-0 w-full flex-1 overflow-hidden rounded-2xl bg-muted/30 mb-2"
+                        className="flex min-h-0 w-full flex-1 overflow-hidden bg-muted/30 mb-4"
                         style={{ opacity: contentOpacity, y: contentY }}
                     >
                         <CompetitionCalendar staggerProgress={calendarStagger} />
+                    </motion.div>
+                ) : feature.number === '02' ? (
+                    <motion.div
+                        className="flex min-h-0 w-full flex-1 overflow-hidden bg-muted/30 mb-4"
+                        style={{ opacity: contentOpacity, y: contentY }}
+                    >
+                        <ClassificationCarousel staggerProgress={calendarStagger} />
                     </motion.div>
                 ) : (
                     <motion.div
