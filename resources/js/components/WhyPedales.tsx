@@ -3,6 +3,7 @@ import { motion, useScroll, useTransform, useInView, MotionValue } from 'framer-
 import PedalesLogo from '@/components/PedalesLogo';
 import CompetitionCalendar from '@/components/CompetitionCalendar';
 import ClassificationCarousel from '@/components/ClassificationCarousel';
+import SpecialtyCarousel from '@/components/SpecialtyCarousel';
 
 const features = [
     {
@@ -17,11 +18,16 @@ const features = [
     },
     {
         number: '03',
+        title: 'Clasificación por especialidad',
+        description: 'Compite sólo en las especialidades que más te gusten. Cada especialidad tiene su ganador a final de temporada.',
+    },
+    {
+        number: '04',
         title: 'Clasificación de la temporada',
         description: 'Puntos acumulados todo el año. El verdadero campeón de Pedales.',
     },
     {
-        number: '04',
+        number: '05',
         title: 'Próximamente: Ligas privadas',
         description: 'Crea tu liga con amigos, elige tu sistema de puntuación y compite con tu grupo.',
         badge: 'Próximamente',
@@ -29,14 +35,14 @@ const features = [
 ];
 
 // --- Scroll architecture ---
-// Visual order (as user scrolls): Intro → F1 → F2 → F3 → F4
-// DOM order (reversed for left→right carousel): [F4, F3, F2, F1, Intro]
+// Visual order (as user scrolls): Intro → F1 → F2 → F3 → F4 → F5
+// DOM order (reversed for left→right carousel): [F5, F4, F3, F2, F1, Intro]
 
-const VISUAL_BUDGETS = [100, 500, 300, 300, 100]; // Intro, F1, F2, F3, F4 (vh)
+const VISUAL_BUDGETS = [100, 500, 300, 300, 300, 100]; // Intro, F1, F2, F3, F4, F5 (vh)
 const TOTAL_VH = VISUAL_BUDGETS.reduce((a, b) => a + b, 0);
 const TRANSITION_FRAC = 20 / TOTAL_VH;
 
-const X_CENTERS = ['-400%', '-300%', '-200%', '-100%', '0%'];
+const X_CENTERS = ['-500%', '-400%', '-300%', '-200%', '-100%', '0%'];
 
 // Scroll ranges per visual panel: [start, end] in scrollYProgress (0-1)
 const SCROLL_RANGES: [number, number][] = (() => {
@@ -154,6 +160,13 @@ function FeaturePanel({
                     >
                         <ClassificationCarousel staggerProgress={calendarStagger} />
                     </motion.div>
+                ) : feature.number === '03' ? (
+                    <motion.div
+                        className="flex min-h-0 w-full flex-1 overflow-hidden bg-muted/30 mb-4"
+                        style={{ opacity: contentOpacity, y: contentY }}
+                    >
+                        <SpecialtyCarousel staggerProgress={calendarStagger} />
+                    </motion.div>
                 ) : (
                     <motion.div
                         className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-muted/50 mb-2"
@@ -180,7 +193,7 @@ export default function WhyPedales() {
 
     const totalPanels = features.length + 1;
     const x = useTransform(scrollYProgress, xTransform.input, xTransform.output);
-    const bgX = useTransform(scrollYProgress, [0, 1], ['-400vw', '0vw']);
+    const bgX = useTransform(scrollYProgress, [0, 1], ['-500vw', '0vw']);
 
     const [activeFeature, setActiveFeature] = useState<number | null>(null);
 
