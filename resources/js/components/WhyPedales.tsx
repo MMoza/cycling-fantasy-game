@@ -1,31 +1,26 @@
 import { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useInView, MotionValue } from 'framer-motion';
-import { Calendar, BarChart3, Trophy, Users } from 'lucide-react';
 import PedalesLogo from '@/components/PedalesLogo';
 import CompetitionCalendar from '@/components/CompetitionCalendar';
 
 const features = [
     {
         number: '01',
-        icon: Calendar,
         title: 'Todo el calendario World Tour',
         description: 'Grandes Vueltas, clásicas, championships. Todo el ciclismo profesional en un solo sitio.',
     },
     {
         number: '02',
-        icon: BarChart3,
         title: 'Clasificación por competición',
         description: 'Compite en cada carrera por separado. Maillots, etapas y clasificaciones.',
     },
     {
         number: '03',
-        icon: Trophy,
         title: 'Clasificación de la temporada',
         description: 'Puntos acumulados todo el año. El verdadero campeón de Pedales.',
     },
     {
         number: '04',
-        icon: Users,
         title: 'Próximamente: Ligas privadas',
         description: 'Crea tu liga con amigos, elige tu sistema de puntuación y compite con tu grupo.',
         badge: 'Próximamente',
@@ -105,7 +100,6 @@ function FeaturePanel({
     visualIndex: number;
     scrollYProgress: MotionValue<number>;
 }) {
-    const Icon = feature.icon;
     const [start, end] = SCROLL_RANGES[visualIndex];
     const pp = useTransform(scrollYProgress, [start, end], [0, 1]);
 
@@ -117,20 +111,23 @@ function FeaturePanel({
     const descOpacity = useTransform(pp, [0.12, 0.3], [0, 1]);
     const descY = useTransform(pp, [0.12, 0.3], [20, 0]);
 
-    // Phase 3 (0.28→0.5): move up
-    const textY = useTransform(pp, [0.28, 0.5], ['0%', '-15%']);
+    // Phase 3 (0.28→0.5): shrink + move from center to top-left
+    const textScale = useTransform(pp, [0, 0.28, 0.5], [1, 1, 0.6]);
+    const textX = useTransform(pp, [0, 0.28, 0.5], ['0%', '0%', '-3%']);
+    const textY = useTransform(pp, [0, 0.28, 0.5], ['35vh', '35vh', '0px']);
 
     // Phase 4 (0.45→0.85): content appears
     const contentOpacity = useTransform(pp, [0.45, 0.6], [0, 1]);
     const contentY = useTransform(pp, [0.45, 0.6], [40, 0]);
     const calendarStagger = useTransform(pp, [0.6, 0.9], [0, 1]);
 
-    const isStep01 = feature.number === '01';
-
     return (
-        <div className="flex w-screen flex-shrink-0 items-center justify-center">
-            <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
-                <motion.div className="flex flex-col gap-4" style={{ y: isStep01 ? textY : 0 }}>
+        <div className="flex w-screen flex-shrink-0 overflow-hidden">
+            <div className="mx-auto flex h-full w-full max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
+                <motion.div
+                    className="flex flex-shrink-0 flex-col gap-4 origin-top-left"
+                    style={{ scale: textScale, x: textX, y: textY }}
+                >
                     <motion.div style={{ opacity: headerOpacity, y: headerY }}>
                         <span className="text-8xl font-black tracking-tighter text-foreground/10 sm:text-9xl">{feature.number}</span>
                     </motion.div>
@@ -149,20 +146,20 @@ function FeaturePanel({
                     </motion.p>
                 </motion.div>
 
-                {isStep01 ? (
+                {feature.number === '01' ? (
                     <motion.div
-                        className="flex h-64 overflow-hidden rounded-2xl bg-muted/30 lg:h-[28rem]"
+                        className="flex min-h-0 flex-1 overflow-hidden rounded-2xl bg-muted/30"
                         style={{ opacity: contentOpacity, y: contentY }}
                     >
                         <CompetitionCalendar staggerProgress={calendarStagger} />
                     </motion.div>
                 ) : (
                     <motion.div
-                        className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-muted/50 lg:h-[28rem]"
+                        className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-muted/50"
                         style={{ opacity: contentOpacity, y: contentY }}
                     >
                         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40">
-                            <Icon className="h-16 w-16 text-muted-foreground/20" />
+                            <span className="text-6xl font-black text-muted-foreground/10">{feature.number}</span>
                         </div>
                     </motion.div>
                 )}
