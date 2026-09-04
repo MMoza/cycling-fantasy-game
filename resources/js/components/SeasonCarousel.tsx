@@ -95,14 +95,21 @@ interface SeasonCarouselProps {
     staggerProgress: MotionValue<number>;
 }
 
+function getSnapshotIndex(v: number, total: number): number {
+    const boundaries = [0.25, 0.45, 0.65, 0.85];
+    for (let i = 0; i < boundaries.length; i++) {
+        if (v < boundaries[i]) return i;
+    }
+    return total - 1;
+}
+
 export default function SeasonCarousel({ staggerProgress }: SeasonCarouselProps) {
     const [currentSnapshot, setCurrentSnapshot] = useState(0);
     const total = MOCK_SEASON.length;
 
     useEffect(() => {
         const unsub = staggerProgress.on('change', (v) => {
-            const snapshotIndex = Math.min(Math.floor(v * total), total - 1);
-            setCurrentSnapshot(snapshotIndex);
+            setCurrentSnapshot(getSnapshotIndex(v, total));
         });
         return unsub;
     }, [staggerProgress, total]);
