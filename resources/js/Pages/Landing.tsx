@@ -61,9 +61,6 @@ export default function Landing({ auth, seasonRaces, activeRaceId, currentStage 
             {/* Features */}
             <WhyPedales />
 
-            {/* Clasificación pública */}
-            <SeasonLeaderboard />
-
             {/* CTA final */}
             <section className="py-20 sm:py-28">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -72,10 +69,10 @@ export default function Landing({ auth, seasonRaces, activeRaceId, currentStage 
                             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-accent-500/10 via-transparent to-transparent" />
                             <div className="relative">
                                 <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                                    ¿Quién será el primero en tu grupo?
+                                    ¿Preparado para darle a los Pedales?
                                 </h2>
                                 <p className="mx-auto mt-4 max-w-xl text-gray-300">
-                                    El Tour 2026 se acerca. Forma tu liga, estudia el recorrido y haz tus apuestas. En los Campos Elíseos solo uno gana el maillot amarillo de tu grupo.
+                                    Demuestra a tu grupeta quién es el más rápido
                                 </p>
                                 <div className="mt-8 flex items-center justify-center gap-4">
                                     <Link
