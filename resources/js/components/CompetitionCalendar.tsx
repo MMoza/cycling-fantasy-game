@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, MotionValue, useTransform } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ArrowRight } from 'lucide-react';
 import { FlagIcon } from '@/components/ui/flag-icon';
 import { getCalendarCategories, CalendarCategory, CalendarRace, UciColor } from '@/services/competitionCalendarService';
 
@@ -53,7 +53,8 @@ function RaceCard({ race, color }: { race: CalendarRace; color: UciColor }) {
                     <ChevronRight className="h-3 w-3 shrink-0 opacity-50" />
                 </div>
                 <div className={`absolute inset-0 flex items-center justify-center border border-transparent [backface-visibility:hidden] [transform:rotateY(180deg)] ${colors.solid} ${colors.solidText}`}>
-                    <span className="text-xs font-semibold">Ver competición</span>
+                    <span className="text-xs font-bold tracking-wide">VER MÁS</span>
+                    <ArrowRight className={`ml-1 h-3 w-3 transition-transform duration-500 ${hovered ? 'translate-x-1' : ''}`} />
                 </div>
             </div>
 
@@ -73,7 +74,10 @@ function RaceCard({ race, color }: { race: CalendarRace; color: UciColor }) {
                     <div className="mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/30 bg-white/10">
                         <span className="text-[8px] font-bold opacity-70">Logo</span>
                     </div>
-                    <span className="text-[11px] font-semibold">Ver competición</span>
+                    <div className="flex items-center">
+                        <span className="text-[11px] font-bold tracking-wide">VER MÁS</span>
+                        <ArrowRight className={`ml-1 h-3 w-3 transition-transform duration-500 ${hovered ? 'translate-x-1' : ''}`} />
+                    </div>
                 </div>
             </div>
         </div>
