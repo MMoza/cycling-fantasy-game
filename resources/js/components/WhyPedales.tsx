@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, useInView } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView, MotionValue } from 'framer-motion';
 import { Calendar, BarChart3, Trophy, Users } from 'lucide-react';
 import PedalesLogo from '@/components/PedalesLogo';
+import CompetitionCalendar from '@/components/CompetitionCalendar';
 
 const features = [
     {
@@ -44,37 +45,92 @@ function IntroPanel() {
     );
 }
 
-function FeaturePanel({ feature }: { feature: (typeof features)[number] }) {
+function FeaturePanel({
+    feature,
+    panelIndex,
+    totalPanels,
+    scrollYProgress,
+}: {
+    feature: (typeof features)[number];
+    panelIndex: number;
+    totalPanels: number;
+    scrollYProgress: MotionValue<number>;
+}) {
     const Icon = feature.icon;
+
+    // Each panel occupies its slice of scrollYProgress.
+    // Panels shown in order: Intro (DOM last) → F1 → F2 → F3 → F4
+    // DOM reversed: [F4, F3, F2, F1, Intro]
+    // panelIndex = position in reversedFeatures array (0=F4, 1=F3, 2=F2, 3=F1)
+    // The panel at DOM position `panelIndex` is visible centered at v = (totalPanels-1-panelIndex) / (totalPanels-1)
+    const vCenter = (totalPanels - 1 - panelIndex) / (totalPanels - 1);
+    const vHalf = 1 / (totalPanels - 1) / 2;
+
+    // Local progress: 0 when panel enters, 1 when fully centered
+    const localProgress = useTransform(scrollYProgress, [vCenter - vHalf, vCenter], [0, 1]);
+    // Clamp: 0 at enter, 1 at center, stays 1 until leaving
+    const clampedProgress = useTransform(localProgress, [0, 1], [0, 1]);
+
+    // Number + title: appear first (0 → 0.33)
+    const headerOpacity = useTransform(clampedProgress, [0, 0.3], [0, 1]);
+    const headerY = useTransform(clampedProgress, [0, 0.3], [30, 0]);
+
+    // Description: appear second (0.15 → 0.5)
+    const descOpacity = useTransform(clampedProgress, [0.15, 0.5], [0, 1]);
+    const descY = useTransform(clampedProgress, [0.15, 0.5], [20, 0]);
+
+    // Calendar / right panel: appear last (0.3 → 0.7)
+    const rightOpacity = useTransform(clampedProgress, [0.3, 0.7], [0, 1]);
+    const rightY = useTransform(clampedProgress, [0.3, 0.7], [40, 0]);
 
     return (
         <div className="flex w-screen flex-shrink-0 items-center justify-center">
             <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
+                {/* Text side */}
                 <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-4">
+                    <motion.div
+                        className="flex items-center gap-4"
+                        style={{ opacity: headerOpacity, y: headerY }}
+                    >
                         <span className="text-8xl font-black tracking-tighter text-foreground/10 sm:text-9xl">{feature.number}</span>
                         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-500/10">
                             <Icon className="h-6 w-6 text-accent-500" />
                         </div>
-                    </div>
+                    </motion.div>
 
-                    <div className="flex items-center gap-3">
+                    <motion.div
+                        className="flex items-center gap-3"
+                        style={{ opacity: headerOpacity, y: headerY }}
+                    >
                         <h3 className="text-4xl font-black uppercase tracking-tight text-foreground sm:text-5xl">{feature.title}</h3>
                         {feature.badge && (
                             <span className="shrink-0 rounded-full bg-accent-500/10 px-3 py-1 text-xs font-semibold text-accent-500">
                                 {feature.badge}
                             </span>
                         )}
-                    </div>
+                    </motion.div>
 
-                    <p className="max-w-md text-lg text-muted-foreground">{feature.description}</p>
+                    <motion.p
+                        className="max-w-md text-lg text-muted-foreground"
+                        style={{ opacity: descOpacity, y: descY }}
+                    >
+                        {feature.description}
+                    </motion.p>
                 </div>
 
-                <div className="flex h-64 items-center justify-center overflow-hidden rounded-2xl bg-muted/50 lg:h-[28rem]">
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40">
-                        <Icon className="h-16 w-16 text-muted-foreground/20" />
-                    </div>
-                </div>
+                {/* Right side */}
+                <motion.div
+                    className="flex h-64 overflow-hidden rounded-2xl bg-muted/30 lg:h-[28rem]"
+                    style={{ opacity: rightOpacity, y: rightY }}
+                >
+                    {feature.number === '01' ? (
+                        <CompetitionCalendar />
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40">
+                            <Icon className="h-16 w-16 text-muted-foreground/20" />
+                        </div>
+                    )}
+                </motion.div>
             </div>
         </div>
     );
@@ -92,11 +148,7 @@ export default function WhyPedales() {
     const totalPanels = features.length + 1;
     const containerHeight = `${totalPanels * 100}vh`;
 
-    // DOM order reversed: [F4, F3, F2, F1, Intro]
-    // x: -400% → 0% → panels slide LEFT to RIGHT, showing Intro → F1 → F2 → F3 → F4
     const x = useTransform(scrollYProgress, [0, 1], [`-${(totalPanels - 1) * 100}%`, '0%']);
-
-    // Background image moves with scroll — same distance in vw units
     const bgX = useTransform(scrollYProgress, [0, 1], [`-${(totalPanels - 1) * 100}vw`, '0vw']);
 
     const [activeFeature, setActiveFeature] = useState<number | null>(null);
@@ -117,7 +169,6 @@ export default function WhyPedales() {
         window.scrollTo({ top: container.offsetTop + target, behavior: 'smooth' });
     };
 
-    // Reversed DOM so Intro is last (visible at start with negative x)
     const reversedFeatures = [...features].reverse();
 
     return (
@@ -127,13 +178,9 @@ export default function WhyPedales() {
                     <PedalesLogo className="h-[40rem] w-[40rem] opacity-[0.03]" />
                 </div>
 
-                {/* Background image — spans all panels, moves with scroll */}
                 <motion.div
                     className="pointer-events-none absolute inset-0 h-full"
-                    style={{
-                        x: bgX,
-                        width: `${totalPanels * 100}vw`,
-                    }}
+                    style={{ x: bgX, width: `${totalPanels * 100}vw` }}
                 >
                     <img
                         src="/images/03-why-pedales/background.png"
@@ -143,8 +190,14 @@ export default function WhyPedales() {
                 </motion.div>
 
                 <motion.div className="relative flex h-full" style={{ x }}>
-                    {reversedFeatures.map((feature) => (
-                        <FeaturePanel key={feature.number} feature={feature} />
+                    {reversedFeatures.map((feature, index) => (
+                        <FeaturePanel
+                            key={feature.number}
+                            feature={feature}
+                            panelIndex={index}
+                            totalPanels={totalPanels}
+                            scrollYProgress={scrollYProgress}
+                        />
                     ))}
                     <IntroPanel />
                 </motion.div>
