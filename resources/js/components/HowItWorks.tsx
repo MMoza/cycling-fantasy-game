@@ -16,8 +16,8 @@ const steps = [
         number: '02',
         title: 'Únete a la competición',
         description: 'Entra en la competición oficial del Tour, la Vuelta, El Giro o cualquier clásica o major de la temporada UCI WT y compite con la comunidad de Pedales.',
-        image: null,
-        href: null,
+        image: '/images/02-how-it-work/02-season.png',
+        href: '/season',
         highlights: ['Tour', 'Vuelta', 'Giro', 'clásica', 'major'],
     },
     {
