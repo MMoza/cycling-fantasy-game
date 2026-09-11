@@ -19,6 +19,7 @@ uses(TestCase::class)->in('Feature', 'Integration');
 use App\Infrastructure\Persistence\Models\CompetitionParticipantModel;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
+use App\Infrastructure\Persistence\Models\StageParticipantModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Infrastructure\Persistence\Models\TeamRosterModel;
 use Illuminate\Support\Str;
@@ -59,6 +60,14 @@ function createTestRoster(string $teamId, string $riderId, int $year = 2026): Te
     return TeamRosterModel::firstOrCreate(
         ['team_id' => $teamId, 'rider_id' => $riderId, 'year' => $year],
         ['id' => Str::uuid()->toString()]
+    );
+}
+
+function createTestStageParticipant(string $stageId, string $riderId, string $teamId): StageParticipantModel
+{
+    return StageParticipantModel::firstOrCreate(
+        ['stage_id' => $stageId, 'rider_id' => $riderId],
+        ['id' => Str::uuid()->toString(), 'team_id' => $teamId]
     );
 }
 

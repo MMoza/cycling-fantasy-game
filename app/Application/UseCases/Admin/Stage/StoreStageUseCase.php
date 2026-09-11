@@ -8,6 +8,8 @@ use App\Application\Exceptions\ApplicationException;
 use App\Domain\ValueObjects\CompetitionType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
+use App\Infrastructure\Persistence\Models\StageParticipantModel;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class StoreStageUseCase
@@ -23,7 +25,7 @@ class StoreStageUseCase
             }
         }
 
-        return StageModel::create([
+        $stage = StageModel::create([
             'id' => Str::uuid()->toString(),
             'edition_id' => $edition->id,
             'number' => $data['number'],
@@ -40,5 +42,31 @@ class StoreStageUseCase
             'live_stream_url' => $data['live_stream_url'] ?? null,
             'status' => 'upcoming',
         ]);
+
+        $this->syncParticipants($stage->id, $edition->id, $data['rider_ids'] ?? []);
+
+        return $stage;
+    }
+
+    private function syncParticipants(string $stageId, string $editionId, array $riderIds): void
+    {
+        if ($riderIds === []) {
+            return;
+        }
+
+        $participants = DB::table('competition_participants')
+            ->where('edition_id', $editionId)
+            ->whereIn('rider_id', $riderIds)
+            ->select('rider_id', 'team_id')
+            ->get();
+
+        foreach ($participants as $p) {
+            StageParticipantModel::create([
+                'id' => Str::uuid()->toString(),
+                'stage_id' => $stageId,
+                'rider_id' => $p->rider_id,
+                'team_id' => $p->team_id,
+            ]);
+        }
     }
 }

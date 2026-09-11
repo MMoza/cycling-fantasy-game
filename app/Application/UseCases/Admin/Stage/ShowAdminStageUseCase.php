@@ -7,6 +7,7 @@ namespace App\Application\UseCases\Admin\Stage;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
+use App\Infrastructure\Persistence\Models\StageParticipantModel;
 use Illuminate\Support\Facades\DB;
 
 class ShowAdminStageUseCase
@@ -18,33 +19,59 @@ class ShowAdminStageUseCase
 
         $isTTT = $stage->type === StageType::TeamTimeTrial;
 
-        $ridersQuery = DB::table('competition_participants')
-            ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
-            ->join('teams', 'competition_participants.team_id', '=', 'teams.id')
-            ->where('competition_participants.competition_id', $edition->competition_id)
-            ->where('competition_participants.edition_id', $editionId)
-            ->where('competition_participants.team_id', '!=', '')
-            ->select('riders.id', 'riders.first_name', 'riders.last_name', 'riders.country_id', 'teams.name as team_name')
-            ->distinct()
-            ->orderBy('riders.last_name')
-            ->orderBy('riders.first_name');
+        $hasStageParticipants = StageParticipantModel::where('stage_id', $id)->exists();
 
-        $participantRiders = $ridersQuery->get()->map(fn ($r) => [
-            'id' => $r->id,
-            'name' => trim("{$r->last_name} {$r->first_name}"),
-            'country_id' => $r->country_id,
-        ]);
+        if ($hasStageParticipants) {
+            $participantRiders = StageParticipantModel::where('stage_id', $id)
+                ->join('riders', 'stage_participants.rider_id', '=', 'riders.id')
+                ->join('teams', 'stage_participants.team_id', '=', 'teams.id')
+                ->select('riders.id', 'riders.first_name', 'riders.last_name', 'riders.country_id', 'teams.name as team_name')
+                ->distinct()
+                ->orderBy('riders.last_name')
+                ->orderBy('riders.first_name')
+                ->get()
+                ->map(fn ($r) => [
+                    'id' => $r->id,
+                    'name' => trim("{$r->last_name} {$r->first_name}"),
+                    'country_id' => $r->country_id,
+                ]);
 
-        $availableTeams = DB::table('competition_participants')
-            ->join('teams', 'competition_participants.team_id', '=', 'teams.id')
-            ->where('competition_participants.competition_id', $edition->competition_id)
-            ->where('competition_participants.edition_id', $editionId)
-            ->where('competition_participants.team_id', '!=', '')
-            ->select('teams.id', 'teams.name')
-            ->distinct()
-            ->orderBy('teams.name')
-            ->get()
-            ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]);
+            $availableTeams = StageParticipantModel::where('stage_id', $id)
+                ->join('teams', 'stage_participants.team_id', '=', 'teams.id')
+                ->select('teams.id', 'teams.name')
+                ->distinct()
+                ->orderBy('teams.name')
+                ->get()
+                ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]);
+        } else {
+            $ridersQuery = DB::table('competition_participants')
+                ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
+                ->join('teams', 'competition_participants.team_id', '=', 'teams.id')
+                ->where('competition_participants.competition_id', $edition->competition_id)
+                ->where('competition_participants.edition_id', $editionId)
+                ->where('competition_participants.team_id', '!=', '')
+                ->select('riders.id', 'riders.first_name', 'riders.last_name', 'riders.country_id', 'teams.name as team_name')
+                ->distinct()
+                ->orderBy('riders.last_name')
+                ->orderBy('riders.first_name');
+
+            $participantRiders = $ridersQuery->get()->map(fn ($r) => [
+                'id' => $r->id,
+                'name' => trim("{$r->last_name} {$r->first_name}"),
+                'country_id' => $r->country_id,
+            ]);
+
+            $availableTeams = DB::table('competition_participants')
+                ->join('teams', 'competition_participants.team_id', '=', 'teams.id')
+                ->where('competition_participants.competition_id', $edition->competition_id)
+                ->where('competition_participants.edition_id', $editionId)
+                ->where('competition_participants.team_id', '!=', '')
+                ->select('teams.id', 'teams.name')
+                ->distinct()
+                ->orderBy('teams.name')
+                ->get()
+                ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]);
+        }
 
         $results = DB::table('stage_results')
             ->where('stage_id', $id)
@@ -80,6 +107,7 @@ class ShowAdminStageUseCase
             'availableRiders' => $participantRiders,
             'availableTeams' => $availableTeams,
             'is_ttt' => $isTTT,
+            'stageParticipants' => $hasStageParticipants ? $participantRiders->toArray() : [],
             'results' => $results->map(fn ($r) => [
                 'id' => $r->id,
                 'rider_id' => $isTTT ? ($riderToTeam[$r->rider_id] ?? $r->rider_id) : $r->rider_id,

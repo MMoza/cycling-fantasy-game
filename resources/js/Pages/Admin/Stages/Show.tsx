@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy, Star, Bike, MapPin, Ruler, Crown, Flame, Clock, Minus } from 'lucide-react';
+import { ArrowLeft, Flag, RotateCcw, Plus, Trash2, Trophy, Star, Bike, MapPin, Ruler, Crown, Flame, Clock, Minus, Users } from 'lucide-react';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
 import { FlagIcon } from '@/components/ui/flag-icon';
 import SearchableSelect from '@/components/ui/searchable-select';
@@ -58,13 +58,14 @@ function getPositionBadgeColor(position: number): string {
     }
 }
 
-export default function Show({ edition, stage, availableRiders, availableTeams, results, is_ttt }: {
+export default function Show({ edition, stage, availableRiders, availableTeams, results, is_ttt, stageParticipants = [] }: {
     edition: { id: string; year: number; competition: string };
     stage: Stage;
     availableRiders: Rider[];
     availableTeams?: Team[];
     results: Result[];
     is_ttt?: boolean;
+    stageParticipants?: Rider[];
 }) {
     const [resultEntries, setResultEntries] = useState<Result[]>(
         results.length > 0
@@ -204,6 +205,32 @@ export default function Show({ edition, stage, availableRiders, availableTeams, 
                         </CardContent>
                     </Card>
                 </div>
+
+                {stageParticipants.length > 0 && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2">
+                                <Users className="h-5 w-5 text-accent-500" />
+                                Participantes ({stageParticipants.length})
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                                {stageParticipants.map((r) => (
+                                    <span
+                                        key={r.id}
+                                        className="inline-flex items-center gap-1.5 rounded-full border bg-secondary px-3 py-1 text-sm"
+                                    >
+                                        {r.country_id && (
+                                            <FlagIcon code={r.country_id} className="h-3 w-4" />
+                                        )}
+                                        <span>{r.name}</span>
+                                    </span>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card>
                     <CardHeader className="pb-3">

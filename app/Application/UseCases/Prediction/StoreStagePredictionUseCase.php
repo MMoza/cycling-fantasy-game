@@ -10,6 +10,7 @@ use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
+use App\Infrastructure\Persistence\Models\StageParticipantModel;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -37,9 +38,9 @@ class StoreStagePredictionUseCase
             $isTeamPick = $isTTT && $prediction['category'] !== 'stage_leader';
 
             if ($isTeamPick) {
-                $this->validateTeam($prediction['value'], $stage->edition_id);
+                $this->validateTeam($prediction['value'], $stage->edition_id, $stage->id);
             } else {
-                $this->validateRider($prediction['value'], $stage->edition_id);
+                $this->validateRider($prediction['value'], $stage->edition_id, $stage->id);
             }
 
             PredictionModel::updateOrCreate(
@@ -60,27 +61,43 @@ class StoreStagePredictionUseCase
         $user->update(['last_visited_league_id' => $leagueId]);
     }
 
-    private function validateRider(string $riderId, string $editionId): void
+    private function validateRider(string $riderId, string $editionId, string $stageId): void
     {
-        $exists = DB::table('competition_participants')
-            ->where('edition_id', $editionId)
-            ->where('rider_id', $riderId)
-            ->exists();
+        $hasStageParticipants = StageParticipantModel::where('stage_id', $stageId)->exists();
+
+        if ($hasStageParticipants) {
+            $exists = StageParticipantModel::where('stage_id', $stageId)
+                ->where('rider_id', $riderId)
+                ->exists();
+        } else {
+            $exists = DB::table('competition_participants')
+                ->where('edition_id', $editionId)
+                ->where('rider_id', $riderId)
+                ->exists();
+        }
 
         if (! $exists) {
-            throw new ApplicationException('El corredor seleccionado no participa en esta edición');
+            throw new ApplicationException('El corredor seleccionado no participa en esta etapa');
         }
     }
 
-    private function validateTeam(string $teamId, string $editionId): void
+    private function validateTeam(string $teamId, string $editionId, string $stageId): void
     {
-        $exists = DB::table('competition_participants')
-            ->where('edition_id', $editionId)
-            ->where('team_id', $teamId)
-            ->exists();
+        $hasStageParticipants = StageParticipantModel::where('stage_id', $stageId)->exists();
+
+        if ($hasStageParticipants) {
+            $exists = StageParticipantModel::where('stage_id', $stageId)
+                ->where('team_id', $teamId)
+                ->exists();
+        } else {
+            $exists = DB::table('competition_participants')
+                ->where('edition_id', $editionId)
+                ->where('team_id', $teamId)
+                ->exists();
+        }
 
         if (! $exists) {
-            throw new ApplicationException('El equipo seleccionado no participa en esta edición');
+            throw new ApplicationException('El equipo seleccionado no participa en esta etapa');
         }
     }
 }
