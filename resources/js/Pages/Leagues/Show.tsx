@@ -4,7 +4,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Trophy, Route, ChevronRight, Target, Settings, ShieldCheck, Users, Shield } from 'lucide-react';
+import { Trophy, Route, ChevronRight, Target, Settings, ShieldCheck, Users, Shield, BarChart3 } from 'lucide-react';
 import { LeagueSettingsModal } from './components/LeagueSettingsModal';
 import { ScoringInfoModal } from './components/ScoringInfoModal';
 import { LeagueStatsCards } from './components/LeagueStatsCards';
@@ -150,6 +150,32 @@ export default function Show({ league, next_stage, user_position, stages, leader
                     onCountdownExpired={() => setCountdownExpired(true)}
                     onFinishedClick={() => setFinishedOpen(true)}
                 />
+
+                <Link href={route('season.classification')} className="block">
+                    <Card className="relative cursor-pointer overflow-hidden border-accent-200/60 bg-gradient-to-br from-accent-50 to-white transition-colors hover:from-accent-100/70 dark:border-accent-800/30 dark:from-accent-950/20 dark:to-transparent dark:hover:from-accent-950/30">
+                        <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-accent-100/50 dark:bg-accent-900/20" />
+                        <CardContent className="relative flex items-center gap-3 p-4">
+                            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/30">
+                                <BarChart3 className="h-5 w-5 text-accent-600 dark:text-accent-400" />
+                                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent-600 text-[10px] font-bold text-white dark:bg-accent-400 dark:text-accent-950">
+                                    N
+                                </span>
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <p className="font-medium">Clasificación Temporada</p>
+                                    <span className="inline-flex items-center rounded-full bg-accent-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white animate-pulse dark:bg-accent-400 dark:text-accent-950">
+                                        NEW
+                                    </span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Compite contra todos los jugadores de la temporada
+                                </p>
+                            </div>
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        </CardContent>
+                    </Card>
+                </Link>
 
                 {isFinished && (
                     <Dialog open={finishedOpen} onOpenChange={setFinishedOpen}>
