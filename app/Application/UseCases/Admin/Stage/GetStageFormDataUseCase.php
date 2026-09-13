@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\Stage;
 
+use App\Domain\ValueObjects\CompetitionType;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
+use App\Infrastructure\Persistence\Models\StageParticipantModel;
+use Illuminate\Support\Facades\DB;
 
 class GetStageFormDataUseCase
 {
@@ -15,6 +18,7 @@ class GetStageFormDataUseCase
         $edition = EditionModel::with('competition')->findOrFail($editionId);
 
         $stage = null;
+        $stageParticipantIds = [];
 
         if ($id) {
             $model = StageModel::where('edition_id', $editionId)->findOrFail($id);
@@ -34,12 +38,38 @@ class GetStageFormDataUseCase
                 'live_stream_url' => $model->live_stream_url,
                 'status' => $model->status->value,
             ];
+
+            $stageParticipantIds = StageParticipantModel::where('stage_id', $id)
+                ->pluck('rider_id')
+                ->toArray();
         }
 
         $stageTypes = collect(StageType::cases())->map(fn ($t) => [
             'value' => $t->value,
             'label' => $t->label(),
         ]);
+
+        $availableParticipants = [];
+
+        if ($edition->competition->type === CompetitionType::Championship) {
+            $availableParticipants = DB::table('competition_participants')
+                ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
+                ->join('teams', 'competition_participants.team_id', '=', 'teams.id')
+                ->where('competition_participants.competition_id', $edition->competition_id)
+                ->where('competition_participants.edition_id', $edition->id)
+                ->select('riders.id', 'riders.first_name', 'riders.last_name', 'riders.country_id', 'teams.name as team_name')
+                ->distinct()
+                ->orderBy('riders.last_name')
+                ->orderBy('riders.first_name')
+                ->get()
+                ->map(fn ($r) => [
+                    'id' => $r->id,
+                    'name' => trim("{$r->last_name} {$r->first_name}"),
+                    'country_id' => $r->country_id,
+                    'team_name' => $r->team_name,
+                ])
+                ->toArray();
+        }
 
         return [
             'edition' => [
@@ -51,6 +81,8 @@ class GetStageFormDataUseCase
             ],
             'stage' => $stage,
             'stageTypes' => $stageTypes,
+            'availableParticipants' => $availableParticipants,
+            'stageParticipantIds' => $stageParticipantIds,
         ];
     }
 }

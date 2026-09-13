@@ -12,6 +12,7 @@ use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
+use App\Infrastructure\Persistence\Models\StageParticipantModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -71,16 +72,30 @@ class ShowStageUseCase
 
         $edition = $league->edition->load('competition');
 
-        $availableRiders = DB::table('competition_participants')
-            ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
-            ->where('competition_participants.competition_id', $edition->competition_id)
-            ->where('competition_participants.edition_id', $edition->id)
-            ->select('riders.id', 'riders.last_name', 'riders.first_name')
-            ->distinct()
-            ->orderBy('riders.last_name')
-            ->orderBy('riders.first_name')
-            ->get()
-            ->map(fn ($r) => ['value' => $r->id, 'label' => trim("{$r->last_name} {$r->first_name}")]);
+        $hasStageParticipants = StageParticipantModel::where('stage_id', $stageId)->exists();
+
+        if ($hasStageParticipants) {
+            $availableRiders = DB::table('stage_participants')
+                ->join('riders', 'stage_participants.rider_id', '=', 'riders.id')
+                ->where('stage_participants.stage_id', $stageId)
+                ->select('riders.id', 'riders.last_name', 'riders.first_name')
+                ->distinct()
+                ->orderBy('riders.last_name')
+                ->orderBy('riders.first_name')
+                ->get()
+                ->map(fn ($r) => ['value' => $r->id, 'label' => trim("{$r->last_name} {$r->first_name}")]);
+        } else {
+            $availableRiders = DB::table('competition_participants')
+                ->join('riders', 'competition_participants.rider_id', '=', 'riders.id')
+                ->where('competition_participants.competition_id', $edition->competition_id)
+                ->where('competition_participants.edition_id', $edition->id)
+                ->select('riders.id', 'riders.last_name', 'riders.first_name')
+                ->distinct()
+                ->orderBy('riders.last_name')
+                ->orderBy('riders.first_name')
+                ->get()
+                ->map(fn ($r) => ['value' => $r->id, 'label' => trim("{$r->last_name} {$r->first_name}")]);
+        }
 
         $availableTeams = TeamModel::whereHas('competitionParticipants', fn ($q) => $q
             ->where('competition_id', $edition->competition_id)

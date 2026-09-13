@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Star } from 'lucide-react';
+import { ArrowLeft, Star, X, Users, FlagIcon as FlagIconLucide } from 'lucide-react';
+import SearchableSelect from '@/components/ui/searchable-select';
+import { FlagIcon } from '@/components/ui/flag-icon';
+import { useState, useMemo } from 'react';
 
 interface StageType {
     value: string;
@@ -29,6 +32,13 @@ interface Stage {
     status: string;
 }
 
+interface Participant {
+    id: string;
+    name: string;
+    country_id: string | null;
+    team_name: string;
+}
+
 function utcToLocalDatetime(isoString: string | null): string {
     if (!isoString) return '';
     const d = new Date(isoString);
@@ -46,8 +56,15 @@ function localToUtcIso(localDatetime: string): string {
     return new Date(localDatetime).toISOString();
 }
 
-export default function Form({ edition, stage, stageTypes }: { edition: { id: string; year: number; competition: string; competition_id: string; competition_type: string }; stage: Stage | null; stageTypes: StageType[] }) {
+export default function Form({ edition, stage, stageTypes, availableParticipants = [], stageParticipantIds = [] }: {
+    edition: { id: string; year: number; competition: string; competition_id: string; competition_type: string };
+    stage: Stage | null;
+    stageTypes: StageType[];
+    availableParticipants?: Participant[];
+    stageParticipantIds?: string[];
+}) {
     const isClassic = edition.competition_type === 'classic';
+    const isChampionship = edition.competition_type === 'championship';
     const { data, setData, post, patch, processing, errors, transform } = useForm({
         number: stage?.number ?? 1,
         name: stage?.name ?? '',
@@ -62,7 +79,40 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
         profile_image: stage?.profile_image ?? '',
         live_stream_url: stage?.live_stream_url ?? '',
         status: stage?.status ?? 'upcoming',
+        rider_ids: stageParticipantIds,
     });
+
+    const [searchRider, setSearchRider] = useState('');
+
+    const riderOptions = useMemo(() =>
+        availableParticipants.map((p) => ({
+            value: p.id,
+            label: p.name,
+        })),
+    [availableParticipants]);
+
+    const selectedParticipants = useMemo(() =>
+        availableParticipants.filter((p) => data.rider_ids.includes(p.id)),
+    [availableParticipants, data.rider_ids]);
+
+    const filteredParticipants = useMemo(() => {
+        const q = searchRider.toLowerCase();
+        return availableParticipants.filter((p) =>
+            !data.rider_ids.includes(p.id) &&
+            (p.name.toLowerCase().includes(q) || p.team_name.toLowerCase().includes(q))
+        );
+    }, [availableParticipants, data.rider_ids, searchRider]);
+
+    const addRider = (riderId: string) => {
+        if (!data.rider_ids.includes(riderId)) {
+            setData('rider_ids', [...data.rider_ids, riderId]);
+        }
+        setSearchRider('');
+    };
+
+    const removeRider = (riderId: string) => {
+        setData('rider_ids', data.rider_ids.filter((id) => id !== riderId));
+    };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -258,6 +308,60 @@ export default function Form({ edition, stage, stageTypes }: { edition: { id: st
                                 </div>
                             )}
                         </CardContent>
+
+                        {isChampionship && (
+                            <>
+                                <div className="border-t px-6 py-4">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <Users className="h-5 w-5 text-muted-foreground" />
+                                        <h3 className="text-lg font-medium">Participantes de esta etapa</h3>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mb-4">
+                                        Selecciona los corredores que participarán en esta prueba. Si no seleccionas ninguno, estarán disponibles todos los de la edición.
+                                    </p>
+
+                                    <div className="space-y-2">
+                                        <Label>Añadir corredor</Label>
+                                        <SearchableSelect
+                                            options={filteredParticipants.map((p) => ({ value: p.id, label: `${p.name} (${p.team_name})` }))}
+                                            value=""
+                                            onChange={addRider}
+                                            placeholder="Buscar corredor..."
+                                        />
+                                    </div>
+
+                                    {selectedParticipants.length > 0 && (
+                                        <div className="mt-4 space-y-1">
+                                            <Label className="text-sm text-muted-foreground">
+                                                {selectedParticipants.length} corredor{selectedParticipants.length !== 1 ? 'es' : ''} seleccionado{selectedParticipants.length !== 1 ? 's' : ''}
+                                            </Label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedParticipants.map((p) => (
+                                                    <span
+                                                        key={p.id}
+                                                        className="inline-flex items-center gap-1.5 rounded-full border bg-secondary px-3 py-1 text-sm"
+                                                    >
+                                                        {p.country_id && (
+                                                            <FlagIcon code={p.country_id} className="h-3 w-4" />
+                                                        )}
+                                                        <span>{p.name}</span>
+                                                        <span className="text-muted-foreground text-xs">({p.team_name})</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeRider(p.id)}
+                                                            className="ml-1 rounded-full p-0.5 hover:bg-muted"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+
                         <div className="flex justify-end gap-2 border-t p-4">
                             <Button variant="outline" type="button" asChild>
                                 <Link href={route('admin.editions.stages.index', edition.id)}>Cancelar</Link>

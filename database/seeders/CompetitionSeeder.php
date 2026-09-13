@@ -38,15 +38,24 @@ class CompetitionSeeder extends Seeder
                 ['year' => 2026, 'start' => '2026-08-15', 'end' => '2026-09-06'],
             ],
         );
+
+        $this->createCompetition(
+            name: 'Mundial 2026',
+            countryId: 'CA',
+            type: CompetitionType::Championship,
+            editions: [
+                ['year' => 2026, 'start' => '2026-09-20', 'end' => '2026-09-27'],
+            ],
+        );
     }
 
-    private function createCompetition(string $name, string $countryId, array $editions): void
+    private function createCompetition(string $name, string $countryId, array $editions, CompetitionType $type = CompetitionType::GC): void
     {
         $competition = CompetitionModel::firstOrCreate([
             'name' => $name,
         ], [
             'id' => Str::uuid()->toString(),
-            'type' => CompetitionType::GC,
+            'type' => $type,
             'country_id' => $countryId,
             'active' => true,
         ]);

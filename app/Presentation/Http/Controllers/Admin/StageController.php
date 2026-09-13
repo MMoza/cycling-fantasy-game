@@ -50,6 +50,8 @@ class StageController extends Controller
             'edition' => $data['edition'],
             'stage' => $data['stage'],
             'stageTypes' => $data['stageTypes'],
+            'availableParticipants' => $data['availableParticipants'],
+            'stageParticipantIds' => $data['stageParticipantIds'],
         ]);
     }
 
@@ -68,6 +70,8 @@ class StageController extends Controller
             'scheduled_start' => 'nullable|date',
             'profile_image' => 'nullable|url|max:2048',
             'live_stream_url' => 'nullable|url|max:2048',
+            'rider_ids' => 'nullable|array',
+            'rider_ids.*' => 'string',
         ]);
 
         $this->storeStageUseCase->execute(
@@ -86,6 +90,8 @@ class StageController extends Controller
             'edition' => $data['edition'],
             'stage' => $data['stage'],
             'stageTypes' => $data['stageTypes'],
+            'availableParticipants' => $data['availableParticipants'],
+            'stageParticipantIds' => $data['stageParticipantIds'],
         ]);
     }
 
@@ -105,6 +111,8 @@ class StageController extends Controller
             'profile_image' => 'nullable|url|max:2048',
             'live_stream_url' => 'nullable|url|max:2048',
             'status' => 'required|string|in:upcoming,ongoing,finished',
+            'rider_ids' => 'nullable|array',
+            'rider_ids.*' => 'string',
         ]);
 
         $this->updateStageUseCase->execute(
@@ -125,6 +133,7 @@ class StageController extends Controller
             'stage' => $data['stage'],
             'availableRiders' => $data['availableRiders'],
             'results' => $data['results'],
+            'stageParticipants' => $data['stageParticipants'],
         ]);
     }
 

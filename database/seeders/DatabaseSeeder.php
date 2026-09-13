@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             ScoringSystemSeeder::class,
             TourDeFrance2026Seeder::class,
             VueltaEspana2026Seeder::class,
+            WorldChampionship2026Seeder::class,
         ]);
 
         if (! User::where('email', 'dev@cyclingfantasy.com')->exists()) {
