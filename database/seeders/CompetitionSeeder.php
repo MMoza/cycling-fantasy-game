@@ -40,7 +40,7 @@ class CompetitionSeeder extends Seeder
         );
 
         $this->createCompetition(
-            name: 'Mundial 2026',
+            name: 'World Championship',
             countryId: 'CA',
             type: CompetitionType::Championship,
             editions: [
