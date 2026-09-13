@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trophy, Users, Calendar } from 'lucide-react';
+import { Trophy, Users, Calendar, Mountain, Flag, Landmark, Star, Bike } from 'lucide-react';
 
 interface BreakdownEntry {
     competition_name: string;
@@ -41,10 +41,48 @@ interface CompetitionClassification {
     leaderboard: CompetitionLeaderboardEntry[];
 }
 
+interface TypeClassification {
+    type: string;
+    label: string;
+    totalPoints: number;
+    leaderboard: AggregatedLeaderboardEntry[];
+}
+
 interface ClassificationProps {
     year: number;
     aggregated_leaderboard: AggregatedLeaderboardEntry[];
     per_competition: CompetitionClassification[];
+    by_type: TypeClassification[];
+}
+
+const TYPE_CONFIG: Record<string, { icon: typeof Mountain; color: string }> = {
+    gc: { icon: Mountain, color: 'text-yellow-500' },
+    championship: { icon: Flag, color: 'text-blue-500' },
+    monument: { icon: Landmark, color: 'text-purple-500' },
+    major: { icon: Star, color: 'text-orange-500' },
+    classic: { icon: Bike, color: 'text-green-500' },
+};
+
+function BreakdownPopup({ breakdown }: { breakdown: BreakdownEntry[] }) {
+    if (breakdown.length === 0) return null;
+
+    const sorted = [...breakdown].sort((a, b) => b.points - a.points);
+
+    return (
+        <div className="invisible group-hover:visible absolute left-0 top-full z-50 mt-1 w-72 rounded-lg border bg-background shadow-lg">
+            <div className="max-h-60 overflow-y-auto p-3">
+                <p className="mb-2 text-xs font-medium text-muted-foreground">Desglose por competición</p>
+                <div className="space-y-1.5">
+                    {sorted.map((b) => (
+                        <div key={b.league_id} className="flex items-center justify-between text-sm">
+                            <span className="truncate text-muted-foreground">{b.competition_name}</span>
+                            <span className="ml-2 shrink-0 font-medium">{b.points} pts</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function AggregatedLeaderboardTable({ leaderboard }: { leaderboard: AggregatedLeaderboardEntry[] }) {
@@ -58,11 +96,11 @@ function AggregatedLeaderboardTable({ leaderboard }: { leaderboard: AggregatedLe
     }
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-1">
             {leaderboard.map((entry) => (
                 <div
                     key={entry.userId}
-                    className={`rounded-lg p-3 ${
+                    className={`group relative rounded-lg p-3 ${
                         entry.isCurrentUser
                             ? 'bg-accent-100/50 dark:bg-accent-900/10 border border-accent-200 dark:border-accent-800'
                             : 'hover:bg-muted/50'
@@ -93,18 +131,7 @@ function AggregatedLeaderboardTable({ leaderboard }: { leaderboard: AggregatedLe
                         <span className="text-sm font-medium">{entry.totalPoints} pts</span>
                     </div>
 
-                    {entry.breakdown.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2 pl-11">
-                            {entry.breakdown.map((b) => (
-                                <span
-                                    key={b.league_id}
-                                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                                >
-                                    {b.competition_name}: <span className="font-medium">{b.points} pts</span>
-                                </span>
-                            ))}
-                        </div>
-                    )}
+                    <BreakdownPopup breakdown={entry.breakdown} />
                 </div>
             ))}
         </div>
@@ -122,7 +149,7 @@ function CompetitionLeaderboardTable({ leaderboard, leagueId }: { leaderboard: C
     }
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-1">
             {leaderboard.map((entry) => (
                 <div
                     key={entry.userId}
@@ -165,20 +192,28 @@ function CompetitionLeaderboardTable({ leaderboard, leagueId }: { leaderboard: C
     );
 }
 
-export default function Classification({ year, aggregated_leaderboard, per_competition }: ClassificationProps) {
-    const [activeTab, setActiveTab] = useState<'aggregated' | 'per_competition'>('aggregated');
+export default function Classification({ year, aggregated_leaderboard, per_competition, by_type }: ClassificationProps) {
+    const [activeTab, setActiveTab] = useState<'aggregated' | 'per_competition' | 'by_type'>('aggregated');
     const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(
-        per_competition[0]?.editionId ?? null
+        per_competition[0]?.editionId ?? null,
     );
+    const [selectedType, setSelectedType] = useState<string | null>(by_type[0]?.type ?? null);
 
     const selectedCompetition = per_competition.find((c) => c.editionId === selectedCompetitionId);
+    const selectedTypeData = by_type.find((t) => t.type === selectedType);
+
+    const tabs = [
+        { key: 'aggregated' as const, label: 'General' },
+        { key: 'per_competition' as const, label: 'Por competición' },
+        { key: 'by_type' as const, label: 'Por tipo' },
+    ];
 
     return (
         <AppLayout>
             <Head title={`Clasificación Temporada ${year}`} />
 
-            <div className="space-y-6 px-4 sm:px-6">
-                <div>
+            <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+                <div className="pt-6 pb-2">
                     <div className="flex items-center gap-2">
                         <Calendar className="h-6 w-6 text-accent-500" />
                         <h1 className="text-2xl font-semibold tracking-tight">Clasificación Temporada {year}</h1>
@@ -189,44 +224,39 @@ export default function Classification({ year, aggregated_leaderboard, per_compe
                 </div>
 
                 <div className="flex gap-1 rounded-lg bg-muted p-1">
-                    <button
-                        onClick={() => setActiveTab('aggregated')}
-                        className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                            activeTab === 'aggregated'
-                                ? 'bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        General
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('per_competition')}
-                        className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                            activeTab === 'per_competition'
-                                ? 'bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        Por competición
-                    </button>
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                                activeTab === tab.key
+                                    ? 'bg-background text-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
 
-                {activeTab === 'aggregated' ? (
+                {activeTab === 'aggregated' && (
                     <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2">
+                        <CardHeader className="px-6 pt-5 pb-3">
+                            <CardTitle className="flex items-center gap-2 text-lg">
                                 <Trophy className="h-5 w-5 text-accent-500" />
                                 Clasificación General
                             </CardTitle>
                             <p className="text-xs text-muted-foreground">
-                                Suma de puntos de todas las competiciones oficiales
+                                Suma de puntos de todas las competiciones oficiales · Hover para ver desglose
                             </p>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="px-6 pt-2 pb-5">
                             <AggregatedLeaderboardTable leaderboard={aggregated_leaderboard} />
                         </CardContent>
                     </Card>
-                ) : (
+                )}
+
+                {activeTab === 'per_competition' && (
                     <>
                         {per_competition.length > 0 && (
                             <div className="flex flex-wrap gap-2">
@@ -248,8 +278,8 @@ export default function Classification({ year, aggregated_leaderboard, per_compe
 
                         {selectedCompetition ? (
                             <Card>
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="flex items-center gap-2">
+                                <CardHeader className="px-6 pt-5 pb-3">
+                                    <CardTitle className="flex items-center gap-2 text-lg">
                                         {selectedCompetition.logoImageUrl && (
                                             <img
                                                 src={selectedCompetition.logoImageUrl}
@@ -260,10 +290,15 @@ export default function Classification({ year, aggregated_leaderboard, per_compe
                                         {selectedCompetition.competitionName}
                                     </CardTitle>
                                     <p className="text-xs text-muted-foreground">
-                                        {selectedCompetition.typeLabel} · {selectedCompetition.editionStatus === 'ongoing' ? 'En curso' : selectedCompetition.editionStatus === 'upcoming' ? 'Próxima' : 'Finalizada'}
+                                        {selectedCompetition.typeLabel} ·{' '}
+                                        {selectedCompetition.editionStatus === 'ongoing'
+                                            ? 'En curso'
+                                            : selectedCompetition.editionStatus === 'upcoming'
+                                              ? 'Próxima'
+                                              : 'Finalizada'}
                                     </p>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-6 pt-2 pb-5">
                                     <CompetitionLeaderboardTable
                                         leaderboard={selectedCompetition.leaderboard}
                                         leagueId={selectedCompetition.leagueId}
@@ -272,10 +307,67 @@ export default function Classification({ year, aggregated_leaderboard, per_compe
                             </Card>
                         ) : (
                             <Card>
-                                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                                <CardContent className="px-6 pt-5 pb-5 flex flex-col items-center justify-center py-12 text-center">
                                     <Trophy className="h-12 w-12 text-muted-foreground" />
                                     <p className="mt-4 text-sm text-muted-foreground">
                                         No hay competiciones con puntuaciones
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </>
+                )}
+
+                {activeTab === 'by_type' && (
+                    <>
+                        {by_type.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {by_type.map((typeData) => {
+                                    const config = TYPE_CONFIG[typeData.type];
+                                    const Icon = config?.icon ?? Trophy;
+                                    return (
+                                        <button
+                                            key={typeData.type}
+                                            onClick={() => setSelectedType(typeData.type)}
+                                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                                                selectedType === typeData.type
+                                                    ? 'bg-brand-600 text-white'
+                                                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                                            }`}
+                                        >
+                                            <Icon className={`h-3.5 w-3.5 ${selectedType === typeData.type ? 'text-white' : config?.color ?? ''}`} />
+                                            {typeData.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {selectedTypeData ? (
+                            <Card>
+                                <CardHeader className="px-6 pt-5 pb-3">
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        {(() => {
+                                            const config = TYPE_CONFIG[selectedTypeData.type];
+                                            const Icon = config?.icon ?? Trophy;
+                                            return <Icon className={`h-5 w-5 ${config?.color ?? 'text-accent-500'}`} />;
+                                        })()}
+                                        {selectedTypeData.label}
+                                    </CardTitle>
+                                    <p className="text-xs text-muted-foreground">
+                                        Puntuación acumulada de todas las competiciones de este tipo
+                                    </p>
+                                </CardHeader>
+                                <CardContent className="px-6 pt-2 pb-5">
+                                    <AggregatedLeaderboardTable leaderboard={selectedTypeData.leaderboard} />
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card>
+                                <CardContent className="px-6 pt-5 pb-5 flex flex-col items-center justify-center py-12 text-center">
+                                    <Trophy className="h-12 w-12 text-muted-foreground" />
+                                    <p className="mt-4 text-sm text-muted-foreground">
+                                        No hay competiciones de este tipo con puntuaciones
                                     </p>
                                 </CardContent>
                             </Card>
