@@ -26,7 +26,7 @@ class WorldChampionship2026Seeder extends Seeder
 
     public function run(): void
     {
-        $edition = EditionModel::whereHas('competition', fn ($q) => $q->where('name', 'Mundial 2026'))
+        $edition = EditionModel::whereHas('competition', fn ($q) => $q->where('name', 'World Championship'))
             ->where('year', self::YEAR)
             ->first();
 
@@ -120,7 +120,7 @@ class WorldChampionship2026Seeder extends Seeder
 
     private function createRosters(): void
     {
-        $competition = CompetitionModel::where('name', 'Mundial 2026')->first();
+        $competition = CompetitionModel::where('name', 'World Championship')->first();
         if ($competition) {
             $edition = EditionModel::where('competition_id', $competition->id)
                 ->where('year', self::YEAR)
@@ -495,7 +495,7 @@ class WorldChampionship2026Seeder extends Seeder
 
     private function createParticipants(string $editionId): void
     {
-        $competition = CompetitionModel::where('name', 'Mundial 2026')->first();
+        $competition = CompetitionModel::where('name', 'World Championship')->first();
         if (! $competition) {
             return;
         }
@@ -579,7 +579,7 @@ class WorldChampionship2026Seeder extends Seeder
 
     private function createStageParticipants(string $editionId): void
     {
-        $competition = CompetitionModel::where('name', 'Mundial 2026')->first();
+        $competition = CompetitionModel::where('name', 'World Championship')->first();
         if (! $competition) {
             return;
         }
