@@ -48,6 +48,16 @@ readonly class CompetitionClassification
     ) {}
 }
 
+readonly class TypeClassification
+{
+    public function __construct(
+        public string $type,
+        public string $label,
+        public int $totalPoints,
+        public array $leaderboard,
+    ) {}
+}
+
 class ShowSeasonClassificationUseCase
 {
     public function execute(User $user, ?int $year = null): array
@@ -71,6 +81,7 @@ class ShowSeasonClassificationUseCase
                 'year' => $year,
                 'aggregated_leaderboard' => [],
                 'per_competition' => [],
+                'by_type' => [],
             ];
         }
 
@@ -188,10 +199,78 @@ class ShowSeasonClassificationUseCase
             );
         }
 
+        $typeOrder = ['gc', 'championship', 'monument', 'major', 'classic'];
+        $typeLabels = [
+            'gc' => 'Grandes Vueltas',
+            'championship' => 'Campeonatos',
+            'monument' => 'Monumentos',
+            'major' => 'Majors',
+            'classic' => 'Clásicas',
+        ];
+
+        $scoresByTypeAndUser = [];
+        foreach ($scoresByUserAndLeague as $scoreEntry) {
+            $edition = $leagueIdToEdition[$scoreEntry->league_id] ?? null;
+            if ($edition === null) {
+                continue;
+            }
+            $type = $edition->competition->type->value;
+            $userId = $scoreEntry->user_id;
+            $scoresByTypeAndUser[$type][$userId] = ($scoresByTypeAndUser[$type][$userId] ?? 0) + (int) $scoreEntry->total_points;
+        }
+
+        $byType = [];
+        foreach ($typeOrder as $type) {
+            if (! isset($scoresByTypeAndUser[$type])) {
+                continue;
+            }
+
+            $typeData = [];
+            foreach ($scoresByTypeAndUser[$type] as $userId => $totalPoints) {
+                $userModel = $users[$userId] ?? null;
+                if ($userModel === null) {
+                    continue;
+                }
+
+                $typeData[] = [
+                    'user_id' => $userId,
+                    'user_name' => $userModel->name,
+                    'avatar' => $this->resolveAvatarUrl($userModel->avatar),
+                    'total_points' => $totalPoints,
+                    'is_current_user' => $userId === $user->id,
+                ];
+            }
+
+            usort($typeData, fn ($a, $b) => $b['total_points'] - $a['total_points']);
+
+            $rankedTypeEntries = [];
+            foreach ($typeData as $index => $entry) {
+                $rankedTypeEntries[] = new AggregatedLeaderboardEntry(
+                    rank: $index + 1,
+                    userId: $entry['user_id'],
+                    userName: $entry['user_name'],
+                    avatar: $entry['avatar'],
+                    totalPoints: $entry['total_points'],
+                    isCurrentUser: $entry['is_current_user'],
+                    breakdown: [],
+                );
+            }
+
+            $totalTypePoints = array_sum($scoresByTypeAndUser[$type]);
+
+            $byType[] = new TypeClassification(
+                type: $type,
+                label: $typeLabels[$type] ?? $type,
+                totalPoints: $totalTypePoints,
+                leaderboard: $rankedTypeEntries,
+            );
+        }
+
         return [
             'year' => $year,
             'aggregated_leaderboard' => $aggregatedLeaderboard,
             'per_competition' => $perCompetition,
+            'by_type' => $byType,
         ];
     }
 

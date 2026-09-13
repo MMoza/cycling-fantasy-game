@@ -37,6 +37,7 @@ class SeasonController extends Controller
             'year' => $data['year'],
             'aggregated_leaderboard' => $data['aggregated_leaderboard'],
             'per_competition' => $data['per_competition'],
+            'by_type' => $data['by_type'],
         ]);
     }
 }
