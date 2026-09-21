@@ -122,6 +122,16 @@ class ShowUserProfileUseCase
             'stage_third' => 2,
             'stage_combativo' => 3,
             'stage_leader' => 4,
+            'stage_position_1' => 5,
+            'stage_position_2' => 6,
+            'stage_position_3' => 7,
+            'stage_position_4' => 8,
+            'stage_position_5' => 9,
+            'stage_position_6' => 10,
+            'stage_position_7' => 11,
+            'stage_position_8' => 12,
+            'stage_position_9' => 13,
+            'stage_position_10' => 14,
         ];
 
         $stageDetails = [];
@@ -193,6 +203,26 @@ class ShowUserProfileUseCase
             ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
             ->distinct()
             ->count('predictions.stage_id');
+
+        // Stage position guesses (stage_position_1 to stage_position_10)
+        $stagePositionGuessed = 0;
+        foreach (range(1, 10) as $pos) {
+            $cat = "stage_position_{$pos}";
+            $count = DB::table('predictions')
+                ->join('stage_results', function ($join) {
+                    $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
+                        ->where('stage_results.position', '=', 1);
+                })
+                ->join('stages', 'stages.id', '=', 'predictions.stage_id')
+                ->where('predictions.user_id', $targetUserId)
+                ->where('predictions.league_id', $leagueId)
+                ->where('predictions.category', '=', $cat)
+                ->where('stages.status', '!=', 'upcoming')
+                ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
+                ->distinct()
+                ->count('predictions.stage_id');
+            $stagePositionGuessed += $count;
+        }
 
         // Points history (cumulative across scored stages in this league)
         $stagePointsRaw = ScoreEventModel::where('user_id', $targetUserId)
@@ -301,7 +331,7 @@ class ShowUserProfileUseCase
             ],
             'global_stats' => [
                 'stages_participated' => $stagesParticipated,
-                'stage_winners_guessed' => $stageWinnersGuessed,
+                'stage_winners_guessed' => $stageWinnersGuessed + $stagePositionGuessed,
                 'best_stage' => $bestStage,
             ],
             'points_history' => $cumulativePoints,
