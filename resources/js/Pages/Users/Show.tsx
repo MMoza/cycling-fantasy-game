@@ -83,6 +83,16 @@ const CATEGORY_LABELS: Record<string, string> = {
     stage_third: '3º clasificado',
     stage_leader: 'Líder general',
     stage_combativo: 'Combativo',
+    stage_position_1: '1er clasificado',
+    stage_position_2: '2º clasificado',
+    stage_position_3: '3er clasificado',
+    stage_position_4: '4º clasificado',
+    stage_position_5: '5º clasificado',
+    stage_position_6: '6º clasificado',
+    stage_position_7: '7º clasificado',
+    stage_position_8: '8º clasificado',
+    stage_position_9: '9º clasificado',
+    stage_position_10: '10º clasificado',
 };
 
 const STAGE_ICONS: Record<string, React.ReactNode> = {
@@ -91,6 +101,16 @@ const STAGE_ICONS: Record<string, React.ReactNode> = {
     stage_third: <Medal className="h-4 w-4 text-amber-700 shrink-0" aria-label="3º" />,
     stage_combativo: <Zap className="h-4 w-4 text-red-500 shrink-0" aria-label="Combativo" />,
     stage_leader: <Shirt className="h-4 w-4 text-yellow-500 shrink-0" aria-label="Líder" />,
+    stage_position_1: <span className="text-xs font-bold text-foreground shrink-0" aria-label="1º">1º</span>,
+    stage_position_2: <span className="text-xs font-bold text-foreground shrink-0" aria-label="2º">2º</span>,
+    stage_position_3: <span className="text-xs font-bold text-foreground shrink-0" aria-label="3º">3º</span>,
+    stage_position_4: <span className="text-xs text-muted-foreground shrink-0" aria-label="4º">4º</span>,
+    stage_position_5: <span className="text-xs text-muted-foreground shrink-0" aria-label="5º">5º</span>,
+    stage_position_6: <span className="text-xs text-muted-foreground shrink-0" aria-label="6º">6º</span>,
+    stage_position_7: <span className="text-xs text-muted-foreground shrink-0" aria-label="7º">7º</span>,
+    stage_position_8: <span className="text-xs text-muted-foreground shrink-0" aria-label="8º">8º</span>,
+    stage_position_9: <span className="text-xs text-muted-foreground shrink-0" aria-label="9º">9º</span>,
+    stage_position_10: <span className="text-xs text-muted-foreground shrink-0" aria-label="10º">10º</span>,
 };
 
 function formatMemberSince(iso: string): string {
