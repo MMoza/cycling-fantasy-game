@@ -295,6 +295,44 @@ PRT: Burgos-BB, Cofidis, Kern Pharma, Pinarello-Q36.5, Tudor
 ### To update startlist
 Replace the `$ridersByTeam` array in `createRosters()` keeping format: `['first' => '...', 'last' => '...', 'country' => 'XX']`.
 
+## Seeder: Il Lombardía 2026 (IlLombardia2026Seeder)
+
+### Source
+https://www.procyclingstats.com/race/il-lombardia-2026-result/startlist
+
+### Stats
+- 33 riders confirmados (startlist parcial, se actualizará)
+- 25 equipos en PCS (12 con corredores confirmados, 13 aún vacíos)
+- Carrera de un día: Bergamo → Como (239km), 2026-10-10
+- Fields: `first_name`, `last_name`, `country_id` (ISO 3166-1 alpha-2)
+
+### Equipos con corredores
+Lotto Intermarché (2), Decathlon CMA CGM (3), Bahrain-Victorious (4), Lidl-Trek (3), Red Bull-BORA (2), Picnic PostNL (7), Visma-LAB (5), UAE-XRG (3), EF-EasyPost (1), Groupama-FDJ (1), Tudor (1), Pinarello-Q36.5 (1)
+
+Equipos sin corredores aún (se crean igual para la actualización futura): Alpecin-PT, INEOS, Movistar, NSN, Soudal-QS, Jayco-AlUla, Uno-X, XDS-Astana, Bardiani, Cofidis, MBH Bank, Polti VisitMalta, Unibet Rose Rockets
+
+### Comportamiento
+1. Busca la competición por nombre (`Il Lombardía` → `Il Lombardia` → `Giro de Lombardía`) y si no, por `pcs_slug = il-lombardia`. Si no hay edición 2026 → warning y no hace nada.
+2. Crea los 25 equipos (`firstOrCreate` por nombre)
+3. Crea los 33 riders (`firstOrCreate` por `first_name` + `last_name`, no duplica existentes) + `team_rosters` 2026
+4. **Reconstruye** los `competition_participants` de la edición con el startlist actual (borra los de la edición y los vuelve a crear → sirve para reflejar altas/bajas al actualizar)
+5. Crea la etapa única `Bergamo - Como` (tipo `hill`, 239km, difficulty 3, elevation 4000) si no existe por número, y sus `stage_participants`
+
+No toca participantes de otras ediciones ni de otras competiciones.
+
+### Uso
+```bash
+php artisan db:seed --class=IlLombardia2026Seeder
+```
+
+### To update startlist
+Ampliar el array `startlist()` manteniendo el formato `{name, country, riders: [{first, last, country}]}` y volver a ejecutar el seeder.
+
+### Tests
+`tests/Feature/IlLombardia2026SeederTest.php` — 19 tests: equipos, riders, no duplicados, participantes por edición, etapa, idempotencia y resolución de competición.
+
+Nota: `SeasonClassificationSeeder` usa `$this->command?->warning()` que no existe en `SeedCommand` (existe `warn()`), fallaría si entra en esa rama.
+
 ## RiderSeeder
 
 Seeder independiente que solo añade riders a la tabla `riders`. Sin equipos, rosters, participantes ni etapas.
