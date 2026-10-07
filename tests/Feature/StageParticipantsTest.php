@@ -83,13 +83,17 @@ beforeEach(function () {
         createTestParticipant($this->competition->id, $this->edition->id, $this->team->id, $rider->id);
     }
 
+    // Fechas relativas: los tests de predicción requieren etapas aún no comenzadas.
+    $ttDate = now()->addDays(7);
+    $roadDate = $ttDate->copy()->addDay();
+
     $this->ttStage = StageModel::create([
         'id' => Str::uuid()->toString(),
         'edition_id' => $this->edition->id,
         'number' => 1,
         'name' => 'Contrareloj Individual',
-        'date' => '2026-09-20',
-        'scheduled_start' => '2026-09-20 10:00:00',
+        'date' => $ttDate->toDateString(),
+        'scheduled_start' => $ttDate->copy()->setTime(10, 0),
         'type' => StageType::TimeTrial,
         'distance' => 32.5,
         'origin' => 'Monaco',
@@ -102,8 +106,8 @@ beforeEach(function () {
         'edition_id' => $this->edition->id,
         'number' => 2,
         'name' => 'Prueba en Línea',
-        'date' => '2026-09-21',
-        'scheduled_start' => '2026-09-21 10:00:00',
+        'date' => $roadDate->toDateString(),
+        'scheduled_start' => $roadDate->copy()->setTime(10, 0),
         'type' => StageType::Flat,
         'distance' => 280.0,
         'origin' => 'Niza',
