@@ -301,24 +301,25 @@ Replace the `$ridersByTeam` array in `createRosters()` keeping format: `['first'
 https://www.procyclingstats.com/race/il-lombardia-2026-result/startlist
 
 ### Stats
-- 33 riders confirmados (startlist parcial, se actualizará)
-- 25 equipos en PCS (12 con corredores confirmados, 13 aún vacíos)
-- Carrera de un día: Bergamo → Como (239km), 2026-10-10
+- 174 riders (25 equipos: 24x7 + Netcompany INEOS con 6) — startlist completo de PCS
 - Fields: `first_name`, `last_name`, `country_id` (ISO 3166-1 alpha-2)
 
-### Equipos con corredores
-Lotto Intermarché (2), Decathlon CMA CGM (3), Bahrain-Victorious (4), Lidl-Trek (3), Red Bull-BORA (2), Picnic PostNL (7), Visma-LAB (5), UAE-XRG (3), EF-EasyPost (1), Groupama-FDJ (1), Tudor (1), Pinarello-Q36.5 (1)
-
-Equipos sin corredores aún (se crean igual para la actualización futura): Alpecin-PT, INEOS, Movistar, NSN, Soudal-QS, Jayco-AlUla, Uno-X, XDS-Astana, Bardiani, Cofidis, MBH Bank, Polti VisitMalta, Unibet Rose Rockets
+### Equipos (25)
+Todos con corredores confirmados: UAE-XRG, Alpecin-PT, Bahrain, Bardiani, Cofidis, Decathlon, EF, Groupama, Lidl-Trek, Lotto, MBH, Movistar, Netcompany INEOS, NSN, Pinarello-Q36.5, Red Bull-BORA, Soudal-QS, Jayco, Picnic-PostNL, Polti-VisitMalta, Visma-LAB, Tudor, Unibet Rose Rockets, Uno-X, XDS-Astana
 
 ### Comportamiento
 1. Busca la competición por nombre (`Il Lombardía` → `Il Lombardia` → `Giro de Lombardía`) y si no, por `pcs_slug = il-lombardia`. Si no hay edición 2026 → warning y no hace nada.
 2. Crea los 25 equipos (`firstOrCreate` por nombre)
-3. Crea los 33 riders (`firstOrCreate` por `first_name` + `last_name`, no duplica existentes) + `team_rosters` 2026
+3. Crea los 174 riders (`firstOrCreate` por `first_name` + `last_name`, no duplica existentes de otros seeders) + `team_rosters` 2026
 4. **Reconstruye** los `competition_participants` de la edición con el startlist actual (borra los de la edición y los vuelve a crear → sirve para reflejar altas/bajas al actualizar)
 5. Crea la etapa única `Bergamo - Como` (tipo `hill`, 239km, difficulty 3, elevation 4000) si no existe por número, y sus `stage_participants`
 
-No toca participantes de otras ediciones ni de otras competiciones.
+No toca participantes de otras ediciones ni de otras competiciones. Seguro en prod: las predicciones referencian `stages`/`riders`, no participantes.
+
+### Ejecución en prod
+```bash
+php artisan db:seed --class=IlLombardia2026Seeder --force
+```
 
 ### Uso
 ```bash
