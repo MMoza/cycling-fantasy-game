@@ -21,30 +21,43 @@ use Illuminate\Support\Str;
 uses(RefreshDatabase::class);
 
 const LOMBARDIA_STARTLIST_TEAMS = 25;
-const LOMBARDIA_STARTLIST_RIDERS = 33;
-const LOMBARDIA_STARTLIST_TEAMS_WITH_RIDERS = 12;
+const LOMBARDIA_STARTLIST_RIDERS = 174;
+const LOMBARDIA_STARTLIST_TEAMS_WITH_RIDERS = 25;
 
 beforeEach(function () {
     $countries = [
         ['AE', 'Emiratos Árabes Unidos'],
+        ['AR', 'Argentina'],
+        ['AT', 'Austria'],
         ['AU', 'Australia'],
         ['BE', 'Bélgica'],
         ['BH', 'Baréin'],
+        ['CA', 'Canadá'],
         ['CH', 'Suiza'],
+        ['CL', 'Chile'],
         ['CO', 'Colombia'],
+        ['CZ', 'República Checa'],
         ['DE', 'Alemania'],
+        ['DK', 'Dinamarca'],
+        ['EC', 'Ecuador'],
         ['ES', 'España'],
         ['FR', 'Francia'],
         ['GB', 'Reino Unido'],
+        ['HR', 'Croacia'],
         ['HU', 'Hungría'],
         ['IE', 'Irlanda'],
         ['IT', 'Italia'],
         ['KZ', 'Kazajistán'],
+        ['MT', 'Malta'],
+        ['MX', 'México'],
         ['NL', 'Países Bajos'],
         ['NO', 'Noruega'],
+        ['NZ', 'Nueva Zelanda'],
+        ['PL', 'Polonia'],
         ['PT', 'Portugal'],
         ['SI', 'Eslovenia'],
         ['US', 'Estados Unidos'],
+        ['ZA', 'Sudáfrica'],
     ];
 
     foreach ($countries as [$code, $name]) {
@@ -102,7 +115,7 @@ describe('IlLombardia2026Seeder: teams', function () {
 
 describe('IlLombardia2026Seeder: riders', function () {
 
-    test('creates the 33 riders of the startlist', function () {
+    test('creates the 174 riders of the startlist', function () {
         $this->seed(IlLombardia2026Seeder::class);
 
         expect(RiderModel::count())->toBe(LOMBARDIA_STARTLIST_RIDERS);
