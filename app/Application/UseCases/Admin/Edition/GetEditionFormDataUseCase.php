@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\Edition;
 
+use App\Application\DTOs\View\AdminEditionFormPageDTO;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
 
 class GetEditionFormDataUseCase
 {
-    public function execute(string $competitionId, ?string $id = null): array
+    public function execute(string $competitionId, ?string $id = null): AdminEditionFormPageDTO
     {
         $competition = CompetitionModel::findOrFail($competitionId);
 
@@ -26,9 +27,9 @@ class GetEditionFormDataUseCase
             ];
         }
 
-        return [
-            'competition' => ['id' => $competition->id, 'name' => $competition->name],
-            'edition' => $edition,
-        ];
+        return new AdminEditionFormPageDTO(
+            competition: ['id' => $competition->id, 'name' => $competition->name],
+            edition: $edition,
+        );
     }
 }

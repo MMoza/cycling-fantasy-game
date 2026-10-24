@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\FinalClassification;
 
+use App\Application\DTOs\View\AdminFinalClassificationsPageDTO;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\FinalClassificationModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
@@ -11,7 +12,7 @@ use App\Infrastructure\Persistence\Models\TeamModel;
 
 class GetFinalClassificationsUseCase
 {
-    public function execute(string $editionId): array
+    public function execute(string $editionId): AdminFinalClassificationsPageDTO
     {
         $edition = EditionModel::with('competition')->findOrFail($editionId);
 
@@ -28,15 +29,15 @@ class GetFinalClassificationsUseCase
             ->groupBy('category')
             ->map(fn ($items) => $items->keyBy('position'));
 
-        return [
-            'edition' => [
+        return new AdminFinalClassificationsPageDTO(
+            edition: [
                 'id' => $edition->id,
                 'year' => $edition->year,
                 'competition' => $edition->competition->name,
             ],
-            'riders' => $riders,
-            'teams' => $teams,
-            'classifications' => $classifications,
-        ];
+            riders: $riders,
+            teams: $teams,
+            classifications: $classifications,
+        );
     }
 }

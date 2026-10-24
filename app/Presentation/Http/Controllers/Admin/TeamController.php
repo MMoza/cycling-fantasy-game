@@ -34,22 +34,12 @@ class TeamController extends Controller
 
     public function index(): Response
     {
-        $data = $this->listTeamsUseCase->execute();
-
-        return Inertia::render('Admin/Teams/Index', [
-            'teams' => $data['teams'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Teams/Index', $this->listTeamsUseCase->execute()->toArray());
     }
 
     public function create(): Response
     {
-        $data = $this->getTeamFormDataUseCase->execute();
-
-        return Inertia::render('Admin/Teams/Form', [
-            'team' => $data['team'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Teams/Form', $this->getTeamFormDataUseCase->execute()->toArray());
     }
 
     public function store(StoreTeamRequest $request): RedirectResponse
@@ -63,24 +53,12 @@ class TeamController extends Controller
 
     public function show(string $id): Response
     {
-        $data = $this->showTeamUseCase->execute($id);
-
-        return Inertia::render('Admin/Teams/Show', [
-            'team' => $data['team'],
-            'rosters' => $data['rosters'],
-            'allRiders' => $data['allRiders'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Teams/Show', $this->showTeamUseCase->execute($id)->toArray());
     }
 
     public function edit(string $id): Response
     {
-        $data = $this->getTeamFormDataUseCase->execute($id);
-
-        return Inertia::render('Admin/Teams/Form', [
-            'team' => $data['team'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Teams/Form', $this->getTeamFormDataUseCase->execute($id)->toArray());
     }
 
     public function update(UpdateTeamRequest $request, string $id): RedirectResponse

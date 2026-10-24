@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\Team;
 
+use App\Application\DTOs\View\AdminTeamFormPageDTO;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 
 class GetTeamFormDataUseCase
 {
-    public function execute(?string $id = null): array
+    public function execute(?string $id = null): AdminTeamFormPageDTO
     {
         $countries = CountryModel::orderBy('name')
             ->get(['id', 'name'])
@@ -28,9 +29,9 @@ class GetTeamFormDataUseCase
             ];
         }
 
-        return [
-            'team' => $team,
-            'countries' => $countries,
-        ];
+        return new AdminTeamFormPageDTO(
+            team: $team,
+            countries: $countries,
+        );
     }
 }

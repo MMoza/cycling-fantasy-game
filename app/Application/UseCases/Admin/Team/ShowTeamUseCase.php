@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\Team;
 
+use App\Application\DTOs\View\AdminTeamShowPageDTO;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 
 class ShowTeamUseCase
 {
-    public function execute(string $id): array
+    public function execute(string $id): AdminTeamShowPageDTO
     {
         $team = TeamModel::with('rosters.rider', 'country')->findOrFail($id);
 
@@ -38,17 +39,17 @@ class ShowTeamUseCase
             ->get(['id', 'name'])
             ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
 
-        return [
-            'team' => [
+        return new AdminTeamShowPageDTO(
+            team: [
                 'id' => $team->id,
                 'name' => $team->name,
                 'abbreviation' => $team->abbreviation,
                 'country_id' => $team->country_id,
                 'logo_url' => $team->logo_url,
             ],
-            'rosters' => $rostersByYear,
-            'allRiders' => $allRiders,
-            'countries' => $countries,
-        ];
+            rosters: $rostersByYear,
+            allRiders: $allRiders,
+            countries: $countries,
+        );
     }
 }

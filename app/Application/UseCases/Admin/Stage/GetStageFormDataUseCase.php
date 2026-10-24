@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\Stage;
 
+use App\Application\DTOs\View\AdminStageFormPageDTO;
 use App\Domain\ValueObjects\CompetitionType;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\EditionModel;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class GetStageFormDataUseCase
 {
-    public function execute(string $editionId, ?string $id = null): array
+    public function execute(string $editionId, ?string $id = null): AdminStageFormPageDTO
     {
         $edition = EditionModel::with('competition')->findOrFail($editionId);
 
@@ -71,18 +72,18 @@ class GetStageFormDataUseCase
                 ->toArray();
         }
 
-        return [
-            'edition' => [
+        return new AdminStageFormPageDTO(
+            edition: [
                 'id' => $edition->id,
                 'year' => $edition->year,
                 'competition' => $edition->competition->name,
                 'competition_id' => $edition->competition->id,
                 'competition_type' => $edition->competition->type->value,
             ],
-            'stage' => $stage,
-            'stageTypes' => $stageTypes,
-            'availableParticipants' => $availableParticipants,
-            'stageParticipantIds' => $stageParticipantIds,
-        ];
+            stage: $stage,
+            stageTypes: $stageTypes,
+            availableParticipants: $availableParticipants,
+            stageParticipantIds: $stageParticipantIds,
+        );
     }
 }

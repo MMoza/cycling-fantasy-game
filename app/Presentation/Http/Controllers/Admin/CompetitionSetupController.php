@@ -27,14 +27,7 @@ class CompetitionSetupController extends Controller
 
     public function show(string $competitionId, string $editionId): Response
     {
-        $data = $this->showSetupUseCase->execute($competitionId, $editionId);
-
-        return Inertia::render('Admin/Competitions/Setup', [
-            'competition' => $data['competition'],
-            'edition' => $data['edition'],
-            'participants' => $data['participants'],
-            'teams' => $data['teams'],
-        ]);
+        return Inertia::render('Admin/Competitions/Setup', $this->showSetupUseCase->execute($competitionId, $editionId)->toArray());
     }
 
     public function addTeam(AddCompetitionTeamRequest $request, string $competitionId, string $editionId): RedirectResponse

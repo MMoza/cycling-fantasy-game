@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\CompetitionSetup;
 
+use App\Application\DTOs\View\AdminCompetitionSetupPageDTO;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\CompetitionParticipantModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
@@ -11,7 +12,7 @@ use App\Infrastructure\Persistence\Models\TeamModel;
 
 class ShowSetupUseCase
 {
-    public function execute(string $competitionId, string $editionId): array
+    public function execute(string $competitionId, string $editionId): AdminCompetitionSetupPageDTO
     {
         $competition = CompetitionModel::findOrFail($competitionId);
         $edition = EditionModel::with('stages')->findOrFail($editionId);
@@ -43,15 +44,15 @@ class ShowSetupUseCase
 
         $allTeams = TeamModel::orderBy('name')->get(['id', 'name']);
 
-        return [
-            'competition' => ['id' => $competition->id, 'name' => $competition->name],
-            'edition' => [
+        return new AdminCompetitionSetupPageDTO(
+            competition: ['id' => $competition->id, 'name' => $competition->name],
+            edition: [
                 'id' => $edition->id,
                 'year' => $edition->year,
                 'stages_count' => $edition->stages->count(),
             ],
-            'participants' => $participants,
-            'teams' => $allTeams,
-        ];
+            participants: $participants,
+            teams: $allTeams,
+        );
     }
 }

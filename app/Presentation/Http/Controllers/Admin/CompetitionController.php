@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers\Admin;
 
-use App\Application\DTOs\Admin\CompetitionDTO;
 use App\Application\UseCases\Admin\Competition\DeleteCompetitionUseCase;
 use App\Application\UseCases\Admin\Competition\GetCompetitionFormDataUseCase;
 use App\Application\UseCases\Admin\Competition\ListCompetitionsUseCase;
 use App\Application\UseCases\Admin\Competition\StoreCompetitionUseCase;
 use App\Application\UseCases\Admin\Competition\UpdateCompetitionUseCase;
-use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Presentation\Http\Controllers\Controller;
 use App\Presentation\Http\Requests\Admin\StoreCompetitionRequest;
@@ -32,27 +30,16 @@ class CompetitionController extends Controller
         private readonly StoreCompetitionUseCase $storeCompetitionUseCase,
         private readonly UpdateCompetitionUseCase $updateCompetitionUseCase,
         private readonly DeleteCompetitionUseCase $deleteCompetitionUseCase,
-        private readonly MediaUrlResolverInterface $mediaUrls,
     ) {}
 
     public function index(): Response
     {
-        $data = $this->listCompetitionsUseCase->execute();
-
-        return Inertia::render('Admin/Competitions/Index', [
-            'competitions' => $this->resolveImages($data['competitions']),
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Competitions/Index', $this->listCompetitionsUseCase->execute()->toArray());
     }
 
     public function create(): Response
     {
-        $data = $this->getCompetitionFormDataUseCase->execute();
-
-        return Inertia::render('Admin/Competitions/Form', [
-            'competition' => $this->resolveCompetitionImages($data['competition']),
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Competitions/Form', $this->getCompetitionFormDataUseCase->execute()->toArray());
     }
 
     public function store(StoreCompetitionRequest $request): RedirectResponse
@@ -76,12 +63,7 @@ class CompetitionController extends Controller
 
     public function edit(string $id): Response
     {
-        $data = $this->getCompetitionFormDataUseCase->execute($id);
-
-        return Inertia::render('Admin/Competitions/Form', [
-            'competition' => $this->resolveCompetitionImages($data['competition']),
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Competitions/Form', $this->getCompetitionFormDataUseCase->execute($id)->toArray());
     }
 
     public function update(UpdateCompetitionRequest $request, string $id): RedirectResponse
@@ -130,35 +112,5 @@ class CompetitionController extends Controller
         $this->deleteCompetitionUseCase->execute($id);
 
         return redirect()->route('admin.competitions.index');
-    }
-
-    private function resolveCompetitionImages(?array $competition): ?array
-    {
-        if ($competition === null) {
-            return null;
-        }
-
-        $competition['cover_image_url'] = $this->mediaUrls->resolve($competition['cover_image'] ?? null);
-        $competition['logo_image_url'] = $this->mediaUrls->resolve($competition['logo_image'] ?? null);
-
-        return $competition;
-    }
-
-    private function resolveImages($competitions)
-    {
-        return $competitions->map(function (CompetitionDTO $c) {
-            return new CompetitionDTO(
-                id: $c->id,
-                name: $c->name,
-                type: $c->type,
-                countryId: $c->countryId,
-                active: $c->active,
-                editionsCount: $c->editionsCount,
-                coverImage: $c->coverImage,
-                logoImage: $c->logoImage,
-                coverImageUrl: $this->mediaUrls->resolve($c->coverImage),
-                logoImageUrl: $this->mediaUrls->resolve($c->logoImage),
-            );
-        });
     }
 }

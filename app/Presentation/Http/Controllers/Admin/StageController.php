@@ -36,25 +36,12 @@ class StageController extends Controller
 
     public function index(string $editionId): Response
     {
-        $data = $this->listAdminStagesUseCase->execute($editionId);
-
-        return Inertia::render('Admin/Stages/Index', [
-            'edition' => $data['edition'],
-            'stages' => $data['stages'],
-        ]);
+        return Inertia::render('Admin/Stages/Index', $this->listAdminStagesUseCase->execute($editionId)->toArray());
     }
 
     public function create(string $editionId): Response
     {
-        $data = $this->getStageFormDataUseCase->execute($editionId);
-
-        return Inertia::render('Admin/Stages/Form', [
-            'edition' => $data['edition'],
-            'stage' => $data['stage'],
-            'stageTypes' => $data['stageTypes'],
-            'availableParticipants' => $data['availableParticipants'],
-            'stageParticipantIds' => $data['stageParticipantIds'],
-        ]);
+        return Inertia::render('Admin/Stages/Form', $this->getStageFormDataUseCase->execute($editionId)->toArray());
     }
 
     public function store(StoreStageRequest $request, string $editionId): RedirectResponse
@@ -71,15 +58,7 @@ class StageController extends Controller
 
     public function edit(string $editionId, string $id): Response
     {
-        $data = $this->getStageFormDataUseCase->execute($editionId, $id);
-
-        return Inertia::render('Admin/Stages/Form', [
-            'edition' => $data['edition'],
-            'stage' => $data['stage'],
-            'stageTypes' => $data['stageTypes'],
-            'availableParticipants' => $data['availableParticipants'],
-            'stageParticipantIds' => $data['stageParticipantIds'],
-        ]);
+        return Inertia::render('Admin/Stages/Form', $this->getStageFormDataUseCase->execute($editionId, $id)->toArray());
     }
 
     public function update(UpdateStageRequest $request, string $editionId, string $id): RedirectResponse
@@ -97,15 +76,7 @@ class StageController extends Controller
 
     public function show(string $editionId, string $id): Response
     {
-        $data = $this->showAdminStageUseCase->execute($editionId, $id);
-
-        return Inertia::render('Admin/Stages/Show', [
-            'edition' => $data['edition'],
-            'stage' => $data['stage'],
-            'availableRiders' => $data['availableRiders'],
-            'results' => $data['results'],
-            'stageParticipants' => $data['stageParticipants'],
-        ]);
+        return Inertia::render('Admin/Stages/Show', $this->showAdminStageUseCase->execute($editionId, $id)->toArray());
     }
 
     public function markFinished(string $editionId, string $id): RedirectResponse

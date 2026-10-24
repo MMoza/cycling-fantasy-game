@@ -22,14 +22,7 @@ class FinalClassificationController extends Controller
 
     public function edit(string $editionId): Response
     {
-        $data = $this->getFinalClassificationsUseCase->execute($editionId);
-
-        return Inertia::render('Admin/Editions/FinalClassifications', [
-            'edition' => $data['edition'],
-            'riders' => $data['riders'],
-            'teams' => $data['teams'],
-            'classifications' => $data['classifications'],
-        ]);
+        return Inertia::render('Admin/Editions/FinalClassifications', $this->getFinalClassificationsUseCase->execute($editionId)->toArray());
     }
 
     public function update(UpdateFinalClassificationsRequest $request, string $editionId): RedirectResponse

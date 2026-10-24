@@ -26,22 +26,12 @@ class EditionController extends Controller
 
     public function index(string $competitionId): Response
     {
-        $data = $this->listEditionsUseCase->execute($competitionId);
-
-        return Inertia::render('Admin/Editions/Index', [
-            'competition' => $data['competition'],
-            'editions' => $data['editions'],
-        ]);
+        return Inertia::render('Admin/Editions/Index', $this->listEditionsUseCase->execute($competitionId)->toArray());
     }
 
     public function create(string $competitionId): Response
     {
-        $data = $this->getEditionFormDataUseCase->execute($competitionId);
-
-        return Inertia::render('Admin/Editions/Form', [
-            'competition' => $data['competition'],
-            'edition' => $data['edition'],
-        ]);
+        return Inertia::render('Admin/Editions/Form', $this->getEditionFormDataUseCase->execute($competitionId)->toArray());
     }
 
     public function store(StoreEditionRequest $request, string $competitionId): RedirectResponse
@@ -55,12 +45,7 @@ class EditionController extends Controller
 
     public function edit(string $competitionId, string $id): Response
     {
-        $data = $this->getEditionFormDataUseCase->execute($competitionId, $id);
-
-        return Inertia::render('Admin/Editions/Form', [
-            'competition' => $data['competition'],
-            'edition' => $data['edition'],
-        ]);
+        return Inertia::render('Admin/Editions/Form', $this->getEditionFormDataUseCase->execute($competitionId, $id)->toArray());
     }
 
     public function update(UpdateEditionRequest $request, string $competitionId, string $id): RedirectResponse

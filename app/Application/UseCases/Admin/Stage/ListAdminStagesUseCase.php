@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Admin\Stage;
 
 use App\Application\DTOs\Admin\AdminStageDTO;
+use App\Application\DTOs\View\AdminStagesListPageDTO;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 
 class ListAdminStagesUseCase
 {
-    public function execute(string $editionId): array
+    public function execute(string $editionId): AdminStagesListPageDTO
     {
         $edition = EditionModel::with('competition')->findOrFail($editionId);
 
@@ -34,14 +35,14 @@ class ListAdminStagesUseCase
                 scheduledStart: $s->scheduled_start?->format('H:i'),
             ));
 
-        return [
-            'edition' => [
+        return new AdminStagesListPageDTO(
+            edition: [
                 'id' => $edition->id,
                 'year' => $edition->year,
                 'competition_id' => $edition->competition->id,
                 'competition' => $edition->competition->name,
             ],
-            'stages' => $stages,
-        ];
+            stages: $stages,
+        );
     }
 }

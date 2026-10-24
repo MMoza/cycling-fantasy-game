@@ -247,9 +247,9 @@ describe('GetStageFormDataUseCase with championship type', function () {
 
         $result = $useCase->execute($this->edition->id);
 
-        expect($result['availableParticipants'])->toHaveCount(5);
-        expect($result['stageParticipantIds'])->toBe([]);
-        expect($result['edition']['competition_type'])->toBe('championship');
+        expect($result->availableParticipants)->toHaveCount(5);
+        expect($result->stageParticipantIds)->toBe([]);
+        expect($result->edition['competition_type'])->toBe('championship');
     });
 
     test('returns stageParticipantIds when stage exists', function () {
@@ -260,9 +260,9 @@ describe('GetStageFormDataUseCase with championship type', function () {
 
         $result = $useCase->execute($this->edition->id, $this->ttStage->id);
 
-        expect($result['stageParticipantIds'])->toHaveCount(2);
-        expect($result['stageParticipantIds'])->toContain($this->riders[0]->id);
-        expect($result['stageParticipantIds'])->toContain($this->riders[1]->id);
+        expect($result->stageParticipantIds)->toHaveCount(2);
+        expect($result->stageParticipantIds)->toContain($this->riders[0]->id);
+        expect($result->stageParticipantIds)->toContain($this->riders[1]->id);
     });
 
     test('returns empty availableParticipants for non-championship type', function () {
@@ -286,7 +286,7 @@ describe('GetStageFormDataUseCase with championship type', function () {
         $useCase = new GetStageFormDataUseCase;
         $result = $useCase->execute($gcEdition->id);
 
-        expect($result['availableParticipants'])->toBe([]);
+        expect($result->availableParticipants)->toBe([]);
     });
 });
 
@@ -402,15 +402,15 @@ describe('ShowAdminStageUseCase with stage_participants', function () {
         $useCase = new ShowAdminStageUseCase;
         $result = $useCase->execute($this->edition->id, $this->ttStage->id);
 
-        expect($result['stageParticipants'])->toHaveCount(2);
-        expect($result['availableRiders'])->toHaveCount(2);
+        expect($result->stageParticipants)->toHaveCount(2);
+        expect($result->availableRiders)->toHaveCount(2);
     });
 
     test('returns empty stageParticipants when no stage_participants', function () {
         $useCase = new ShowAdminStageUseCase;
         $result = $useCase->execute($this->edition->id, $this->ttStage->id);
 
-        expect($result['stageParticipants'])->toBe([]);
-        expect($result['availableRiders'])->toHaveCount(5);
+        expect($result->stageParticipants)->toBe([]);
+        expect($result->availableRiders)->toHaveCount(5);
     });
 });

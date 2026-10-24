@@ -26,22 +26,12 @@ class RiderController extends Controller
 
     public function index(): Response
     {
-        $data = $this->listRidersUseCase->execute();
-
-        return Inertia::render('Admin/Riders/Index', [
-            'riders' => $data['riders'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Riders/Index', $this->listRidersUseCase->execute()->toArray());
     }
 
     public function create(): Response
     {
-        $data = $this->getRiderFormDataUseCase->execute();
-
-        return Inertia::render('Admin/Riders/Form', [
-            'rider' => $data['rider'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Riders/Form', $this->getRiderFormDataUseCase->execute()->toArray());
     }
 
     public function store(StoreRiderRequest $request): RedirectResponse
@@ -55,12 +45,7 @@ class RiderController extends Controller
 
     public function edit(string $id): Response
     {
-        $data = $this->getRiderFormDataUseCase->execute($id);
-
-        return Inertia::render('Admin/Riders/Form', [
-            'rider' => $data['rider'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Riders/Form', $this->getRiderFormDataUseCase->execute($id)->toArray());
     }
 
     public function update(UpdateRiderRequest $request, string $id): RedirectResponse

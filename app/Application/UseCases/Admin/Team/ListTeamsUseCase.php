@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Admin\Team;
 
 use App\Application\DTOs\Admin\TeamDTO;
+use App\Application\DTOs\View\AdminTeamsListPageDTO;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 
 class ListTeamsUseCase
 {
-    public function execute(): array
+    public function execute(): AdminTeamsListPageDTO
     {
         $teams = TeamModel::with('country')
             ->withCount('rosters')
@@ -29,9 +30,9 @@ class ListTeamsUseCase
             ->get(['id', 'name'])
             ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
 
-        return [
-            'teams' => $teams,
-            'countries' => $countries,
-        ];
+        return new AdminTeamsListPageDTO(
+            teams: $teams,
+            countries: $countries,
+        );
     }
 }

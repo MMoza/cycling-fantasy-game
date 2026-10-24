@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\Rider;
 
+use App\Application\DTOs\View\AdminRiderFormPageDTO;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
 
 class GetRiderFormDataUseCase
 {
-    public function execute(?string $id = null): array
+    public function execute(?string $id = null): AdminRiderFormPageDTO
     {
         $countries = CountryModel::orderBy('name')
             ->get(['id', 'name'])
@@ -29,9 +30,9 @@ class GetRiderFormDataUseCase
             ];
         }
 
-        return [
-            'rider' => $rider,
-            'countries' => $countries,
-        ];
+        return new AdminRiderFormPageDTO(
+            rider: $rider,
+            countries: $countries,
+        );
     }
 }

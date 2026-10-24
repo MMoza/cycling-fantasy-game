@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Admin\Rider;
 
 use App\Application\DTOs\Admin\RiderDTO;
+use App\Application\DTOs\View\AdminRidersListPageDTO;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
 
 class ListRidersUseCase
 {
-    public function execute(): array
+    public function execute(): AdminRidersListPageDTO
     {
         $riders = RiderModel::with('country')
             ->leftJoin('competition_participants', function ($join) {
@@ -40,9 +41,9 @@ class ListRidersUseCase
             ->get(['id', 'name'])
             ->map(fn ($c) => ['value' => $c->id, 'label' => $c->name]);
 
-        return [
-            'riders' => $riders,
-            'countries' => $countries,
-        ];
+        return new AdminRidersListPageDTO(
+            riders: $riders,
+            countries: $countries,
+        );
     }
 }
