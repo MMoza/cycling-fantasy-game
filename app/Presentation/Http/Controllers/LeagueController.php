@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers;
 
-use App\Application\DTOs\CreateLeagueDTO;
 use App\Application\DTOs\View\LeagueIndexDTO;
 use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\League\CreateLeagueUseCase;
@@ -14,6 +13,10 @@ use App\Application\UseCases\League\JoinLeagueUseCase;
 use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\SearchPublicLeaguesUseCase;
 use App\Application\UseCases\League\UpdateLeagueUseCase;
+use App\Presentation\Http\Requests\League\JoinLeagueRequest;
+use App\Presentation\Http\Requests\League\JoinOfficialLeagueRequest;
+use App\Presentation\Http\Requests\League\StoreLeagueRequest;
+use App\Presentation\Http\Requests\League\UpdateLeagueRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -53,26 +56,10 @@ class LeagueController extends Controller
         return Inertia::render('Leagues/Show', $this->getLeagueDashboardUseCase->execute($request->user(), $league)->toArray());
     }
 
-    public function store(Request $request)
+    public function store(StoreLeagueRequest $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'edition_id' => ['required', 'uuid', 'exists:editions,id'],
-            'scoring_system_id' => ['required', 'uuid', 'exists:scoring_systems,id'],
-            'is_public' => ['required', 'boolean'],
-            'is_official' => ['sometimes', 'boolean'],
-        ]);
-
-        $dto = new CreateLeagueDTO(
-            name: $validated['name'],
-            editionId: $validated['edition_id'],
-            scoringSystemId: $validated['scoring_system_id'],
-            isPublic: $validated['is_public'],
-            isOfficial: $validated['is_official'] ?? false,
-        );
-
         try {
-            $league = $this->createLeagueUseCase->execute($request->user(), $dto);
+            $league = $this->createLeagueUseCase->execute($request->user(), $request->toDTO());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['plan' => $e->getMessage()])->withInput();
         }
@@ -80,14 +67,10 @@ class LeagueController extends Controller
         return redirect()->route('leagues.show', $league->id);
     }
 
-    public function join(Request $request)
+    public function join(JoinLeagueRequest $request)
     {
-        $validated = $request->validate([
-            'invite_code' => ['required', 'string', 'exists:leagues,invite_code'],
-        ]);
-
         try {
-            $league = $this->joinLeagueUseCase->execute($request->user(), $validated['invite_code']);
+            $league = $this->joinLeagueUseCase->execute($request->user(), $request->inviteCode());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['invite_code' => $e->getMessage()]);
         }
@@ -95,14 +78,10 @@ class LeagueController extends Controller
         return redirect()->route('leagues.show', $league->id);
     }
 
-    public function joinOfficial(Request $request)
+    public function joinOfficial(JoinOfficialLeagueRequest $request)
     {
-        $validated = $request->validate([
-            'league_id' => ['required', 'uuid', 'exists:leagues,id'],
-        ]);
-
         try {
-            $league = $this->joinLeagueUseCase->executeById($request->user(), $validated['league_id']);
+            $league = $this->joinLeagueUseCase->executeById($request->user(), $request->leagueId());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['league' => $e->getMessage()]);
         }
@@ -110,15 +89,10 @@ class LeagueController extends Controller
         return redirect()->route('leagues.show', $league->id);
     }
 
-    public function update(Request $request, string $league)
+    public function update(UpdateLeagueRequest $request, string $league)
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'is_public' => ['sometimes', 'boolean'],
-        ]);
-
         try {
-            $this->updateLeagueUseCase->execute($request->user(), $league, $validated);
+            $this->updateLeagueUseCase->execute($request->user(), $league, $request->validated());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['settings' => $e->getMessage()]);
         }
