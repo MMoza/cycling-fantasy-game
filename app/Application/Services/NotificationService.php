@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 
 class NotificationService
 {
+    public function __construct(private readonly PredictionHitService $predictionHits) {}
+
     public function notifyCompetitionEnded(string $leagueId): void
     {
         $league = LeagueModel::with(['edition.competition', 'users'])->find($leagueId);
@@ -53,16 +55,7 @@ class NotificationService
 
         $leaderboard = $this->buildLeaderboard($league->id, $userId);
 
-        $stagesWon = DB::table('predictions')
-            ->join('stage_results', function ($join) {
-                $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
-                    ->where('stage_results.position', '=', 1);
-            })
-            ->where('predictions.league_id', $league->id)
-            ->where('predictions.user_id', $userId)
-            ->where('predictions.category', 'stage_winner')
-            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
-            ->count();
+        $stagesWon = $this->predictionHits->correctWinnerPredictions($league->id, $userId)->count();
 
         $bestStage = DB::table('score_events')
             ->join('stages', 'stages.id', '=', 'score_events.stage_id')

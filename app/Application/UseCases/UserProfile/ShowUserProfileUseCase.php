@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\UserProfile;
 
+use App\Application\Services\PredictionHitService;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Domain\Services\OnlineStatusService;
 use App\Domain\ValueObjects\StageStatus;
@@ -18,7 +19,10 @@ use Illuminate\Support\Facades\DB;
 
 class ShowUserProfileUseCase
 {
-    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+    public function __construct(
+        private readonly MediaUrlResolverInterface $mediaUrls,
+        private readonly PredictionHitService $predictionHits,
+    ) {}
 
     public function execute(User $currentUser, string $leagueId, string $targetUserId): array
     {
@@ -192,37 +196,21 @@ class ShowUserProfileUseCase
             ->distinct()
             ->count('predictions.stage_id');
 
-        $stageWinnersGuessed = DB::table('predictions')
-            ->join('stage_results', function ($join) {
-                $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
-                    ->where('stage_results.position', '=', 1);
-            })
-            ->join('stages', 'stages.id', '=', 'predictions.stage_id')
-            ->where('predictions.user_id', $targetUserId)
-            ->where('predictions.league_id', $leagueId)
-            ->where('predictions.category', '=', 'stage_winner')
-            ->where('stages.status', '!=', 'upcoming')
-            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
-            ->distinct()
-            ->count('predictions.stage_id');
+        $stageWinnersGuessed = $this->predictionHits
+            ->correctWinnerPredictions($leagueId, $targetUserId, 'stage_winner', null, true)
+            ->pluck('stage_id')
+            ->unique()
+            ->count();
 
         // Stage position guesses (stage_position_1 to stage_position_10)
         $stagePositionGuessed = 0;
         foreach (range(1, 10) as $pos) {
             $cat = "stage_position_{$pos}";
-            $count = DB::table('predictions')
-                ->join('stage_results', function ($join) {
-                    $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
-                        ->where('stage_results.position', '=', 1);
-                })
-                ->join('stages', 'stages.id', '=', 'predictions.stage_id')
-                ->where('predictions.user_id', $targetUserId)
-                ->where('predictions.league_id', $leagueId)
-                ->where('predictions.category', '=', $cat)
-                ->where('stages.status', '!=', 'upcoming')
-                ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
-                ->distinct()
-                ->count('predictions.stage_id');
+            $count = $this->predictionHits
+                ->correctWinnerPredictions($leagueId, $targetUserId, $cat, null, true)
+                ->pluck('stage_id')
+                ->unique()
+                ->count();
             $stagePositionGuessed += $count;
         }
 

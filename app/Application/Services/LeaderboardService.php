@@ -21,7 +21,10 @@ use Illuminate\Support\Facades\DB;
  */
 class LeaderboardService
 {
-    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+    public function __construct(
+        private readonly MediaUrlResolverInterface $mediaUrls,
+        private readonly PredictionHitService $predictionHits,
+    ) {}
 
     public function leagueStandings(LeagueModel $league, string $currentUserId): LeagueStandingsDTO
     {
@@ -148,19 +151,10 @@ class LeaderboardService
             return [];
         }
 
-        $lastStageIds = $scoredStages->take(-5)->pluck('id')->reverse()->values();
+        $lastStageIds = $scoredStages->take(-5)->pluck('id')->reverse()->values()->all();
 
-        $correctPredictions = DB::table('predictions')
-            ->join('stage_results', function ($join) {
-                $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
-                    ->where('stage_results.position', '=', 1);
-            })
-            ->where('predictions.league_id', $leagueId)
-            ->where('predictions.category', '=', 'stage_winner')
-            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
-            ->whereIn('predictions.stage_id', $lastStageIds)
-            ->select('predictions.user_id', 'predictions.stage_id')
-            ->get()
+        $correctPredictions = $this->predictionHits
+            ->correctWinnerPredictions($leagueId, null, 'stage_winner', $lastStageIds)
             ->groupBy('user_id');
 
         $streaks = [];
