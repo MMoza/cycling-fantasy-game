@@ -26,6 +26,8 @@
 }
 
 .uci-rainbow-stripe {
+    display: block;
+    width: 100%;
     height: 3px;
     background: linear-gradient(
         to right,
@@ -34,10 +36,10 @@
         #ed1c24 20%,
         #ed1c24 40%,
         #000000 40%,
-        #000000 50%,
-        #fecd05 50%,
-        #fecd05 70%,
-        #009a44 70%,
+        #000000 60%,
+        #fecd05 60%,
+        #fecd05 80%,
+        #009a44 80%,
         #009a44 100%
     );
 }

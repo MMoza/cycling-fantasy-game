@@ -8,6 +8,7 @@ use App\Application\DTOs\CreateLeagueDTO;
 use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\League\CreateLeagueUseCase;
 use App\Application\UseCases\League\GetCreateLeagueFormDataUseCase;
+use App\Application\UseCases\League\GetUserSeasonLeaguesUseCase;
 use App\Application\UseCases\League\JoinLeagueUseCase;
 use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\ShowLeagueUseCase;
@@ -35,6 +36,7 @@ class LeagueController extends Controller
         private readonly JoinLeagueUseCase $joinLeagueUseCase,
         private readonly UpdateLeagueUseCase $updateLeagueUseCase,
         private readonly ShowSeasonUseCase $showSeasonUseCase,
+        private readonly GetUserSeasonLeaguesUseCase $getUserSeasonLeaguesUseCase,
     ) {}
 
     public function index(Request $request)
@@ -109,6 +111,8 @@ class LeagueController extends Controller
     public function show(Request $request, string $league)
     {
         $leagueModel = $this->showLeagueUseCase->execute($request->user(), $league);
+
+        $seasonLeagues = $this->getUserSeasonLeaguesUseCase->execute($request->user(), $leagueModel->id);
 
         $nextStage = $leagueModel->stages()
             ->whereIn('status', ['upcoming', 'ongoing'])
@@ -270,6 +274,7 @@ class LeagueController extends Controller
 
         return Inertia::render('Leagues/Show', [
             'league_id' => $leagueModel->id,
+            'season_leagues' => $seasonLeagues,
             'league' => [
                 'id' => $leagueModel->id,
                 'name' => $leagueModel->name,
