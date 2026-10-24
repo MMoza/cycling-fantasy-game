@@ -2,6 +2,8 @@
 
 namespace App\Presentation\Http\Controllers;
 
+use App\Presentation\Http\Requests\Profile\DeleteAccountRequest;
+use App\Presentation\Http\Requests\Profile\UploadAvatarRequest;
 use App\Presentation\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -44,12 +46,8 @@ class ProfileController extends Controller
     /**
      * Upload the user's avatar image to S3.
      */
-    public function uploadAvatar(Request $request): RedirectResponse
+    public function uploadAvatar(UploadAvatarRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
-        ]);
-
         $user = $request->user();
 
         // Delete previous avatar from S3 if it was uploaded by the app
@@ -82,12 +80,8 @@ class ProfileController extends Controller
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(DeleteAccountRequest $request): RedirectResponse
     {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
 
         Auth::logout();
