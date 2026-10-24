@@ -35,6 +35,21 @@ export interface League {
     };
 }
 
+export interface SeasonLeague {
+    id: string;
+    name: string;
+    year: number;
+    is_official: boolean;
+    member_count: number;
+    edition_status: 'upcoming' | 'ongoing' | 'finished';
+    competition: {
+        name: string;
+        type: string;
+        coverImageUrl: string | null;
+        logoImageUrl: string | null;
+    };
+}
+
 export interface Stage {
     id: string;
     number: number;
