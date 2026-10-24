@@ -6,12 +6,12 @@ use App\Application\UseCases\Invitation\IncrementInvitationCountUseCase;
 use App\Infrastructure\Persistence\Models\InvitationModel;
 use App\Models\User;
 use App\Presentation\Http\Controllers\Controller;
+use App\Presentation\Http\Requests\Auth\RegisterRequest;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -37,19 +37,13 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(RegisterRequest $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'ref' => 'nullable|string|size:12',
-        ]);
 
         $invitedBy = null;
 
-        if ($request->ref) {
-            $invitation = InvitationModel::where('code', $request->ref)->first();
+        if ($request->referralCode()) {
+            $invitation = InvitationModel::where('code', $request->referralCode())->first();
 
             if ($invitation !== null) {
                 $invitedBy = $invitation->user_id;
@@ -63,8 +57,8 @@ class RegisteredUserController extends Controller
             'invited_by' => $invitedBy,
         ]);
 
-        if ($invitedBy !== null && $request->ref) {
-            $this->incrementInvitationCountUseCase->execute($request->ref);
+        if ($invitedBy !== null && $request->referralCode()) {
+            $this->incrementInvitationCountUseCase->execute($request->referralCode());
         }
 
         event(new Registered($user));
