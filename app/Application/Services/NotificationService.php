@@ -36,24 +36,17 @@ class NotificationService
 
         $totalPoints = (int) ($userScores ?? 0);
 
-        $allUserScores = DB::table('score_events')
-            ->where('league_id', $league->id)
-            ->selectRaw('user_id, SUM(points) as total_points')
-            ->groupBy('user_id')
-            ->orderByDesc('total_points')
-            ->get();
+        $leaderboard = $this->buildLeaderboard($league->id, $userId);
 
         $position = 1;
 
-        foreach ($allUserScores as $index => $score) {
-            if ($score->user_id === $userId) {
-                $position = $index + 1;
+        foreach ($leaderboard as $row) {
+            if ($row['user_id'] === $userId) {
+                $position = $row['rank'];
 
                 break;
             }
         }
-
-        $leaderboard = $this->buildLeaderboard($league->id, $userId);
 
         $stagesWon = $this->predictionHits->correctWinnerPredictions($league->id, $userId)->count();
 
@@ -102,7 +95,6 @@ class NotificationService
             ->where('league_id', $leagueId)
             ->selectRaw('user_id, SUM(points) as total_points')
             ->groupBy('user_id')
-            ->orderByDesc('total_points')
             ->get();
 
         $users = DB::table('users')
@@ -110,28 +102,21 @@ class NotificationService
             ->get()
             ->keyBy('id');
 
-        $leaderboard = [];
-        $rank = 1;
+        return array_map(function (array $row) use ($users, $currentUserId) {
+            $user = $users->get($row['user_id']);
 
-        foreach ($allScores as $score) {
-            $user = $users->get($score->user_id);
-
-            $leaderboard[] = [
-                'rank' => $rank,
-                'user_id' => $score->user_id,
+            return [
+                'rank' => $row['rank'],
+                'user_id' => $row['user_id'],
                 'user_name' => $user->name ?? 'Unknown',
                 'avatar' => $user->avatar ?? null,
-                'points' => (int) $score->total_points,
-                'behind_leader' => $rank === 1 ? 0 : (int) $allScores[0]->total_points - (int) $score->total_points,
-                'is_current_user' => $score->user_id === $currentUserId,
+                'points' => $row['points'],
+                'behind_leader' => $row['behind_leader'],
+                'is_current_user' => $row['user_id'] === $currentUserId,
                 'is_online' => false,
                 'previous_rank' => null,
                 'rank_change' => null,
             ];
-
-            $rank++;
-        }
-
-        return $leaderboard;
+        }, LeaderboardService::rankPoints($allScores->pluck('total_points', 'user_id')->all()));
     }
 }

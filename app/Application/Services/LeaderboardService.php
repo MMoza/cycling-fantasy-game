@@ -26,6 +26,34 @@ class LeaderboardService
         private readonly PredictionHitService $predictionHits,
     ) {}
 
+    /**
+     * Ranks points per user descending.
+     *
+     * @param  array<string, int>  $pointsByUser
+     * @return array<int, array{user_id: string, points: int, rank: int, behind_leader: int}>
+     */
+    public static function rankPoints(array $pointsByUser): array
+    {
+        arsort($pointsByUser);
+
+        $topPoints = $pointsByUser === [] ? 0 : (int) reset($pointsByUser);
+
+        $rows = [];
+        $rank = 1;
+
+        foreach ($pointsByUser as $userId => $points) {
+            $rows[] = [
+                'user_id' => (string) $userId,
+                'points' => (int) $points,
+                'rank' => $rank,
+                'behind_leader' => $topPoints - (int) $points,
+            ];
+            $rank++;
+        }
+
+        return $rows;
+    }
+
     public function leagueStandings(LeagueModel $league, string $currentUserId): LeagueStandingsDTO
     {
         $allScoreEvents = ScoreEventModel::where('league_id', $league->id)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Classification;
 
+use App\Application\Services\LeaderboardService;
 use App\Infrastructure\Persistence\Models\FinalClassificationModel;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
@@ -219,25 +220,22 @@ class ShowClassificationUseCase
     {
         $scoresPerUser = $scores->pluck('total_points', 'user_id');
 
-        $leaderboard = $members
-            ->map(fn ($member) => [
-                'user_id' => $member->id,
-                'user_name' => $member->name,
-                'points' => (int) ($scoresPerUser[$member->id] ?? 0),
-                'is_current_user' => $member->id === $currentUserId,
-            ])
-            ->sortByDesc('points')
-            ->values()
-            ->map(fn ($entry, $index) => [
-                'rank' => $index + 1,
-                ...$entry,
+        $pointsByUser = [];
+        $names = [];
+
+        foreach ($members as $member) {
+            $pointsByUser[$member->id] = (int) ($scoresPerUser[$member->id] ?? 0);
+            $names[$member->id] = $member->name;
+        }
+
+        return collect(LeaderboardService::rankPoints($pointsByUser))
+            ->map(fn (array $row) => [
+                'user_id' => $row['user_id'],
+                'user_name' => $names[$row['user_id']],
+                'points' => $row['points'],
+                'is_current_user' => $row['user_id'] === $currentUserId,
+                'rank' => $row['rank'],
+                'behind_leader' => $row['behind_leader'],
             ]);
-
-        $topPoints = $leaderboard->first()['points'] ?? 0;
-
-        return $leaderboard->map(fn ($entry) => [
-            ...$entry,
-            'behind_leader' => $topPoints - $entry['points'],
-        ]);
     }
 }
