@@ -13,16 +13,15 @@ use App\Application\UseCases\Admin\Competition\UpdateCompetitionUseCase;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Presentation\Http\Controllers\Controller;
+use App\Presentation\Http\Requests\Admin\StoreCompetitionRequest;
+use App\Presentation\Http\Requests\Admin\UpdateCompetitionRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CompetitionController extends Controller
 {
-    private const ALLOWED_TYPES = 'gc,major,monument,classic,championship';
-
     private const IMAGE_DIR_COVERS = 'competitions/covers';
 
     private const IMAGE_DIR_LOGOS = 'competitions/logos';
@@ -56,16 +55,9 @@ class CompetitionController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreCompetitionRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|string|in:'.self::ALLOWED_TYPES,
-            'country_id' => 'required|string|size:2|exists:countries,id',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,webp|max:4096',
-            'logo_image' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
-            'pcs_slug' => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $data = $validated;
 
@@ -92,19 +84,9 @@ class CompetitionController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(UpdateCompetitionRequest $request, string $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'type' => 'required|string|in:'.self::ALLOWED_TYPES,
-            'country_id' => 'required|string|size:2|exists:countries,id',
-            'active' => 'boolean',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,webp|max:4096',
-            'logo_image' => 'nullable|image|mimes:jpeg,png,webp|max:2048',
-            'pcs_slug' => 'nullable|string|max:255',
-            'remove_cover_image' => 'boolean',
-            'remove_logo_image' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         $data = $validated;
 

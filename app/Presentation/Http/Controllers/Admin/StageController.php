@@ -14,8 +14,10 @@ use App\Application\UseCases\Admin\Stage\StoreStageResultUseCase;
 use App\Application\UseCases\Admin\Stage\StoreStageUseCase;
 use App\Application\UseCases\Admin\Stage\UpdateStageUseCase;
 use App\Presentation\Http\Controllers\Controller;
+use App\Presentation\Http\Requests\Admin\StoreStageRequest;
+use App\Presentation\Http\Requests\Admin\StoreStageResultRequest;
+use App\Presentation\Http\Requests\Admin\UpdateStageRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -55,24 +57,9 @@ class StageController extends Controller
         ]);
     }
 
-    public function store(Request $request, string $editionId): RedirectResponse
+    public function store(StoreStageRequest $request, string $editionId): RedirectResponse
     {
-        $validated = $request->validate([
-            'number' => 'required|integer|min:1',
-            'name' => 'required|string|max:255',
-            'date' => 'required|date',
-            'type' => 'required|string',
-            'distance' => 'nullable|numeric|min:0',
-            'elevation_gain' => 'nullable|integer|min:0',
-            'difficulty' => 'nullable|integer|min:1|max:3',
-            'origin' => 'required|string|max:255',
-            'destination' => 'required|string|max:255',
-            'scheduled_start' => 'nullable|date',
-            'profile_image' => 'nullable|url|max:2048',
-            'live_stream_url' => 'nullable|url|max:2048',
-            'rider_ids' => 'nullable|array',
-            'rider_ids.*' => 'string',
-        ]);
+        $validated = $request->validated();
 
         $this->storeStageUseCase->execute(
             $editionId,
@@ -95,25 +82,9 @@ class StageController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $editionId, string $id): RedirectResponse
+    public function update(UpdateStageRequest $request, string $editionId, string $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'number' => 'required|integer|min:1',
-            'name' => 'required|string|max:255',
-            'date' => 'required|date',
-            'type' => 'required|string',
-            'distance' => 'nullable|numeric|min:0',
-            'elevation_gain' => 'nullable|integer|min:0',
-            'difficulty' => 'nullable|integer|min:1|max:3',
-            'origin' => 'required|string|max:255',
-            'destination' => 'required|string|max:255',
-            'scheduled_start' => 'nullable|date',
-            'profile_image' => 'nullable|url|max:2048',
-            'live_stream_url' => 'nullable|url|max:2048',
-            'status' => 'required|string|in:upcoming,ongoing,finished',
-            'rider_ids' => 'nullable|array',
-            'rider_ids.*' => 'string',
-        ]);
+        $validated = $request->validated();
 
         $this->updateStageUseCase->execute(
             $editionId,
@@ -151,17 +122,9 @@ class StageController extends Controller
         return redirect()->route('admin.editions.stages.show', [$editionId, $id]);
     }
 
-    public function storeResult(Request $request, string $editionId, string $id): RedirectResponse
+    public function storeResult(StoreStageResultRequest $request, string $editionId, string $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'results' => 'required|array|min:1',
-            'results.*.rider_id' => 'required|string',
-            'results.*.position' => 'required|integer|min:1',
-            'results.*.time' => 'nullable|string|max:50',
-            'results.*.gap' => 'nullable|string|max:50',
-            'results.*.is_gc_leader' => 'nullable|boolean',
-            'results.*.is_combativo' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         try {
             $this->storeStageResultUseCase->execute($editionId, $id, $validated['results']);

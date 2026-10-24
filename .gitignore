@@ -31,3 +31,6 @@ Thumbs.db
 # Local database files
 database/*.sqlite
 database/*.sqlite-*
+
+# Env backups (never commit)
+.env.backup*
