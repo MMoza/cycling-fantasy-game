@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Prediction;
 
+use App\Application\DTOs\View\PreRaceFormDTO;
 use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class ShowPreRaceFormUseCase
 {
-    public function execute(User $user, string $leagueId): array
+    public function execute(User $user, string $leagueId): PreRaceFormDTO
     {
         $league = LeagueModel::with(['edition.competition', 'scoringSystem.rules'])->findOrFail($leagueId);
 
@@ -70,16 +71,16 @@ class ShowPreRaceFormUseCase
             ->get()
             ->map(fn ($t) => ['value' => $t->id, 'label' => $t->name]);
 
-        return [
-            'leagueId' => $league->id,
-            'leagueName' => $league->name,
-            'competitionName' => $edition->competition->name,
-            'competitionYear' => $edition->year,
-            'isLocked' => $isLocked,
-            'predictions' => $predictions,
-            'availableRiders' => $availableRiders,
-            'availableTeams' => $availableTeams,
-            'scoringSystem' => $league->scoringSystem,
-        ];
+        return new PreRaceFormDTO(
+            leagueId: $league->id,
+            leagueName: $league->name,
+            competitionName: $edition->competition->name,
+            competitionYear: $edition->year,
+            isLocked: $isLocked,
+            predictions: $predictions,
+            availableRiders: $availableRiders,
+            availableTeams: $availableTeams,
+            scoringSystem: $league->scoringSystem,
+        );
     }
 }

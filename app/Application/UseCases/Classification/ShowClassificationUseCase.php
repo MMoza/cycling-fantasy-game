@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Classification;
 
+use App\Application\DTOs\View\ClassificationLeaderboardEntryViewDTO;
+use App\Application\DTOs\View\ClassificationPageDTO;
 use App\Application\Services\LeaderboardService;
 use App\Infrastructure\Persistence\Models\FinalClassificationModel;
 use App\Infrastructure\Persistence\Models\LeagueModel;
@@ -12,12 +14,11 @@ use App\Infrastructure\Persistence\Models\RiderModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ShowClassificationUseCase
 {
-    public function execute(User $user, string $leagueId): array
+    public function execute(User $user, string $leagueId): ClassificationPageDTO
     {
         $league = LeagueModel::findOrFail($leagueId);
 
@@ -60,18 +61,10 @@ class ShowClassificationUseCase
 
             $stageLeaderboard = $this->buildLeaderboard($members, $stageOnlyScores, $user->id);
 
-            $leaderboardWithChange = $stageLeaderboard->map(function ($entry) {
-                return [
-                    ...$entry,
-                    'previous_rank' => null,
-                    'rank_change' => null,
-                ];
-            });
-
             $stageLeaderboards[] = [
                 'stage_id' => $stage->id,
                 'stage_number' => $stage->number,
-                'leaderboard' => $leaderboardWithChange,
+                'leaderboard' => $stageLeaderboard,
             ];
 
             if ($stage->number > $lastStageNumber) {
@@ -80,31 +73,31 @@ class ShowClassificationUseCase
             }
         }
 
-        $userEntry = $generalLeaderboard->firstWhere('is_current_user');
+        $userEntry = collect($generalLeaderboard)->firstWhere('isCurrentUser', true);
 
-        return [
-            'leagueId' => $league->id,
-            'leagueName' => $league->name,
-            'stages' => $stages->map(fn ($s) => [
+        return new ClassificationPageDTO(
+            leagueId: $league->id,
+            leagueName: $league->name,
+            stages: $stages->map(fn ($s) => [
                 'id' => $s->id,
                 'number' => $s->number,
                 'name' => $s->name,
                 'has_scores' => in_array($s->id, $stageIdsWithScores, true),
             ])->values()->all(),
-            'general_leaderboard' => $generalLeaderboard->values()->all(),
-            'stage_leaderboards' => $stageLeaderboards,
-            'last_scored_stage_id' => $lastScoredStageId,
-            'general_details' => $this->buildGeneralDetails($league, $members, $user->id),
-            'user_position' => $userEntry ? [
-                'rank' => $userEntry['rank'],
-                'points' => $userEntry['points'],
-                'behind_leader' => $userEntry['behind_leader'],
+            generalLeaderboard: $generalLeaderboard,
+            stageLeaderboards: $stageLeaderboards,
+            lastScoredStageId: $lastScoredStageId,
+            generalDetails: $this->buildGeneralDetails($league, $members, $user->id),
+            userPosition: $userEntry ? [
+                'rank' => $userEntry->rank,
+                'points' => $userEntry->points,
+                'behind_leader' => $userEntry->behindLeader,
             ] : [
                 'rank' => '-',
                 'points' => 0,
                 'behind_leader' => 0,
             ],
-        ];
+        );
     }
 
     private function buildGeneralDetails($league, $members, string $currentUserId): array
@@ -216,7 +209,10 @@ class ShowClassificationUseCase
         return $riderNames[$riderId] ?? '—';
     }
 
-    private function buildLeaderboard($members, $scores, string $currentUserId): Collection
+    /**
+     * @return array<int, ClassificationLeaderboardEntryViewDTO>
+     */
+    private function buildLeaderboard($members, $scores, string $currentUserId): array
     {
         $scoresPerUser = $scores->pluck('total_points', 'user_id');
 
@@ -228,14 +224,13 @@ class ShowClassificationUseCase
             $names[$member->id] = $member->name;
         }
 
-        return collect(LeaderboardService::rankPoints($pointsByUser))
-            ->map(fn (array $row) => [
-                'user_id' => $row['user_id'],
-                'user_name' => $names[$row['user_id']],
-                'points' => $row['points'],
-                'is_current_user' => $row['user_id'] === $currentUserId,
-                'rank' => $row['rank'],
-                'behind_leader' => $row['behind_leader'],
-            ]);
+        return array_map(fn (array $row) => new ClassificationLeaderboardEntryViewDTO(
+            userId: $row['user_id'],
+            userName: $names[$row['user_id']],
+            points: $row['points'],
+            isCurrentUser: $row['user_id'] === $currentUserId,
+            rank: $row['rank'],
+            behindLeader: $row['behind_leader'],
+        ), LeaderboardService::rankPoints($pointsByUser));
     }
 }
