@@ -16,12 +16,20 @@ uses(TestCase::class)->in('Feature', 'Integration');
 |--------------------------------------------------------------------------
 */
 
+use App\Domain\ValueObjects\CompetitionType;
+use App\Domain\ValueObjects\EditionStatus;
+use App\Domain\ValueObjects\ScoringSystemType;
+use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\CompetitionParticipantModel;
 use App\Infrastructure\Persistence\Models\CountryModel;
+use App\Infrastructure\Persistence\Models\EditionModel;
+use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
+use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageParticipantModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Infrastructure\Persistence\Models\TeamRosterModel;
+use App\Models\User;
 use Illuminate\Support\Str;
 
 function createCountry(string $code = 'FR', string $name = 'Francia'): string
@@ -69,6 +77,70 @@ function createTestStageParticipant(string $stageId, string $riderId, string $te
         ['stage_id' => $stageId, 'rider_id' => $riderId],
         ['id' => Str::uuid()->toString(), 'team_id' => $teamId]
     );
+}
+
+/**
+ * Creates a competition + edition for the given year with an official league.
+ *
+ * @return array{league: LeagueModel, edition: EditionModel}
+ */
+function createSeasonLeague(
+    string $leagueName,
+    int $year,
+    string $startDate,
+    ?User $owner = null,
+    ?string $competitionName = null,
+    EditionStatus $status = EditionStatus::Upcoming,
+): array {
+    $owner ??= User::factory()->create();
+
+    CountryModel::firstOrCreate(['id' => 'FR'], ['name' => 'Francia']);
+
+    $competition = CompetitionModel::create([
+        'id' => Str::uuid()->toString(),
+        'name' => $competitionName ?? $leagueName,
+        'type' => CompetitionType::GC,
+        'country_id' => 'FR',
+        'active' => true,
+    ]);
+
+    $edition = EditionModel::create([
+        'id' => Str::uuid()->toString(),
+        'competition_id' => $competition->id,
+        'year' => $year,
+        'start_date' => $startDate,
+        'end_date' => $startDate,
+        'status' => $status,
+    ]);
+
+    $scoringSystem = ScoringSystemModel::firstOrCreate(
+        ['name' => 'Conservador'],
+        [
+            'id' => Str::uuid()->toString(),
+            'type' => ScoringSystemType::Conservative,
+            'description' => 'Puntuación más repartida',
+        ]
+    );
+
+    $league = LeagueModel::create([
+        'id' => Str::uuid()->toString(),
+        'name' => $leagueName,
+        'edition_id' => $edition->id,
+        'scoring_system_id' => $scoringSystem->id,
+        'owner_id' => $owner->id,
+        'invite_code' => strtoupper(Str::random(8)),
+        'is_official' => true,
+        'is_public' => true,
+    ]);
+
+    $league->users()->attach($owner->id, ['id' => Str::uuid()->toString(), 'role' => 'owner']);
+
+    return ['league' => $league, 'edition' => $edition];
+}
+
+function joinSeasonLeague(LeagueModel $league, User $user): void
+{
+    $league->users()->attach($user->id, ['id' => Str::uuid()->toString(), 'role' => 'member']);
 }
 
 /*

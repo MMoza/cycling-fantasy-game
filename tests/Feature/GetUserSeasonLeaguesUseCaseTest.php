@@ -1,81 +1,10 @@
 <?php
 
 use App\Application\UseCases\League\GetUserSeasonLeaguesUseCase;
-use App\Domain\ValueObjects\CompetitionType;
-use App\Domain\ValueObjects\EditionStatus;
-use App\Domain\ValueObjects\ScoringSystemType;
-use App\Infrastructure\Persistence\Models\CompetitionModel;
-use App\Infrastructure\Persistence\Models\CountryModel;
-use App\Infrastructure\Persistence\Models\EditionModel;
-use App\Infrastructure\Persistence\Models\LeagueModel;
-use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
-
-/**
- * Creates a competition + edition for the given year with an official league.
- *
- * @return array{league: LeagueModel, edition: EditionModel}
- */
-function createSeasonLeague(
-    string $leagueName,
-    int $year,
-    string $startDate,
-    ?User $owner = null,
-): array {
-    $owner ??= User::factory()->create();
-
-    CountryModel::firstOrCreate(['id' => 'FR'], ['name' => 'Francia']);
-
-    $competition = CompetitionModel::create([
-        'id' => Str::uuid()->toString(),
-        'name' => $leagueName,
-        'type' => CompetitionType::GC,
-        'country_id' => 'FR',
-        'active' => true,
-    ]);
-
-    $edition = EditionModel::create([
-        'id' => Str::uuid()->toString(),
-        'competition_id' => $competition->id,
-        'year' => $year,
-        'start_date' => $startDate,
-        'end_date' => $startDate,
-        'status' => EditionStatus::Upcoming,
-    ]);
-
-    $scoringSystem = ScoringSystemModel::firstOrCreate(
-        ['name' => 'Conservador'],
-        [
-            'id' => Str::uuid()->toString(),
-            'type' => ScoringSystemType::Conservative,
-            'description' => 'Puntuación más repartida',
-        ]
-    );
-
-    $league = LeagueModel::create([
-        'id' => Str::uuid()->toString(),
-        'name' => $leagueName,
-        'edition_id' => $edition->id,
-        'scoring_system_id' => $scoringSystem->id,
-        'owner_id' => $owner->id,
-        'invite_code' => strtoupper(Str::random(8)),
-        'is_official' => true,
-        'is_public' => true,
-    ]);
-
-    $league->users()->attach($owner->id, ['id' => Str::uuid()->toString(), 'role' => 'owner']);
-
-    return ['league' => $league, 'edition' => $edition];
-}
-
-function joinSeasonLeague(LeagueModel $league, User $user): void
-{
-    $league->users()->attach($user->id, ['id' => Str::uuid()->toString(), 'role' => 'member']);
-}
 
 test('returns only the user leagues from the current season', function () {
     $user = User::factory()->create();
