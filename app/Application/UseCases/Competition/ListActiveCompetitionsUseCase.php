@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Competition;
 
+use App\Application\DTOs\View\CompetitionsIndexDTO;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
 
@@ -49,7 +50,7 @@ class ListActiveCompetitionsUseCase
 {
     public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
 
-    public function execute(?int $year = null): array
+    public function execute(?int $year = null): CompetitionsIndexDTO
     {
         $year ??= (int) date('Y');
 
@@ -109,10 +110,10 @@ class ListActiveCompetitionsUseCase
             ->pluck('year')
             ->toArray();
 
-        return [
-            'yearGroups' => [new YearGroup(year: $year, groups: $groups)],
-            'years' => $years,
-            'currentYear' => $year,
-        ];
+        return new CompetitionsIndexDTO(
+            yearGroups: [new YearGroup(year: $year, groups: $groups)],
+            years: $years,
+            currentYear: $year,
+        );
     }
 }

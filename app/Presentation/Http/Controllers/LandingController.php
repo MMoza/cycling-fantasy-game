@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers;
 
+use App\Application\DTOs\View\LandingPageDTO;
+use App\Application\DTOs\View\LandingRaceViewDTO;
+use App\Application\DTOs\View\LandingStageViewDTO;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -47,42 +50,23 @@ class LandingController
                 ->first();
 
             if ($stage) {
-                $currentStage = [
-                    'number' => $stage->number,
-                    'name' => $stage->name,
-                    'distance' => $stage->distance,
-                    'date' => $stage->date->toDateString(),
-                ];
+                $currentStage = LandingStageViewDTO::fromModel($stage);
             }
         }
 
-        $races = $editions->map(fn (EditionModel $edition) => [
-            'editionId' => $edition->id,
-            'name' => $edition->competition->name,
-            'year' => $edition->year,
-            'status' => $edition->status->value,
-            'startDate' => $edition->start_date->toIso8601String(),
-            'endDate' => $edition->end_date->toIso8601String(),
-            'countryId' => $edition->competition->country_id,
-            'countryName' => $edition->competition?->country?->name,
-            'logoImageUrl' => $this->mediaUrls->resolve($edition->competition->logo_image),
-            'coverImageUrl' => $this->mediaUrls->resolve($edition->competition->cover_image),
-            'officialLeagueId' => $edition->leagues->first()?->id,
-        ])->values()->all();
+        $races = $editions->map(fn (EditionModel $edition) => LandingRaceViewDTO::fromModel($edition, $this->mediaUrls))->values()->all();
 
         $activeRace = $editions->firstWhere('status', 'ongoing')
             ?? $editions->firstWhere('status', 'upcoming');
 
-        return Inertia::render('Landing', [
-            'auth' => [
-                'user' => $request->user() ? [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                ] : null,
-            ],
-            'seasonRaces' => $races,
-            'activeRaceId' => $activeRace?->id,
-            'currentStage' => $currentStage,
-        ]);
+        return Inertia::render('Landing', (new LandingPageDTO(
+            user: $request->user() ? [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+            ] : null,
+            seasonRaces: $races,
+            activeRaceId: $activeRace?->id,
+            currentStage: $currentStage,
+        ))->toArray());
     }
 }

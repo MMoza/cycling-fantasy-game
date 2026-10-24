@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Season;
 
+use App\Application\DTOs\View\SeasonIndexPageDTO;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Models\User;
@@ -33,7 +34,7 @@ class ShowSeasonUseCase
 {
     public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
 
-    public function execute(User $user, ?int $year = null): array
+    public function execute(User $user, ?int $year = null): SeasonIndexPageDTO
     {
         $year ??= (int) date('Y');
 
@@ -78,11 +79,11 @@ class ShowSeasonUseCase
 
         $userJoinedCount = count(array_filter($competitions, fn ($c) => $c->isUserMember));
 
-        return [
-            'year' => $year,
-            'competitions' => $competitions,
-            'user_joined_count' => $userJoinedCount,
-            'total_competitions' => count($competitions),
-        ];
+        return new SeasonIndexPageDTO(
+            year: $year,
+            competitions: $competitions,
+            userJoinedCount: $userJoinedCount,
+            totalCompetitions: count($competitions),
+        );
     }
 }

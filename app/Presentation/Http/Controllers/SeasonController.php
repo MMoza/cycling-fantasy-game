@@ -19,25 +19,11 @@ class SeasonController extends Controller
 
     public function index(Request $request): Response
     {
-        $data = $this->showSeasonUseCase->execute($request->user());
-
-        return Inertia::render('Season/Index', [
-            'year' => $data['year'],
-            'competitions' => $data['competitions'],
-            'user_joined_count' => $data['user_joined_count'],
-            'total_competitions' => $data['total_competitions'],
-        ]);
+        return Inertia::render('Season/Index', $this->showSeasonUseCase->execute($request->user())->toArray());
     }
 
     public function classification(Request $request): Response
     {
-        $data = $this->showSeasonClassificationUseCase->execute($request->user());
-
-        return Inertia::render('Season/Classification', [
-            'year' => $data['year'],
-            'aggregated_leaderboard' => $data['aggregated_leaderboard'],
-            'per_competition' => $data['per_competition'],
-            'by_type' => $data['by_type'],
-        ]);
+        return Inertia::render('Season/Classification', $this->showSeasonClassificationUseCase->execute($request->user())->toArray());
     }
 }

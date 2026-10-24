@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Season;
 
+use App\Application\DTOs\View\SeasonClassificationPageDTO;
 use App\Application\Services\LeaderboardService;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
@@ -63,7 +64,7 @@ class ShowSeasonClassificationUseCase
 {
     public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
 
-    public function execute(User $user, ?int $year = null): array
+    public function execute(User $user, ?int $year = null): SeasonClassificationPageDTO
     {
         $year ??= (int) date('Y');
 
@@ -80,12 +81,12 @@ class ShowSeasonClassificationUseCase
         $officialLeagueIds = $editions->pluck('leagues')->flatten()->pluck('id')->toArray();
 
         if (empty($officialLeagueIds)) {
-            return [
-                'year' => $year,
-                'aggregated_leaderboard' => [],
-                'per_competition' => [],
-                'by_type' => [],
-            ];
+            return new SeasonClassificationPageDTO(
+                year: $year,
+                aggregatedLeaderboard: [],
+                perCompetition: [],
+                byType: [],
+            );
         }
 
         $scoresByUserAndLeague = ScoreEventModel::whereIn('league_id', $officialLeagueIds)
@@ -255,11 +256,11 @@ class ShowSeasonClassificationUseCase
             );
         }
 
-        return [
-            'year' => $year,
-            'aggregated_leaderboard' => $aggregatedLeaderboard,
-            'per_competition' => $perCompetition,
-            'by_type' => $byType,
-        ];
+        return new SeasonClassificationPageDTO(
+            year: $year,
+            aggregatedLeaderboard: $aggregatedLeaderboard,
+            perCompetition: $perCompetition,
+            byType: $byType,
+        );
     }
 }

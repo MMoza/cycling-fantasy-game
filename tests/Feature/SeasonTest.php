@@ -215,9 +215,9 @@ test('season use case returns only official leagues for current year', function 
     $useCase = new ShowSeasonUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user);
 
-    expect($result['year'])->toBe((int) date('Y'));
-    expect($result['competitions'])->toHaveCount(1);
-    expect($result['competitions'][0]->competitionName)->toBe('Tour de Francia');
+    expect($result->year)->toBe((int) date('Y'));
+    expect($result->competitions)->toHaveCount(1);
+    expect($result->competitions[0]->competitionName)->toBe('Tour de Francia');
 });
 
 test('season classification aggregates scores across official leagues', function () {
@@ -285,11 +285,11 @@ test('season classification aggregates scores across official leagues', function
     $useCase = new ShowSeasonClassificationUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user1);
 
-    expect($result['aggregated_leaderboard'])->toHaveCount(2);
-    expect($result['aggregated_leaderboard'][0]->userName)->toBe('User 1');
-    expect($result['aggregated_leaderboard'][0]->totalPoints)->toBe(100);
-    expect($result['aggregated_leaderboard'][1]->userName)->toBe('User 2');
-    expect($result['aggregated_leaderboard'][1]->totalPoints)->toBe(50);
+    expect($result->aggregatedLeaderboard)->toHaveCount(2);
+    expect($result->aggregatedLeaderboard[0]->userName)->toBe('User 1');
+    expect($result->aggregatedLeaderboard[0]->totalPoints)->toBe(100);
+    expect($result->aggregatedLeaderboard[1]->userName)->toBe('User 2');
+    expect($result->aggregatedLeaderboard[1]->totalPoints)->toBe(50);
 });
 
 test('season page is accessible for authenticated users', function () {
