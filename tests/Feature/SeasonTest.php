@@ -13,6 +13,7 @@ use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
+use App\Infrastructure\Services\S3MediaUrlResolver;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -211,7 +212,7 @@ test('season use case returns only official leagues for current year', function 
         'is_public' => false,
     ]);
 
-    $useCase = new ShowSeasonUseCase;
+    $useCase = new ShowSeasonUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user);
 
     expect($result['year'])->toBe((int) date('Y'));
@@ -281,7 +282,7 @@ test('season classification aggregates scores across official leagues', function
         'context' => 'test',
     ]);
 
-    $useCase = new ShowSeasonClassificationUseCase;
+    $useCase = new ShowSeasonClassificationUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user1);
 
     expect($result['aggregated_leaderboard'])->toHaveCount(2);

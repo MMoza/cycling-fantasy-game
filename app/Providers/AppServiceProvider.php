@@ -6,7 +6,9 @@ namespace App\Providers;
 
 use App\Application\Services\PushNotificationService;
 use App\Domain\Interfaces\CyclingDataFetcherInterface;
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Services\MockCyclingDataFetcher;
+use App\Infrastructure\Services\S3MediaUrlResolver;
 use App\Presentation\Console\CleanPushSubscriptionsCommand;
 use App\Presentation\Console\Deploy\AppDeployCommand;
 use App\Presentation\Console\ImportResultsCommand;
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(CyclingDataFetcherInterface::class, MockCyclingDataFetcher::class);
+        $this->app->bind(MediaUrlResolverInterface::class, S3MediaUrlResolver::class);
 
         $this->app->bind(PushNotificationService::class, function (): PushNotificationService {
             try {

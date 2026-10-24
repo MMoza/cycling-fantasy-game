@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Season;
 
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
 
 readonly class AggregatedLeaderboardEntry
 {
@@ -60,6 +60,8 @@ readonly class TypeClassification
 
 class ShowSeasonClassificationUseCase
 {
+    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+
     public function execute(User $user, ?int $year = null): array
     {
         $year ??= (int) date('Y');
@@ -140,7 +142,7 @@ class ShowSeasonClassificationUseCase
                 rank: $index + 1,
                 userId: $data['user_id'],
                 userName: $userModel->name,
-                avatar: $this->resolveAvatarUrl($userModel->avatar),
+                avatar: $this->mediaUrls->resolve($userModel->avatar),
                 totalPoints: $data['total_points'],
                 isCurrentUser: $data['user_id'] === $user->id,
                 breakdown: $data['breakdown'],
@@ -167,7 +169,7 @@ class ShowSeasonClassificationUseCase
                 $competitionEntries[] = [
                     'user_id' => $leagueScore->user_id,
                     'user_name' => $userModel->name,
-                    'avatar' => $this->resolveAvatarUrl($userModel->avatar),
+                    'avatar' => $this->mediaUrls->resolve($userModel->avatar),
                     'points' => (int) $leagueScore->total_points,
                     'is_current_user' => $leagueScore->user_id === $user->id,
                 ];
@@ -192,7 +194,7 @@ class ShowSeasonClassificationUseCase
                 competitionName: $edition->competition->name,
                 competitionType: $edition->competition->type->value,
                 typeLabel: $edition->competition->type->label(),
-                logoImageUrl: $this->resolveS3Url($edition->competition->logo_image),
+                logoImageUrl: $this->mediaUrls->resolve($edition->competition->logo_image),
                 editionStatus: $edition->status->value,
                 leagueId: $officialLeague->id,
                 leaderboard: $rankedEntries,
@@ -235,7 +237,7 @@ class ShowSeasonClassificationUseCase
                 $typeData[] = [
                     'user_id' => $userId,
                     'user_name' => $userModel->name,
-                    'avatar' => $this->resolveAvatarUrl($userModel->avatar),
+                    'avatar' => $this->mediaUrls->resolve($userModel->avatar),
                     'total_points' => $totalPoints,
                     'is_current_user' => $userId === $user->id,
                 ];
@@ -272,58 +274,5 @@ class ShowSeasonClassificationUseCase
             'per_competition' => $perCompetition,
             'by_type' => $byType,
         ];
-    }
-
-    private function resolveAvatarUrl(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            try {
-                return $disk->url($path);
-            } catch (\Exception) {
-                return null;
-            }
-        }
-    }
-
-    private function resolveS3Url(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            // fall through
-        }
-
-        try {
-            return $disk->url($path);
-        } catch (\Exception) {
-            // fall through
-        }
-
-        $endpoint = rtrim(config('filesystems.disks.s3.endpoint', ''), '/');
-        $bucket = config('filesystems.disks.s3.bucket', '');
-
-        if ($endpoint && $bucket) {
-            return "{$endpoint}/{$bucket}/".ltrim($path, '/');
-        }
-
-        return null;
     }
 }

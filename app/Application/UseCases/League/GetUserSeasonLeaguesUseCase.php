@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\League;
 
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
 
 class GetUserSeasonLeaguesUseCase
 {
+    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+
     /**
      * Returns the leagues the user belongs to whose edition belongs to the
      * current season (year), ordered by edition start date.
@@ -54,8 +56,8 @@ class GetUserSeasonLeaguesUseCase
                 'competition' => [
                     'name' => $league->edition->competition->name,
                     'type' => $league->edition->competition->type->value,
-                    'coverImageUrl' => $this->resolveS3Url($league->edition->competition->cover_image),
-                    'logoImageUrl' => $this->resolveS3Url($league->edition->competition->logo_image),
+                    'coverImageUrl' => $this->mediaUrls->resolve($league->edition->competition->cover_image),
+                    'logoImageUrl' => $this->mediaUrls->resolve($league->edition->competition->logo_image),
                 ],
             ])
             ->values()
@@ -82,35 +84,5 @@ class GetUserSeasonLeaguesUseCase
         $byStart = $aStart->equalTo($bStart) ? 0 : ($aStart->lessThan($bStart) ? -1 : 1);
 
         return $byStart !== 0 ? $byStart : strcmp($a->name, $b->name);
-    }
-
-    private function resolveS3Url(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            // fall through
-        }
-
-        try {
-            return $disk->url($path);
-        } catch (\Exception) {
-            // fall through
-        }
-
-        $endpoint = rtrim((string) config('filesystems.disks.s3.endpoint', ''), '/');
-        $bucket = (string) config('filesystems.disks.s3.bucket', '');
-
-        if ($endpoint && $bucket) {
-            return "{$endpoint}/{$bucket}/".ltrim($path, '/');
-        }
-
-        return null;
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Application\UseCases\League\GetUserSeasonLeaguesUseCase;
+use App\Infrastructure\Services\S3MediaUrlResolver;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -14,7 +15,7 @@ test('returns only the user leagues from the current season', function () {
     $season = createSeasonLeague('Liga Temporada', $currentYear, $currentYear.'-07-01', $user);
     createSeasonLeague('Liga Año Pasado', $currentYear - 1, ($currentYear - 1).'-07-01');
 
-    $useCase = new GetUserSeasonLeaguesUseCase;
+    $useCase = new GetUserSeasonLeaguesUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user);
 
     expect($result)->toHaveCount(1);
@@ -32,7 +33,7 @@ test('excludes leagues the user does not belong to', function () {
     $mine = createSeasonLeague('Mi Liga', $currentYear, $currentYear.'-06-01', $user);
     createSeasonLeague('Liga Ajena', $currentYear, $currentYear.'-07-01', $otherUser);
 
-    $useCase = new GetUserSeasonLeaguesUseCase;
+    $useCase = new GetUserSeasonLeaguesUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user);
 
     expect($result)->toHaveCount(1);
@@ -47,7 +48,7 @@ test('orders leagues by edition start date', function () {
     $later = createSeasonLeague('Vuelta', $currentYear, $currentYear.'-08-15', $user);
     $earlier = createSeasonLeague('Tour', $currentYear, $currentYear.'-07-01', $user);
 
-    $useCase = new GetUserSeasonLeaguesUseCase;
+    $useCase = new GetUserSeasonLeaguesUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user);
 
     expect($result)->toHaveCount(2);
@@ -63,7 +64,7 @@ test('appends the active league from another season at the end', function () {
     $season = createSeasonLeague('Liga Temporada', $currentYear, $currentYear.'-07-01', $user);
     $past = createSeasonLeague('Liga Histórica', $currentYear - 1, ($currentYear - 1).'-07-01', $user);
 
-    $useCase = new GetUserSeasonLeaguesUseCase;
+    $useCase = new GetUserSeasonLeaguesUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user, $past['league']->id);
 
     expect($result)->toHaveCount(2);
@@ -81,7 +82,7 @@ test('ignores an active league the user does not belong to', function () {
     $season = createSeasonLeague('Liga Temporada', $currentYear, $currentYear.'-07-01', $user);
     $foreign = createSeasonLeague('Liga Ajena', $currentYear - 1, ($currentYear - 1).'-07-01', $otherUser);
 
-    $useCase = new GetUserSeasonLeaguesUseCase;
+    $useCase = new GetUserSeasonLeaguesUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user, $foreign['league']->id);
 
     expect($result)->toHaveCount(1);
@@ -97,7 +98,7 @@ test('returns the season league payload shape', function () {
     $friend = User::factory()->create();
     joinSeasonLeague($season['league'], $friend);
 
-    $useCase = new GetUserSeasonLeaguesUseCase;
+    $useCase = new GetUserSeasonLeaguesUseCase(new S3MediaUrlResolver);
     $result = $useCase->execute($user);
 
     expect($result)->toHaveCount(1);

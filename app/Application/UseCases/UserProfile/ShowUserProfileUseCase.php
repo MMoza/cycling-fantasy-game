@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\UserProfile;
 
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Domain\Services\OnlineStatusService;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\LeagueModel;
@@ -14,10 +15,11 @@ use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ShowUserProfileUseCase
 {
+    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+
     public function execute(User $currentUser, string $leagueId, string $targetUserId): array
     {
         $league = LeagueModel::findOrFail($leagueId);
@@ -172,7 +174,7 @@ class ShowUserProfileUseCase
         }
 
         $avatarUrl = $targetUser->avatar
-            ? $this->resolveAvatarUrl($targetUser->avatar)
+            ? $this->mediaUrls->resolve($targetUser->avatar)
             : null;
 
         $hasStagePredictions = ! empty($stageDetails);
@@ -377,28 +379,5 @@ class ShowUserProfileUseCase
                 ['id' => $riderId, 'name' => $name, 'type' => 'rider'],
             ],
         ];
-    }
-
-    private function resolveAvatarUrl(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            try {
-                return $disk->url($path);
-            } catch (\Exception) {
-                return null;
-            }
-        }
     }
 }

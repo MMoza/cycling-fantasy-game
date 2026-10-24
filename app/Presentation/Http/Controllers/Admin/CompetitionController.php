@@ -10,6 +10,7 @@ use App\Application\UseCases\Admin\Competition\GetCompetitionFormDataUseCase;
 use App\Application\UseCases\Admin\Competition\ListCompetitionsUseCase;
 use App\Application\UseCases\Admin\Competition\StoreCompetitionUseCase;
 use App\Application\UseCases\Admin\Competition\UpdateCompetitionUseCase;
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Presentation\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -32,6 +33,7 @@ class CompetitionController extends Controller
         private readonly StoreCompetitionUseCase $storeCompetitionUseCase,
         private readonly UpdateCompetitionUseCase $updateCompetitionUseCase,
         private readonly DeleteCompetitionUseCase $deleteCompetitionUseCase,
+        private readonly MediaUrlResolverInterface $mediaUrls,
     ) {}
 
     public function index(): Response
@@ -148,44 +150,14 @@ class CompetitionController extends Controller
         return redirect()->route('admin.competitions.index');
     }
 
-    private function resolveS3Url(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            // fall through
-        }
-
-        try {
-            return $disk->url($path);
-        } catch (\Exception) {
-            // fall through
-        }
-
-        $endpoint = rtrim(config('filesystems.disks.s3.endpoint', ''), '/');
-        $bucket = config('filesystems.disks.s3.bucket', '');
-
-        if ($endpoint && $bucket) {
-            return "{$endpoint}/{$bucket}/".ltrim($path, '/');
-        }
-
-        return null;
-    }
-
     private function resolveCompetitionImages(?array $competition): ?array
     {
         if ($competition === null) {
             return null;
         }
 
-        $competition['cover_image_url'] = $this->resolveS3Url($competition['cover_image'] ?? null);
-        $competition['logo_image_url'] = $this->resolveS3Url($competition['logo_image'] ?? null);
+        $competition['cover_image_url'] = $this->mediaUrls->resolve($competition['cover_image'] ?? null);
+        $competition['logo_image_url'] = $this->mediaUrls->resolve($competition['logo_image'] ?? null);
 
         return $competition;
     }
@@ -202,8 +174,8 @@ class CompetitionController extends Controller
                 editionsCount: $c->editionsCount,
                 coverImage: $c->coverImage,
                 logoImage: $c->logoImage,
-                coverImageUrl: $this->resolveS3Url($c->coverImage),
-                logoImageUrl: $this->resolveS3Url($c->logoImage),
+                coverImageUrl: $this->mediaUrls->resolve($c->coverImage),
+                logoImageUrl: $this->mediaUrls->resolve($c->logoImage),
             );
         });
     }

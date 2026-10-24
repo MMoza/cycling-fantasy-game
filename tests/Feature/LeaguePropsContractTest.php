@@ -7,6 +7,7 @@ use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\ActivityLogModel;
+use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -23,7 +24,7 @@ uses(RefreshDatabase::class);
  *
  * Totals: owner 70 pts (50 general + 10 + 10), rival 160 pts (100 + 30 + 30).
  *
- * @return array{owner: User, rival: User, league: \App\Infrastructure\Persistence\Models\LeagueModel}
+ * @return array{owner: User, rival: User, league: LeagueModel}
  */
 function leagueContractFixture(): array
 {
@@ -262,11 +263,11 @@ test('show locks the full league dashboard contract', function () {
                 ->hasAll(['current_stage', 'total_stages'])
                 ->whereType('current_stage', 'integer')
                 ->whereType('total_stages', 'integer')))
-            ->where('league.member_count', 2)
-            ->where('league.is_owner', true)
-            ->where('league.edition_status', 'ongoing')
-            ->where('league.progress.current_stage', 3)
-            ->where('league.progress.total_stages', 3)
+        ->where('league.member_count', 2)
+        ->where('league.is_owner', true)
+        ->where('league.edition_status', 'ongoing')
+        ->where('league.progress.current_stage', 3)
+        ->where('league.progress.total_stages', 3)
         ->has('next_stage', fn (Assert $stage) => $stage
             ->hasAll([
                 'id', 'number', 'name', 'date', 'type', 'type_value', 'distance', 'distance_value',

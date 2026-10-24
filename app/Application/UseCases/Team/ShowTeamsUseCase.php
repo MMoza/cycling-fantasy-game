@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Team;
 
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\CompetitionParticipantModel;
 use App\Infrastructure\Persistence\Models\LeagueModel;
-use Illuminate\Support\Facades\Storage;
 
 readonly class TeamRider
 {
@@ -38,6 +38,8 @@ readonly class TeamData
 
 class ShowTeamsUseCase
 {
+    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+
     public function execute(string $leagueId): array
     {
         $league = LeagueModel::with('edition.competition')->findOrFail($leagueId);
@@ -72,7 +74,7 @@ class ShowTeamsUseCase
                     fullName: "{$rider->first_name} {$rider->last_name}",
                     countryId: $rider->country_id,
                     countryName: $rider->country?->name,
-                    profileImageUrl: $this->resolveS3Url($rider->profile_image),
+                    profileImageUrl: $this->mediaUrls->resolve($rider->profile_image),
                     age: $rider->age,
                 );
             }
@@ -85,7 +87,7 @@ class ShowTeamsUseCase
                 abbreviation: $team->abbreviation,
                 countryId: $team->country_id,
                 countryName: $team->country?->name,
-                logoUrl: $this->resolveS3Url($team->logo_url),
+                logoUrl: $this->mediaUrls->resolve($team->logo_url),
                 riders: $riders,
             );
         }
@@ -101,35 +103,5 @@ class ShowTeamsUseCase
             'total_teams' => count($teams),
             'total_riders' => $participants->count(),
         ];
-    }
-
-    private function resolveS3Url(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            // fall through
-        }
-
-        try {
-            return $disk->url($path);
-        } catch (\Exception) {
-            // fall through
-        }
-
-        $endpoint = rtrim(config('filesystems.disks.s3.endpoint', ''), '/');
-        $bucket = config('filesystems.disks.s3.bucket', '');
-
-        if ($endpoint && $bucket) {
-            return "{$endpoint}/{$bucket}/".ltrim($path, '/');
-        }
-
-        return null;
     }
 }

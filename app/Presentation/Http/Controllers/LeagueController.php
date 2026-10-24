@@ -14,6 +14,7 @@ use App\Application\UseCases\League\ListLeaguesUseCase;
 use App\Application\UseCases\League\ShowLeagueUseCase;
 use App\Application\UseCases\League\UpdateLeagueUseCase;
 use App\Application\UseCases\Season\ShowSeasonUseCase;
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Domain\Services\OnlineStatusService;
 use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
@@ -23,7 +24,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class LeagueController extends Controller
@@ -37,6 +37,7 @@ class LeagueController extends Controller
         private readonly UpdateLeagueUseCase $updateLeagueUseCase,
         private readonly ShowSeasonUseCase $showSeasonUseCase,
         private readonly GetUserSeasonLeaguesUseCase $getUserSeasonLeaguesUseCase,
+        private readonly MediaUrlResolverInterface $mediaUrls,
     ) {}
 
     public function index(Request $request)
@@ -190,7 +191,7 @@ class LeagueController extends Controller
             ->map(fn ($member) => [
                 'user_id' => $member->id,
                 'user_name' => $member->name,
-                'avatar' => $this->resolveAvatarUrl($member->avatar),
+                'avatar' => $this->mediaUrls->resolve($member->avatar),
                 'points' => (int) ($totalScoresPerUser[$member->id] ?? 0),
                 'is_current_user' => $member->id === $userId,
                 'is_online' => OnlineStatusService::isOnline(
@@ -259,7 +260,7 @@ class LeagueController extends Controller
             $data = $log->data;
 
             if ($log->type->value === 'league_winner' && isset($data['winner_avatar'])) {
-                $data['winner_avatar'] = $this->resolveAvatarUrl($data['winner_avatar']);
+                $data['winner_avatar'] = $this->mediaUrls->resolve($data['winner_avatar']);
             }
 
             return [
@@ -283,8 +284,8 @@ class LeagueController extends Controller
                     'name' => $leagueModel->edition->competition->name,
                     'year' => $leagueModel->edition->year,
                     'type' => $leagueModel->edition->competition->type->value,
-                    'coverImageUrl' => $this->resolveAvatarUrl($leagueModel->edition->competition->cover_image),
-                    'logoImageUrl' => $this->resolveAvatarUrl($leagueModel->edition->competition->logo_image),
+                    'coverImageUrl' => $this->mediaUrls->resolve($leagueModel->edition->competition->cover_image),
+                    'logoImageUrl' => $this->mediaUrls->resolve($leagueModel->edition->competition->logo_image),
                 ],
                 'owner_id' => $leagueModel->owner_id,
                 'scoring_system' => [
@@ -437,28 +438,5 @@ class LeagueController extends Controller
         }
 
         return redirect()->back();
-    }
-
-    private function resolveAvatarUrl(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            try {
-                return $disk->url($path);
-            } catch (\Exception) {
-                return null;
-            }
-        }
     }
 }
