@@ -300,7 +300,7 @@ describe('ShowStageUseCase with stage_participants', function () {
 
         $result = $useCase->execute($this->user, $this->league->id, $this->roadStage->id);
 
-        $riderIds = array_column($result['availableRiders']->toArray(), 'value');
+        $riderIds = array_column($result->availableRiders->toArray(), 'value');
         expect($riderIds)->toHaveCount(2);
         expect($riderIds)->toContain($this->riders[0]->id);
         expect($riderIds)->toContain($this->riders[1]->id);
@@ -312,7 +312,7 @@ describe('ShowStageUseCase with stage_participants', function () {
 
         $result = $useCase->execute($this->user, $this->league->id, $this->roadStage->id);
 
-        $riderIds = array_column($result['availableRiders']->toArray(), 'value');
+        $riderIds = array_column($result->availableRiders->toArray(), 'value');
         expect($riderIds)->toHaveCount(5);
     });
 
@@ -327,11 +327,11 @@ describe('ShowStageUseCase with stage_participants', function () {
         $useCase = new ShowStageUseCase;
 
         $ttResult = $useCase->execute($this->user, $this->league->id, $this->ttStage->id);
-        $ttRiderIds = array_column($ttResult['availableRiders']->toArray(), 'value');
+        $ttRiderIds = array_column($ttResult->availableRiders->toArray(), 'value');
         expect($ttRiderIds)->toHaveCount(2);
 
         $roadResult = $useCase->execute($this->user, $this->league->id, $this->roadStage->id);
-        $roadRiderIds = array_column($roadResult['availableRiders']->toArray(), 'value');
+        $roadRiderIds = array_column($roadResult->availableRiders->toArray(), 'value');
         expect($roadRiderIds)->toHaveCount(3);
     });
 });

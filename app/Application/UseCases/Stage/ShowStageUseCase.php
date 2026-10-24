@@ -6,6 +6,7 @@ namespace App\Application\UseCases\Stage;
 
 use App\Application\DTOs\PredictionDTO;
 use App\Application\DTOs\StageDetailDTO;
+use App\Application\DTOs\View\StageShowDTO;
 use App\Domain\ValueObjects\ScoringRuleContext;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\LeagueModel;
@@ -19,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 
 class ShowStageUseCase
 {
-    public function execute(User $user, string $leagueId, string $stageId): array
+    public function execute(User $user, string $leagueId, string $stageId): StageShowDTO
     {
         $league = LeagueModel::with('edition')->findOrFail($leagueId);
 
@@ -191,27 +192,27 @@ class ShowStageUseCase
             totalPossiblePoints: $totalPossiblePoints,
         );
 
-        return [
-            'leagueId' => $league->id,
-            'leagueName' => $league->name,
-            'stage' => $stageDetail,
-            'isFinished' => $isFinished,
-            'isLocked' => $isLocked,
-            'predictions' => $predictions,
-            'stageResults' => $stageResults,
-            'stageClassification' => $stageClassification,
-            'navigation' => [
+        return new StageShowDTO(
+            leagueId: $league->id,
+            leagueName: $league->name,
+            stage: $stageDetail,
+            isFinished: $isFinished,
+            isLocked: $isLocked,
+            predictions: $predictions,
+            stageResults: $stageResults,
+            stageClassification: $stageClassification,
+            navigation: [
                 'prev' => $prevStage ? ['id' => $prevStage->id, 'number' => $prevStage->number] : null,
                 'next' => $nextStage ? ['id' => $nextStage->id, 'number' => $nextStage->number] : null,
             ],
-            'allStages' => $allStages,
-            'availableRiders' => $availableRiders,
-            'availableTeams' => $availableTeams,
-            'pcsSlug' => $edition->competition->pcs_slug ?? null,
-            'editionYear' => $edition->year,
-            'stageRules' => $stageRules,
-            'totalPossiblePoints' => $totalPossiblePoints,
-        ];
+            allStages: $allStages,
+            availableRiders: $availableRiders,
+            availableTeams: $availableTeams,
+            pcsSlug: $edition->competition->pcs_slug ?? null,
+            editionYear: $edition->year,
+            stageRules: $stageRules,
+            totalPossiblePoints: $totalPossiblePoints,
+        );
     }
 
     private function mapRuleTypeToCategory(string $ruleTypeValue): string
