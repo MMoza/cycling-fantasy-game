@@ -19,9 +19,9 @@ test('returns only the user leagues from the current season', function () {
     $result = $useCase->execute($user);
 
     expect($result)->toHaveCount(1);
-    expect($result[0]['id'])->toBe($season['league']->id);
-    expect($result[0]['name'])->toBe('Liga Temporada');
-    expect($result[0]['year'])->toBe($currentYear);
+    expect($result[0]->id)->toBe($season['league']->id);
+    expect($result[0]->name)->toBe('Liga Temporada');
+    expect($result[0]->year)->toBe($currentYear);
 });
 
 test('excludes leagues the user does not belong to', function () {
@@ -37,7 +37,7 @@ test('excludes leagues the user does not belong to', function () {
     $result = $useCase->execute($user);
 
     expect($result)->toHaveCount(1);
-    expect($result[0]['id'])->toBe($mine['league']->id);
+    expect($result[0]->id)->toBe($mine['league']->id);
 });
 
 test('orders leagues by edition start date', function () {
@@ -52,8 +52,8 @@ test('orders leagues by edition start date', function () {
     $result = $useCase->execute($user);
 
     expect($result)->toHaveCount(2);
-    expect($result[0]['id'])->toBe($earlier['league']->id);
-    expect($result[1]['id'])->toBe($later['league']->id);
+    expect($result[0]->id)->toBe($earlier['league']->id);
+    expect($result[1]->id)->toBe($later['league']->id);
 });
 
 test('appends the active league from another season at the end', function () {
@@ -68,9 +68,9 @@ test('appends the active league from another season at the end', function () {
     $result = $useCase->execute($user, $past['league']->id);
 
     expect($result)->toHaveCount(2);
-    expect($result[0]['id'])->toBe($season['league']->id);
-    expect($result[1]['id'])->toBe($past['league']->id);
-    expect($result[1]['year'])->toBe($currentYear - 1);
+    expect($result[0]->id)->toBe($season['league']->id);
+    expect($result[1]->id)->toBe($past['league']->id);
+    expect($result[1]->year)->toBe($currentYear - 1);
 });
 
 test('ignores an active league the user does not belong to', function () {
@@ -86,7 +86,7 @@ test('ignores an active league the user does not belong to', function () {
     $result = $useCase->execute($user, $foreign['league']->id);
 
     expect($result)->toHaveCount(1);
-    expect($result[0]['id'])->toBe($season['league']->id);
+    expect($result[0]->id)->toBe($season['league']->id);
 });
 
 test('returns the season league payload shape', function () {
@@ -102,14 +102,12 @@ test('returns the season league payload shape', function () {
     $result = $useCase->execute($user);
 
     expect($result)->toHaveCount(1);
-    expect($result[0])->toHaveKeys([
-        'id', 'name', 'year', 'is_official', 'member_count', 'edition_status', 'competition',
-    ]);
-    expect($result[0]['is_official'])->toBeTrue();
-    expect($result[0]['member_count'])->toBe(2);
-    expect($result[0]['edition_status'])->toBe('upcoming');
-    expect($result[0]['competition'])->toHaveKeys(['name', 'type', 'coverImageUrl', 'logoImageUrl']);
-    expect($result[0]['competition']['type'])->toBe('gc');
+    expect($result[0])->toHaveProperties(['id', 'name', 'year', 'isOfficial', 'memberCount', 'editionStatus', 'competition']);
+    expect($result[0]->isOfficial)->toBeTrue();
+    expect($result[0]->memberCount)->toBe(2);
+    expect($result[0]->editionStatus)->toBe('upcoming');
+    expect($result[0]->competition)->toHaveProperties(['name', 'type', 'coverImageUrl', 'logoImageUrl']);
+    expect($result[0]->competition->type)->toBe('gc');
 });
 
 test('league show page exposes the season leagues prop', function () {

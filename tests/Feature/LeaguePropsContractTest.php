@@ -220,7 +220,13 @@ test('show locks the full league dashboard contract', function () {
         ->component('Leagues/Show')
         ->where('league_id', $league->id)
         ->has('season_leagues', 1)
-        ->whereType('season_leagues.0.year', 'integer')
+        ->has('season_leagues.0', fn (Assert $seasonLeague) => $seasonLeague
+            ->hasAll(['id', 'name', 'year', 'is_official', 'member_count', 'edition_status', 'competition'])
+            ->whereType('year', 'integer')
+            ->whereType('is_official', 'boolean')
+            ->whereType('member_count', 'integer')
+            ->has('competition', fn (Assert $competition) => $competition
+                ->hasAll(['name', 'type', 'coverImageUrl', 'logoImageUrl'])))
         ->has('league', fn (Assert $league) => $league
             ->hasAll([
                 'id', 'name', 'invite_code', 'competition', 'owner_id', 'scoring_system',
