@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\UserProfile;
 
+use App\Application\DTOs\View\UserProfilePageDTO;
+use App\Application\Services\PredictionHitService;
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Domain\Services\OnlineStatusService;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\LeagueModel;
@@ -14,11 +17,15 @@ use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ShowUserProfileUseCase
 {
-    public function execute(User $currentUser, string $leagueId, string $targetUserId): array
+    public function __construct(
+        private readonly MediaUrlResolverInterface $mediaUrls,
+        private readonly PredictionHitService $predictionHits,
+    ) {}
+
+    public function execute(User $currentUser, string $leagueId, string $targetUserId): UserProfilePageDTO
     {
         $league = LeagueModel::findOrFail($leagueId);
 
@@ -172,7 +179,7 @@ class ShowUserProfileUseCase
         }
 
         $avatarUrl = $targetUser->avatar
-            ? $this->resolveAvatarUrl($targetUser->avatar)
+            ? $this->mediaUrls->resolve($targetUser->avatar)
             : null;
 
         $hasStagePredictions = ! empty($stageDetails);
@@ -190,37 +197,21 @@ class ShowUserProfileUseCase
             ->distinct()
             ->count('predictions.stage_id');
 
-        $stageWinnersGuessed = DB::table('predictions')
-            ->join('stage_results', function ($join) {
-                $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
-                    ->where('stage_results.position', '=', 1);
-            })
-            ->join('stages', 'stages.id', '=', 'predictions.stage_id')
-            ->where('predictions.user_id', $targetUserId)
-            ->where('predictions.league_id', $leagueId)
-            ->where('predictions.category', '=', 'stage_winner')
-            ->where('stages.status', '!=', 'upcoming')
-            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
-            ->distinct()
-            ->count('predictions.stage_id');
+        $stageWinnersGuessed = $this->predictionHits
+            ->correctWinnerPredictions($leagueId, $targetUserId, 'stage_winner', null, true)
+            ->pluck('stage_id')
+            ->unique()
+            ->count();
 
         // Stage position guesses (stage_position_1 to stage_position_10)
         $stagePositionGuessed = 0;
         foreach (range(1, 10) as $pos) {
             $cat = "stage_position_{$pos}";
-            $count = DB::table('predictions')
-                ->join('stage_results', function ($join) {
-                    $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
-                        ->where('stage_results.position', '=', 1);
-                })
-                ->join('stages', 'stages.id', '=', 'predictions.stage_id')
-                ->where('predictions.user_id', $targetUserId)
-                ->where('predictions.league_id', $leagueId)
-                ->where('predictions.category', '=', $cat)
-                ->where('stages.status', '!=', 'upcoming')
-                ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
-                ->distinct()
-                ->count('predictions.stage_id');
+            $count = $this->predictionHits
+                ->correctWinnerPredictions($leagueId, $targetUserId, $cat, null, true)
+                ->pluck('stage_id')
+                ->unique()
+                ->count();
             $stagePositionGuessed += $count;
         }
 
@@ -313,12 +304,12 @@ class ShowUserProfileUseCase
             ];
         }
 
-        return [
-            'league_id' => $league->id,
-            'league_name' => $league->name,
-            'competition_started' => $competitionStarted,
-            'has_stage_predictions' => $hasStagePredictions,
-            'user' => [
+        return new UserProfilePageDTO(
+            leagueId: $league->id,
+            leagueName: $league->name,
+            competitionStarted: $competitionStarted,
+            hasStagePredictions: $hasStagePredictions,
+            user: [
                 'id' => $targetUser->id,
                 'name' => $targetUser->name,
                 'avatar' => $avatarUrl,
@@ -329,15 +320,15 @@ class ShowUserProfileUseCase
                 'last_active_at' => $targetUser->last_active_at?->toISOString(),
                 'member_since' => $targetUser->created_at->toISOString(),
             ],
-            'global_stats' => [
+            globalStats: [
                 'stages_participated' => $stagesParticipated,
                 'stage_winners_guessed' => $stageWinnersGuessed + $stagePositionGuessed,
                 'best_stage' => $bestStage,
             ],
-            'points_history' => $cumulativePoints,
-            'pre_race_predictions' => $preRacePredictions,
-            'stage_details' => $stageDetails,
-        ];
+            pointsHistory: $cumulativePoints,
+            preRacePredictions: $preRacePredictions,
+            stageDetails: $stageDetails,
+        );
     }
 
     private function formatPrediction(array $value, string $category, Collection $riders, $teamNames): array
@@ -377,28 +368,5 @@ class ShowUserProfileUseCase
                 ['id' => $riderId, 'name' => $name, 'type' => 'rider'],
             ],
         ];
-    }
-
-    private function resolveAvatarUrl(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            try {
-                return $disk->url($path);
-            } catch (\Exception) {
-                return null;
-            }
-        }
     }
 }

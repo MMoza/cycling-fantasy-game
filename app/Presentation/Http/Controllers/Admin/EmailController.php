@@ -4,18 +4,16 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers\Admin;
 
-use App\Application\DTOs\Email\StoreEmailDTO;
-use App\Application\DTOs\Email\UpdateEmailDTO;
 use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\Admin\Email\DeleteEmailUseCase;
 use App\Application\UseCases\Admin\Email\ListEmailsUseCase;
 use App\Application\UseCases\Admin\Email\SendEmailNowUseCase;
 use App\Application\UseCases\Admin\Email\StoreEmailUseCase;
 use App\Application\UseCases\Admin\Email\UpdateEmailUseCase;
-use App\Domain\ValueObjects\EmailRecipients;
 use App\Infrastructure\Persistence\Models\ScheduledEmailModel;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Presentation\Http\Requests\Admin\StoreEmailRequest;
+use App\Presentation\Http\Requests\Admin\UpdateEmailRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -65,27 +63,9 @@ class EmailController
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreEmailRequest $request)
     {
-        $validated = $request->validate([
-            'subject' => ['required', 'string', 'max:255'],
-            'body_html' => ['required', 'string'],
-            'recipients' => ['required', 'string', 'in:all_users,custom'],
-            'recipient_ids' => ['nullable', 'array'],
-            'recipient_ids.*' => ['uuid', 'exists:users,id'],
-            'scheduled_at' => ['nullable', 'date', 'after:now'],
-        ]);
-
-        $dto = new StoreEmailDTO(
-            subject: $validated['subject'],
-            bodyHtml: $validated['body_html'],
-            recipients: EmailRecipients::from($validated['recipients']),
-            recipientIds: $validated['recipient_ids'] ?? null,
-            scheduledAt: isset($validated['scheduled_at']) ? Carbon::parse($validated['scheduled_at']) : null,
-            createdBy: $request->user()->id,
-        );
-
-        $email = $this->storeEmailUseCase->execute($dto);
+        $email = $this->storeEmailUseCase->execute($request->toDTO());
 
         return redirect()->route('admin.emails.index')
             ->with('success', 'Email creado correctamente');
@@ -110,28 +90,10 @@ class EmailController
         ]);
     }
 
-    public function update(Request $request, string $email)
+    public function update(UpdateEmailRequest $request, string $email)
     {
-        $validated = $request->validate([
-            'subject' => ['required', 'string', 'max:255'],
-            'body_html' => ['required', 'string'],
-            'recipients' => ['required', 'string', 'in:all_users,custom'],
-            'recipient_ids' => ['nullable', 'array'],
-            'recipient_ids.*' => ['uuid', 'exists:users,id'],
-            'scheduled_at' => ['nullable', 'date', 'after:now'],
-        ]);
-
         try {
-            $dto = new UpdateEmailDTO(
-                id: $email,
-                subject: $validated['subject'],
-                bodyHtml: $validated['body_html'],
-                recipients: EmailRecipients::from($validated['recipients']),
-                recipientIds: $validated['recipient_ids'] ?? null,
-                scheduledAt: isset($validated['scheduled_at']) ? Carbon::parse($validated['scheduled_at']) : null,
-            );
-
-            $this->updateEmailUseCase->execute($dto);
+            $this->updateEmailUseCase->execute($request->toDTO());
 
             return redirect()->route('admin.emails.index')
                 ->with('success', 'Email actualizado correctamente');

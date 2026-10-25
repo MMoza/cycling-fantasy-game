@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin\Stage;
 
+use App\Application\DTOs\View\AdminStageShowPageDTO;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class ShowAdminStageUseCase
 {
-    public function execute(string $editionId, string $id): array
+    public function execute(string $editionId, string $id): AdminStageShowPageDTO
     {
         $edition = EditionModel::with('competition')->findOrFail($editionId);
         $stage = StageModel::where('edition_id', $editionId)->findOrFail($id);
@@ -83,13 +84,13 @@ class ShowAdminStageUseCase
             ->pluck('team_id', 'rider_id')
             ->toArray() : [];
 
-        return [
-            'edition' => [
+        return new AdminStageShowPageDTO(
+            edition: [
                 'id' => $edition->id,
                 'year' => $edition->year,
                 'competition' => $edition->competition->name,
             ],
-            'stage' => [
+            stage: [
                 'id' => $stage->id,
                 'number' => $stage->number,
                 'name' => $stage->name,
@@ -104,11 +105,11 @@ class ShowAdminStageUseCase
                 'status' => $stage->status->value,
                 'status_label' => $stage->status->label(),
             ],
-            'availableRiders' => $participantRiders,
-            'availableTeams' => $availableTeams,
-            'is_ttt' => $isTTT,
-            'stageParticipants' => $hasStageParticipants ? $participantRiders->toArray() : [],
-            'results' => $results->map(fn ($r) => [
+            availableRiders: $participantRiders,
+            availableTeams: $availableTeams,
+            isTtt: $isTTT,
+            stageParticipants: $hasStageParticipants ? $participantRiders->toArray() : [],
+            results: $results->map(fn ($r) => [
                 'id' => $r->id,
                 'rider_id' => $isTTT ? ($riderToTeam[$r->rider_id] ?? $r->rider_id) : $r->rider_id,
                 'position' => $r->position,
@@ -117,6 +118,6 @@ class ShowAdminStageUseCase
                 'is_gc_leader' => (bool) $r->is_gc_leader,
                 'is_combativo' => (bool) $r->is_combativo,
             ]),
-        ];
+        );
     }
 }

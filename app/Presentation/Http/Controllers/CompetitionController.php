@@ -19,13 +19,7 @@ class CompetitionController extends Controller
 
     public function index(Request $request, ?int $year = null): Response
     {
-        $data = $this->listActiveCompetitionsUseCase->execute($year);
-
-        return Inertia::render('Competitions/Index', [
-            'yearGroups' => $data['yearGroups'],
-            'years' => $data['years'],
-            'currentYear' => $data['currentYear'],
-        ]);
+        return Inertia::render('Competitions/Index', $this->listActiveCompetitionsUseCase->execute($year)->toArray());
     }
 
     public function show(string $edition): Response

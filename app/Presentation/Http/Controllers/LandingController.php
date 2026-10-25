@@ -4,15 +4,20 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers;
 
+use App\Application\DTOs\View\LandingPageDTO;
+use App\Application\DTOs\View\LandingRaceViewDTO;
+use App\Application\DTOs\View\LandingStageViewDTO;
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class LandingController
 {
+    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+
     public function index(Request $request): Response
     {
         $now = now();
@@ -45,72 +50,23 @@ class LandingController
                 ->first();
 
             if ($stage) {
-                $currentStage = [
-                    'number' => $stage->number,
-                    'name' => $stage->name,
-                    'distance' => $stage->distance,
-                    'date' => $stage->date->toDateString(),
-                ];
+                $currentStage = LandingStageViewDTO::fromModel($stage);
             }
         }
 
-        $races = $editions->map(fn (EditionModel $edition) => [
-            'editionId' => $edition->id,
-            'name' => $edition->competition->name,
-            'year' => $edition->year,
-            'status' => $edition->status->value,
-            'startDate' => $edition->start_date->toIso8601String(),
-            'endDate' => $edition->end_date->toIso8601String(),
-            'countryId' => $edition->competition->country_id,
-            'countryName' => $edition->competition?->country?->name,
-            'logoImageUrl' => $this->resolveS3Url($edition->competition->logo_image),
-            'coverImageUrl' => $this->resolveS3Url($edition->competition->cover_image),
-            'officialLeagueId' => $edition->leagues->first()?->id,
-        ])->values()->all();
+        $races = $editions->map(fn (EditionModel $edition) => LandingRaceViewDTO::fromModel($edition, $this->mediaUrls))->values()->all();
 
         $activeRace = $editions->firstWhere('status', 'ongoing')
             ?? $editions->firstWhere('status', 'upcoming');
 
-        return Inertia::render('Landing', [
-            'auth' => [
-                'user' => $request->user() ? [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                ] : null,
-            ],
-            'seasonRaces' => $races,
-            'activeRaceId' => $activeRace?->id,
-            'currentStage' => $currentStage,
-        ]);
-    }
-
-    private function resolveS3Url(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            // fall through
-        }
-
-        try {
-            return $disk->url($path);
-        } catch (\Exception) {
-            // fall through
-        }
-
-        $endpoint = rtrim(config('filesystems.disks.s3.endpoint', ''), '/');
-        $bucket = config('filesystems.disks.s3.bucket', '');
-
-        if ($endpoint && $bucket) {
-            return "{$endpoint}/{$bucket}/".ltrim($path, '/');
-        }
-
-        return null;
+        return Inertia::render('Landing', (new LandingPageDTO(
+            user: $request->user() ? [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+            ] : null,
+            seasonRaces: $races,
+            activeRaceId: $activeRace?->id,
+            currentStage: $currentStage,
+        ))->toArray());
     }
 }

@@ -8,8 +8,8 @@ use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\Admin\FinalClassification\GetFinalClassificationsUseCase;
 use App\Application\UseCases\Admin\FinalClassification\UpdateFinalClassificationsUseCase;
 use App\Presentation\Http\Controllers\Controller;
+use App\Presentation\Http\Requests\Admin\UpdateFinalClassificationsRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -22,36 +22,15 @@ class FinalClassificationController extends Controller
 
     public function edit(string $editionId): Response
     {
-        $data = $this->getFinalClassificationsUseCase->execute($editionId);
-
-        return Inertia::render('Admin/Editions/FinalClassifications', [
-            'edition' => $data['edition'],
-            'riders' => $data['riders'],
-            'teams' => $data['teams'],
-            'classifications' => $data['classifications'],
-        ]);
+        return Inertia::render('Admin/Editions/FinalClassifications', $this->getFinalClassificationsUseCase->execute($editionId)->toArray());
     }
 
-    public function update(Request $request, string $editionId): RedirectResponse
+    public function update(UpdateFinalClassificationsRequest $request, string $editionId): RedirectResponse
     {
-        $validated = $request->validate([
-            'classifications' => 'required|array',
-            'classifications.gc_top_5' => 'nullable|array|size:5',
-            'classifications.gc_top_5.*' => 'required|string|exists:riders,id',
-            'classifications.points_winner' => 'nullable|array|size:3',
-            'classifications.points_winner.*' => 'required|string|exists:riders,id',
-            'classifications.mountains_winner' => 'nullable|array|size:3',
-            'classifications.mountains_winner.*' => 'required|string|exists:riders,id',
-            'classifications.youth_winner' => 'nullable|array|size:3',
-            'classifications.youth_winner.*' => 'required|string|exists:riders,id',
-            'classifications.teams_winner' => 'nullable|string|exists:teams,id',
-            'classifications.super_combativo' => 'nullable|string|exists:riders,id',
-        ]);
-
         try {
             $result = $this->updateFinalClassificationsUseCase->execute(
                 $editionId,
-                $validated['classifications'],
+                $request->classifications(),
             );
 
             $message = "Clasificaciones guardadas. Puntuación pre-carrera: {$result['scored']} eventos en {$result['leagues']} liga(s)";

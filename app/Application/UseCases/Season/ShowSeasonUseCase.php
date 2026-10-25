@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Season;
 
+use App\Application\DTOs\View\SeasonIndexPageDTO;
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Models\User;
-use Illuminate\Support\Facades\Storage;
 
 readonly class SeasonCompetition
 {
@@ -31,7 +32,9 @@ readonly class SeasonCompetition
 
 class ShowSeasonUseCase
 {
-    public function execute(User $user, ?int $year = null): array
+    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+
+    public function execute(User $user, ?int $year = null): SeasonIndexPageDTO
     {
         $year ??= (int) date('Y');
 
@@ -63,8 +66,8 @@ class ShowSeasonUseCase
                 typeLabel: $edition->competition->type->label(),
                 countryId: $edition->competition->country_id,
                 countryName: $edition->competition->country?->name,
-                coverImageUrl: $this->resolveS3Url($edition->competition->cover_image),
-                logoImageUrl: $this->resolveS3Url($edition->competition->logo_image),
+                coverImageUrl: $this->mediaUrls->resolve($edition->competition->cover_image),
+                logoImageUrl: $this->mediaUrls->resolve($edition->competition->logo_image),
                 editionStatus: $edition->status->value,
                 officialLeagueId: $officialLeague->id,
                 memberCount: $officialLeague->users_count,
@@ -76,41 +79,11 @@ class ShowSeasonUseCase
 
         $userJoinedCount = count(array_filter($competitions, fn ($c) => $c->isUserMember));
 
-        return [
-            'year' => $year,
-            'competitions' => $competitions,
-            'user_joined_count' => $userJoinedCount,
-            'total_competitions' => count($competitions),
-        ];
-    }
-
-    private function resolveS3Url(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            // fall through
-        }
-
-        try {
-            return $disk->url($path);
-        } catch (\Exception) {
-            // fall through
-        }
-
-        $endpoint = rtrim(config('filesystems.disks.s3.endpoint', ''), '/');
-        $bucket = config('filesystems.disks.s3.bucket', '');
-
-        if ($endpoint && $bucket) {
-            return "{$endpoint}/{$bucket}/".ltrim($path, '/');
-        }
-
-        return null;
+        return new SeasonIndexPageDTO(
+            year: $year,
+            competitions: $competitions,
+            userJoinedCount: $userJoinedCount,
+            totalCompetitions: count($competitions),
+        );
     }
 }

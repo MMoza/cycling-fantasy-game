@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Admin\Edition;
 
 use App\Application\DTOs\Admin\EditionDTO;
+use App\Application\DTOs\View\AdminEditionsListPageDTO;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
 
 class ListEditionsUseCase
 {
-    public function execute(string $competitionId): array
+    public function execute(string $competitionId): AdminEditionsListPageDTO
     {
         $competition = CompetitionModel::findOrFail($competitionId);
 
@@ -25,9 +26,9 @@ class ListEditionsUseCase
                 status: $e->status->label(),
             ));
 
-        return [
-            'competition' => ['id' => $competition->id, 'name' => $competition->name],
-            'editions' => $editions,
-        ];
+        return new AdminEditionsListPageDTO(
+            competition: ['id' => $competition->id, 'name' => $competition->name],
+            editions: $editions,
+        );
     }
 }

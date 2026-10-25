@@ -18,59 +18,11 @@ class StageController extends Controller
 
     public function index(Request $request, string $league)
     {
-        $data = $this->listStagesUseCase->execute($request->user(), $league);
-
-        return Inertia::render('Stages/Index', [
-            'league_id' => $data['leagueId'],
-            'league_name' => $data['leagueName'],
-            'competition' => $data['competitionName'],
-            'year' => $data['year'],
-            'stages' => $data['stages'],
-            'predictionsPerStage' => $data['stages']
-                ->filter(fn ($s) => $s->hasPredictions)
-                ->mapWithKeys(fn ($s) => [$s->id => true]),
-            'pointsPerStage' => $data['stages']
-                ->mapWithKeys(fn ($s) => [$s->id => $s->points]),
-        ]);
+        return Inertia::render('Stages/Index', $this->listStagesUseCase->execute($request->user(), $league)->toArray());
     }
 
     public function show(Request $request, string $league, string $stage)
     {
-        $data = $this->showStageUseCase->execute($request->user(), $league, $stage);
-
-        return Inertia::render('Stages/Show', [
-            'league_id' => $data['leagueId'],
-            'stage' => [
-                'id' => $data['stage']->id,
-                'number' => $data['stage']->number,
-                'name' => $data['stage']->name,
-                'date' => $data['stage']->date,
-                'type' => $data['stage']->type,
-                'type_value' => $data['stage']->typeValue,
-                'distance' => $data['stage']->distance,
-                'elevation_gain' => $data['stage']->elevationGain,
-                'profile_image' => $data['stage']->profileImage,
-                'origin' => $data['stage']->origin,
-                'destination' => $data['stage']->destination,
-                'difficulty' => $data['stage']->difficulty,
-                'status' => $data['stage']->status,
-                'scheduled_start' => $data['stage']->scheduledStart,
-                'live_stream_url' => $data['stage']->liveStreamUrl,
-            ],
-            'is_finished' => $data['isFinished'],
-            'is_locked' => $data['isLocked'],
-            'predictions' => $data['predictions'],
-            'stage_results' => $data['stageResults'],
-            'stage_classification' => $data['stageClassification'],
-            'league_name' => $data['leagueName'],
-            'navigation' => $data['navigation'],
-            'all_stages' => $data['allStages'],
-            'availableRiders' => $data['availableRiders'],
-            'availableTeams' => $data['availableTeams'],
-            'pcs_slug' => $data['pcsSlug'],
-            'edition_year' => $data['editionYear'],
-            'stage_rules' => $data['stageRules'],
-            'total_possible_points' => $data['totalPossiblePoints'],
-        ]);
+        return Inertia::render('Stages/Show', $this->showStageUseCase->execute($request->user(), $league, $stage)->toArray());
     }
 }

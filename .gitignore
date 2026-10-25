@@ -27,3 +27,10 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local database files
+database/*.sqlite
+database/*.sqlite-*
+
+# Env backups (never commit)
+.env.backup*

@@ -8,65 +8,23 @@ use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\Prediction\ShowPreRaceFormUseCase;
 use App\Application\UseCases\Prediction\StorePreRacePredictionUseCase;
 use App\Application\UseCases\Prediction\StoreStagePredictionUseCase;
-use App\Infrastructure\Persistence\Models\LeagueModel;
+use App\Presentation\Http\Requests\Prediction\StorePreRacePredictionsRequest;
+use App\Presentation\Http\Requests\Prediction\StoreStagePredictionRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PredictionController extends Controller
 {
-    private const PRE_RACE_CATEGORIES = [
-        'gc_top_5',
-        'points_winner',
-        'youth_winner',
-        'mountains_winner',
-        'teams_winner',
-        'super_combativo',
-    ];
-
-    private const PRE_STAGE_CATEGORIES = [
-        'stage_winner',
-        'stage_second',
-        'stage_third',
-        'stage_leader',
-        'stage_combativo',
-        'stage_position_1',
-        'stage_position_2',
-        'stage_position_3',
-        'stage_position_4',
-        'stage_position_5',
-        'stage_position_6',
-        'stage_position_7',
-        'stage_position_8',
-        'stage_position_9',
-        'stage_position_10',
-    ];
-
     public function __construct(
         private readonly ShowPreRaceFormUseCase $showPreRaceFormUseCase,
         private readonly StorePreRacePredictionUseCase $storePreRacePredictionUseCase,
         private readonly StoreStagePredictionUseCase $storeStagePredictionUseCase,
     ) {}
 
-    public function store(Request $request, string $league, string $stage)
+    public function store(StoreStagePredictionRequest $request, string $league, string $stage)
     {
-        $validated = $request->validate([
-            'predictions' => ['required', 'array'],
-            'predictions.*.category' => ['required', 'string', 'in:'.implode(',', self::PRE_STAGE_CATEGORIES)],
-            'predictions.*.value' => ['required'],
-        ]);
-
-        $predictions = array_values(array_filter(
-            $validated['predictions'],
-            fn ($p) => ! empty($p['value']),
-        ));
-
         try {
-            $this->storeStagePredictionUseCase->execute(
-                $request->user(),
-                $league,
-                $stage,
-                $predictions,
-            );
+            $this->storeStagePredictionUseCase->execute($request->user(), $league, $stage, $request->predictions());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['stage' => $e->getMessage()]);
         }
@@ -76,43 +34,13 @@ class PredictionController extends Controller
 
     public function preRace(Request $request, string $league)
     {
-        $data = $this->showPreRaceFormUseCase->execute($request->user(), $league);
-
-        return Inertia::render('Predictions/PreRace', [
-            'league_id' => $data['leagueId'],
-            'league_name' => $data['leagueName'],
-            'competition' => [
-                'name' => $data['competitionName'],
-                'year' => $data['competitionYear'],
-            ],
-            'is_locked' => $data['isLocked'],
-            'predictions' => $data['predictions'],
-            'availableRiders' => $data['availableRiders'],
-            'availableTeams' => $data['availableTeams'],
-            'scoring_system' => $data['scoringSystem'],
-        ]);
+        return Inertia::render('Predictions/PreRace', $this->showPreRaceFormUseCase->execute($request->user(), $league)->toArray());
     }
 
-    public function storePreRace(Request $request, string $league)
+    public function storePreRace(StorePreRacePredictionsRequest $request, string $league)
     {
-        $leagueModel = LeagueModel::with('edition.competition')->findOrFail($league);
-        $competitionType = $leagueModel->edition->competition->type->value;
-        if (in_array($competitionType, ['monument', 'championship', 'classic'], true)) {
-            abort(404);
-        }
-
-        $validated = $request->validate([
-            'predictions' => ['required', 'array'],
-            'predictions.*.category' => ['required', 'string', 'in:'.implode(',', self::PRE_RACE_CATEGORIES)],
-            'predictions.*.value' => ['required'],
-        ]);
-
         try {
-            $this->storePreRacePredictionUseCase->execute(
-                $request->user(),
-                $league,
-                $validated['predictions'],
-            );
+            $this->storePreRacePredictionUseCase->execute($request->user(), $league, $request->predictions());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['race' => $e->getMessage()]);
         }

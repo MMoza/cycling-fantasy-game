@@ -9,8 +9,9 @@ use App\Application\UseCases\Admin\Edition\ListEditionsUseCase;
 use App\Application\UseCases\Admin\Edition\StoreEditionUseCase;
 use App\Application\UseCases\Admin\Edition\UpdateEditionUseCase;
 use App\Presentation\Http\Controllers\Controller;
+use App\Presentation\Http\Requests\Admin\StoreEditionRequest;
+use App\Presentation\Http\Requests\Admin\UpdateEditionRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,31 +26,17 @@ class EditionController extends Controller
 
     public function index(string $competitionId): Response
     {
-        $data = $this->listEditionsUseCase->execute($competitionId);
-
-        return Inertia::render('Admin/Editions/Index', [
-            'competition' => $data['competition'],
-            'editions' => $data['editions'],
-        ]);
+        return Inertia::render('Admin/Editions/Index', $this->listEditionsUseCase->execute($competitionId)->toArray());
     }
 
     public function create(string $competitionId): Response
     {
-        $data = $this->getEditionFormDataUseCase->execute($competitionId);
-
-        return Inertia::render('Admin/Editions/Form', [
-            'competition' => $data['competition'],
-            'edition' => $data['edition'],
-        ]);
+        return Inertia::render('Admin/Editions/Form', $this->getEditionFormDataUseCase->execute($competitionId)->toArray());
     }
 
-    public function store(Request $request, string $competitionId): RedirectResponse
+    public function store(StoreEditionRequest $request, string $competitionId): RedirectResponse
     {
-        $validated = $request->validate([
-            'year' => 'required|integer|min:1900|max:2100',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-        ]);
+        $validated = $request->validated();
 
         $this->storeEditionUseCase->execute($competitionId, $validated, $request->user()->id);
 
@@ -58,22 +45,12 @@ class EditionController extends Controller
 
     public function edit(string $competitionId, string $id): Response
     {
-        $data = $this->getEditionFormDataUseCase->execute($competitionId, $id);
-
-        return Inertia::render('Admin/Editions/Form', [
-            'competition' => $data['competition'],
-            'edition' => $data['edition'],
-        ]);
+        return Inertia::render('Admin/Editions/Form', $this->getEditionFormDataUseCase->execute($competitionId, $id)->toArray());
     }
 
-    public function update(Request $request, string $competitionId, string $id): RedirectResponse
+    public function update(UpdateEditionRequest $request, string $competitionId, string $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'year' => 'required|integer|min:1900|max:2100',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'required|string|in:upcoming,ongoing,finished',
-        ]);
+        $validated = $request->validated();
 
         $this->updateEditionUseCase->execute($competitionId, $id, $validated);
 

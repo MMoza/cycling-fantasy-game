@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Competition;
 
+use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
-use Illuminate\Support\Facades\Storage;
 
 readonly class CompetitionDetail
 {
@@ -33,6 +33,8 @@ readonly class CompetitionDetail
 
 class ShowCompetitionUseCase
 {
+    public function __construct(private readonly MediaUrlResolverInterface $mediaUrls) {}
+
     public function execute(string $editionId): CompetitionDetail
     {
         $edition = EditionModel::with([
@@ -55,8 +57,8 @@ class ShowCompetitionUseCase
             typeLabel: $competition->type->label(),
             countryId: $competition->country_id,
             countryName: $competition->country?->name,
-            coverImageUrl: $this->resolveS3Url($competition->cover_image),
-            logoImageUrl: $this->resolveS3Url($competition->logo_image),
+            coverImageUrl: $this->mediaUrls->resolve($competition->cover_image),
+            logoImageUrl: $this->mediaUrls->resolve($competition->logo_image),
             editionId: $edition->id,
             year: $edition->year,
             editionStatus: $edition->status->value,
@@ -68,35 +70,5 @@ class ShowCompetitionUseCase
             teamsCount: $teamsCount,
             ridersCount: $ridersCount,
         );
-    }
-
-    private function resolveS3Url(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            // fall through
-        }
-
-        try {
-            return $disk->url($path);
-        } catch (\Exception) {
-            // fall through
-        }
-
-        $endpoint = rtrim(config('filesystems.disks.s3.endpoint', ''), '/');
-        $bucket = config('filesystems.disks.s3.bucket', '');
-
-        if ($endpoint && $bucket) {
-            return "{$endpoint}/{$bucket}/".ltrim($path, '/');
-        }
-
-        return null;
     }
 }

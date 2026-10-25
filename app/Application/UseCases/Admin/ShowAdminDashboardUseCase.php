@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Admin;
 
+use App\Application\DTOs\View\AdminDashboardPageDTO;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
@@ -11,14 +12,14 @@ use App\Models\User;
 
 class ShowAdminDashboardUseCase
 {
-    public function execute(): array
+    public function execute(): AdminDashboardPageDTO
     {
-        return [
-            'competitions_count' => CompetitionModel::count(),
-            'editions_count' => EditionModel::count(),
-            'stages_count' => StageModel::count(),
-            'users_count' => User::count(),
-            'active_competitions' => CompetitionModel::where('active', true)->count(),
-        ];
+        return new AdminDashboardPageDTO(
+            competitionsCount: CompetitionModel::count(),
+            editionsCount: EditionModel::count(),
+            stagesCount: StageModel::count(),
+            usersCount: User::count(),
+            activeCompetitions: CompetitionModel::where('active', true)->count(),
+        );
     }
 }

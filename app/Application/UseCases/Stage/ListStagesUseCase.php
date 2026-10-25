@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Stage;
 
 use App\Application\DTOs\StageDTO;
+use App\Application\DTOs\View\StagesIndexDTO;
 use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
@@ -14,7 +15,7 @@ use App\Models\User;
 
 class ListStagesUseCase
 {
-    public function execute(User $user, string $leagueId): array
+    public function execute(User $user, string $leagueId): StagesIndexDTO
     {
         $league = LeagueModel::with('edition')->findOrFail($leagueId);
 
@@ -85,12 +86,12 @@ class ListStagesUseCase
             );
         });
 
-        return [
-            'leagueId' => $league->id,
-            'leagueName' => $league->name,
-            'competitionName' => $edition->competition->name,
-            'year' => $edition->year,
-            'stages' => $stages,
-        ];
+        return new StagesIndexDTO(
+            leagueId: $league->id,
+            leagueName: $league->name,
+            competitionName: $edition->competition->name,
+            year: $edition->year,
+            stages: $stages,
+        );
     }
 }

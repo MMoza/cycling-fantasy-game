@@ -4,26 +4,20 @@ declare(strict_types=1);
 
 namespace App\Presentation\Http\Controllers;
 
-use App\Application\DTOs\CreateLeagueDTO;
+use App\Application\DTOs\View\LeagueIndexDTO;
 use App\Application\Exceptions\ApplicationException;
 use App\Application\UseCases\League\CreateLeagueUseCase;
 use App\Application\UseCases\League\GetCreateLeagueFormDataUseCase;
-use App\Application\UseCases\League\GetUserSeasonLeaguesUseCase;
+use App\Application\UseCases\League\GetLeagueDashboardUseCase;
 use App\Application\UseCases\League\JoinLeagueUseCase;
 use App\Application\UseCases\League\ListLeaguesUseCase;
-use App\Application\UseCases\League\ShowLeagueUseCase;
+use App\Application\UseCases\League\SearchPublicLeaguesUseCase;
 use App\Application\UseCases\League\UpdateLeagueUseCase;
-use App\Application\UseCases\Season\ShowSeasonUseCase;
-use App\Domain\Services\OnlineStatusService;
-use App\Domain\ValueObjects\PredictionType;
-use App\Infrastructure\Persistence\Models\LeagueModel;
-use App\Infrastructure\Persistence\Models\PredictionModel;
-use App\Infrastructure\Persistence\Models\ScoreEventModel;
-use App\Models\User;
-use Carbon\Carbon;
+use App\Presentation\Http\Requests\League\JoinLeagueRequest;
+use App\Presentation\Http\Requests\League\JoinOfficialLeagueRequest;
+use App\Presentation\Http\Requests\League\StoreLeagueRequest;
+use App\Presentation\Http\Requests\League\UpdateLeagueRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class LeagueController extends Controller
@@ -32,360 +26,40 @@ class LeagueController extends Controller
         private readonly ListLeaguesUseCase $listLeaguesUseCase,
         private readonly GetCreateLeagueFormDataUseCase $getCreateLeagueFormDataUseCase,
         private readonly CreateLeagueUseCase $createLeagueUseCase,
-        private readonly ShowLeagueUseCase $showLeagueUseCase,
+        private readonly GetLeagueDashboardUseCase $getLeagueDashboardUseCase,
+        private readonly SearchPublicLeaguesUseCase $searchPublicLeaguesUseCase,
         private readonly JoinLeagueUseCase $joinLeagueUseCase,
         private readonly UpdateLeagueUseCase $updateLeagueUseCase,
-        private readonly ShowSeasonUseCase $showSeasonUseCase,
-        private readonly GetUserSeasonLeaguesUseCase $getUserSeasonLeaguesUseCase,
     ) {}
 
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        $myLeagues = $this->listLeaguesUseCase->execute($user);
-
         $search = $request->query('q');
-        $publicLeagues = collect();
+        $showPublicLeagues = $search || $request->has('page');
 
-        if ($search || $request->has('page')) {
-            $query = LeagueModel::withCount('users')
-                ->with(['edition.competition', 'scoringSystem', 'owner'])
-                ->where('is_public', true);
-
-            if ($search) {
-                $query->where('name', 'like', "%{$search}%");
-            }
-
-            $publicLeagues = $query->orderBy('name')
-                ->paginate(20)
-                ->through(fn ($league) => [
-                    'id' => $league->id,
-                    'name' => $league->name,
-                    'edition' => [
-                        'name' => $league->edition->competition->name,
-                        'year' => $league->edition->year,
-                    ],
-                    'scoring_system' => [
-                        'name' => $league->scoringSystem->name,
-                    ],
-                    'member_count' => $league->users_count,
-                    'owner_name' => $league->owner->name,
-                    'is_joined' => $user->leagues()->where('leagues.id', $league->id)->exists(),
-                    'is_official' => $league->is_official,
-                ]);
-        }
-
-        return Inertia::render('Leagues/Index', [
-            'my_leagues' => $myLeagues->map(fn ($dto) => [
-                'id' => $dto->id,
-                'name' => $dto->name,
-                'edition' => [
-                    'name' => $dto->editionName,
-                    'year' => $dto->editionYear,
-                ],
-                'scoring_system' => [
-                    'name' => $dto->scoringSystemName,
-                ],
-                'member_count' => $dto->memberCount,
-                'owner_id' => $dto->ownerId,
-                'invite_code' => $dto->inviteCode,
-                'is_official' => $dto->isOfficial,
-                'is_public' => $dto->isPublic,
-            ]),
-            'public_leagues' => $publicLeagues,
-            'search_query' => $search ?? '',
-        ]);
+        return Inertia::render('Leagues/Index', (new LeagueIndexDTO(
+            myLeagues: $this->listLeaguesUseCase->execute($request->user()),
+            publicLeagues: $showPublicLeagues
+                ? $this->searchPublicLeaguesUseCase->execute($request->user(), $search)
+                : [],
+            searchQuery: $search ?? '',
+        ))->toArray());
     }
 
     public function create()
     {
-        $data = $this->getCreateLeagueFormDataUseCase->execute();
-
-        return Inertia::render('Leagues/Create', [
-            'editions' => $data['editions'],
-            'scoringSystems' => $data['scoringSystems'],
-        ]);
+        return Inertia::render('Leagues/Create', $this->getCreateLeagueFormDataUseCase->execute()->toArray());
     }
 
     public function show(Request $request, string $league)
     {
-        $leagueModel = $this->showLeagueUseCase->execute($request->user(), $league);
-
-        $seasonLeagues = $this->getUserSeasonLeaguesUseCase->execute($request->user(), $leagueModel->id);
-
-        $nextStage = $leagueModel->stages()
-            ->whereIn('status', ['upcoming', 'ongoing'])
-            ->orderByRaw("CASE WHEN status = 'ongoing' THEN 0 ELSE 1 END")
-            ->orderBy('date')
-            ->orderBy('scheduled_start')
-            ->first();
-
-        $totalStages = $leagueModel->stages()->where('type', '!=', 'rest')->count();
-        $completedStages = $leagueModel->stages()->where('status', 'finished')->count();
-
-        $userId = $request->user()->id;
-
-        $nextStageHasPredictions = $nextStage
-            ? PredictionModel::where('league_id', $leagueModel->id)
-                ->where('user_id', $userId)
-                ->where('stage_id', $nextStage->id)
-                ->where('type', PredictionType::PreStage)
-                ->exists()
-            : false;
-
-        $allScoreEvents = ScoreEventModel::where('league_id', $leagueModel->id)
-            ->selectRaw('user_id, stage_id, SUM(points) as total_points')
-            ->groupBy('user_id', 'stage_id')
-            ->get();
-
-        $generalScores = $allScoreEvents->whereNull('stage_id');
-        $perStageScores = $allScoreEvents->whereNotNull('stage_id');
-
-        $members = DB::table('league_user')
-            ->where('league_id', $leagueModel->id)
-            ->join('users', 'users.id', '=', 'league_user.user_id')
-            ->select('users.id', 'users.name', 'users.avatar', 'users.last_active_at')
-            ->get();
-
-        $scoredStages = $leagueModel->stages()
-            ->where('status', 'finished')
-            ->whereIn('id', $perStageScores->pluck('stage_id')->unique())
-            ->orderBy('number')
-            ->get(['id', 'number']);
-
-        $previousRanks = null;
-
-        if ($scoredStages->count() >= 2) {
-            $previousStageId = $scoredStages->slice(-2, 1)->first()->id;
-
-            $previousScores = $generalScores->concat(
-                $perStageScores->filter(fn ($s) => in_array($s->stage_id, $scoredStages->pluck('id')->take($scoredStages->count() - 1)->toArray(), true))
-            );
-
-            $previousScoresPerUser = $previousScores
-                ->groupBy('user_id')
-                ->map(fn ($events) => $events->sum('total_points'));
-
-            $previousLeaderboard = $members
-                ->map(fn ($member) => [
-                    'user_id' => $member->id,
-                    'points' => (int) ($previousScoresPerUser[$member->id] ?? 0),
-                ])
-                ->sortByDesc('points')
-                ->values()
-                ->map(fn ($entry, $index) => [
-                    'rank' => $index + 1,
-                    ...$entry,
-                ]);
-
-            $previousRanks = $previousLeaderboard->pluck('rank', 'user_id')->toArray();
-        }
-
-        $totalScoresPerUser = $allScoreEvents
-            ->groupBy('user_id')
-            ->map(fn ($events) => $events->sum('total_points'));
-
-        $leaderboard = $members
-            ->map(fn ($member) => [
-                'user_id' => $member->id,
-                'user_name' => $member->name,
-                'avatar' => $this->resolveAvatarUrl($member->avatar),
-                'points' => (int) ($totalScoresPerUser[$member->id] ?? 0),
-                'is_current_user' => $member->id === $userId,
-                'is_online' => OnlineStatusService::isOnline(
-                    $member->last_active_at ? Carbon::parse($member->last_active_at) : null
-                ),
-            ])
-            ->sortByDesc('points')
-            ->values()
-            ->map(fn ($entry, $index) => [
-                'rank' => $index + 1,
-                ...$entry,
-            ]);
-
-        $topPoints = $leaderboard->first()['points'] ?? 0;
-
-        // Calculate winner streak (correctly guessed stage winner in last 2+ scored stages)
-        $winnerStreaks = [];
-        if ($scoredStages->isNotEmpty()) {
-            $lastStageIds = $scoredStages->take(-5)->pluck('id')->reverse()->values();
-
-            $correctPredictions = DB::table('predictions')
-                ->join('stage_results', function ($join) {
-                    $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
-                        ->where('stage_results.position', '=', 1);
-                })
-                ->where('predictions.league_id', $leagueModel->id)
-                ->where('predictions.category', '=', 'stage_winner')
-                ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
-                ->whereIn('predictions.stage_id', $lastStageIds)
-                ->select('predictions.user_id', 'predictions.stage_id')
-                ->get()
-                ->groupBy('user_id');
-
-            foreach ($correctPredictions as $userId => $hits) {
-                $hitStageIds = $hits->pluck('stage_id')->toArray();
-                $streak = 0;
-                foreach ($lastStageIds as $stageId) {
-                    if (in_array($stageId, $hitStageIds, true)) {
-                        $streak++;
-                    } else {
-                        break;
-                    }
-                }
-                if ($streak >= 2) {
-                    $winnerStreaks[$userId] = $streak;
-                }
-            }
-        }
-
-        $leaderboard = $leaderboard->map(function ($entry) use ($previousRanks, $topPoints, $winnerStreaks) {
-            $previousRank = $previousRanks[$entry['user_id']] ?? null;
-            $rankChange = $previousRank !== null ? $previousRank - $entry['rank'] : null;
-
-            return [
-                ...$entry,
-                'previous_rank' => $previousRank,
-                'rank_change' => $rankChange,
-                'behind_leader' => $topPoints - $entry['points'],
-                'winner_streak' => $winnerStreaks[$entry['user_id']] ?? 0,
-            ];
-        });
-
-        $userEntry = $leaderboard->firstWhere('is_current_user', true);
-
-        $activityLogs = $leagueModel->activityLogs->map(function ($log) {
-            $data = $log->data;
-
-            if ($log->type->value === 'league_winner' && isset($data['winner_avatar'])) {
-                $data['winner_avatar'] = $this->resolveAvatarUrl($data['winner_avatar']);
-            }
-
-            return [
-                'id' => $log->id,
-                'type' => $log->type->value,
-                'title' => $log->title,
-                'description' => $log->description,
-                'data' => $data,
-                'created_at' => $log->created_at->diffForHumans(),
-            ];
-        });
-
-        return Inertia::render('Leagues/Show', [
-            'league_id' => $leagueModel->id,
-            'season_leagues' => $seasonLeagues,
-            'league' => [
-                'id' => $leagueModel->id,
-                'name' => $leagueModel->name,
-                'invite_code' => $leagueModel->invite_code,
-                'competition' => [
-                    'name' => $leagueModel->edition->competition->name,
-                    'year' => $leagueModel->edition->year,
-                    'type' => $leagueModel->edition->competition->type->value,
-                    'coverImageUrl' => $this->resolveAvatarUrl($leagueModel->edition->competition->cover_image),
-                    'logoImageUrl' => $this->resolveAvatarUrl($leagueModel->edition->competition->logo_image),
-                ],
-                'owner_id' => $leagueModel->owner_id,
-                'scoring_system' => [
-                    'name' => $leagueModel->scoringSystem->name,
-                    'type' => $leagueModel->scoringSystem->type->value,
-                    'description' => $leagueModel->scoringSystem->type->description(),
-                    'rules' => $leagueModel->scoringSystem->rules->map(fn ($rule) => [
-                        'type' => $rule->type->value,
-                        'label' => $rule->type->label(),
-                        'context' => $rule->type->context()->value,
-                        'points' => $rule->points,
-                        'difficulty' => $rule->difficulty,
-                        'position' => $rule->position,
-                    ])->values(),
-                ],
-                'is_official' => $leagueModel->is_official,
-                'is_public' => $leagueModel->is_public,
-                'max_players' => $leagueModel->max_players,
-                'invite_code' => $leagueModel->invite_code,
-                'member_count' => $members->count(),
-                'is_owner' => $leagueModel->owner_id === $userId,
-                'edition_status' => $leagueModel->edition->status->value,
-                'progress' => [
-                    'current_stage' => $completedStages + 1,
-                    'total_stages' => $totalStages,
-                ],
-            ],
-            'next_stage' => $nextStage ? [
-                'id' => $nextStage->id,
-                'number' => $nextStage->number,
-                'name' => $nextStage->name,
-                'date' => $nextStage->date->format('d M'),
-                'type' => $nextStage->type->label(),
-                'type_value' => $nextStage->type->value,
-                'distance' => $nextStage->distance ? "{$nextStage->distance} km" : null,
-                'distance_value' => $nextStage->distance,
-                'origin' => $nextStage->origin,
-                'destination' => $nextStage->destination,
-                'status' => $nextStage->status->value,
-                'scheduled_start' => $nextStage->scheduled_start?->toIso8601String(),
-                'difficulty' => $nextStage->difficulty,
-                'has_predictions' => $nextStageHasPredictions,
-            ] : null,
-            'user_position' => $userEntry ? [
-                'rank' => (string) $userEntry['rank'],
-                'points' => (string) $userEntry['points'],
-                'behind_leader' => $userEntry['behind_leader'].' pts',
-            ] : [
-                'rank' => '-',
-                'points' => '0',
-                'behind_leader' => '-',
-            ],
-            'stages' => $leagueModel->stages()
-                ->orderBy('number')
-                ->limit(5)
-                ->get()
-                ->map(fn ($s) => [
-                    'id' => $s->id,
-                    'number' => $s->number,
-                    'name' => "{$s->origin} → {$s->destination}",
-                    'date' => $s->date->format('d M'),
-                    'type' => $s->type->label(),
-                    'distance' => $s->distance ? "{$s->distance} km" : null,
-                    'status' => $s->status->value,
-                ]),
-            'leaderboard' => $leaderboard->values(),
-            'activity_logs' => $activityLogs,
-        ]);
+        return Inertia::render('Leagues/Show', $this->getLeagueDashboardUseCase->execute($request->user(), $league)->toArray());
     }
 
-    private function getSeasonSummary(User $user): array
+    public function store(StoreLeagueRequest $request)
     {
-        $seasonData = $this->showSeasonUseCase->execute($user);
-
-        return [
-            'year' => $seasonData['year'],
-            'joined_count' => $seasonData['user_joined_count'],
-            'total_competitions' => $seasonData['total_competitions'],
-        ];
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'edition_id' => ['required', 'uuid', 'exists:editions,id'],
-            'scoring_system_id' => ['required', 'uuid', 'exists:scoring_systems,id'],
-            'is_public' => ['required', 'boolean'],
-            'is_official' => ['sometimes', 'boolean'],
-        ]);
-
-        $dto = new CreateLeagueDTO(
-            name: $validated['name'],
-            editionId: $validated['edition_id'],
-            scoringSystemId: $validated['scoring_system_id'],
-            isPublic: $validated['is_public'],
-            isOfficial: $validated['is_official'] ?? false,
-        );
-
         try {
-            $league = $this->createLeagueUseCase->execute($request->user(), $dto);
+            $league = $this->createLeagueUseCase->execute($request->user(), $request->toDTO());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['plan' => $e->getMessage()])->withInput();
         }
@@ -393,14 +67,10 @@ class LeagueController extends Controller
         return redirect()->route('leagues.show', $league->id);
     }
 
-    public function join(Request $request)
+    public function join(JoinLeagueRequest $request)
     {
-        $validated = $request->validate([
-            'invite_code' => ['required', 'string', 'exists:leagues,invite_code'],
-        ]);
-
         try {
-            $league = $this->joinLeagueUseCase->execute($request->user(), $validated['invite_code']);
+            $league = $this->joinLeagueUseCase->execute($request->user(), $request->inviteCode());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['invite_code' => $e->getMessage()]);
         }
@@ -408,14 +78,10 @@ class LeagueController extends Controller
         return redirect()->route('leagues.show', $league->id);
     }
 
-    public function joinOfficial(Request $request)
+    public function joinOfficial(JoinOfficialLeagueRequest $request)
     {
-        $validated = $request->validate([
-            'league_id' => ['required', 'uuid', 'exists:leagues,id'],
-        ]);
-
         try {
-            $league = $this->joinLeagueUseCase->executeById($request->user(), $validated['league_id']);
+            $league = $this->joinLeagueUseCase->executeById($request->user(), $request->leagueId());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['league' => $e->getMessage()]);
         }
@@ -423,42 +89,14 @@ class LeagueController extends Controller
         return redirect()->route('leagues.show', $league->id);
     }
 
-    public function update(Request $request, string $league)
+    public function update(UpdateLeagueRequest $request, string $league)
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'is_public' => ['sometimes', 'boolean'],
-        ]);
-
         try {
-            $this->updateLeagueUseCase->execute($request->user(), $league, $validated);
+            $this->updateLeagueUseCase->execute($request->user(), $league, $request->validated());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['settings' => $e->getMessage()]);
         }
 
         return redirect()->back();
-    }
-
-    private function resolveAvatarUrl(?string $path): ?string
-    {
-        if ($path === null) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http')) {
-            return $path;
-        }
-
-        $disk = Storage::disk('s3');
-
-        try {
-            return $disk->temporaryUrl($path, now()->addHours(24));
-        } catch (\Exception) {
-            try {
-                return $disk->url($path);
-            } catch (\Exception) {
-                return null;
-            }
-        }
     }
 }

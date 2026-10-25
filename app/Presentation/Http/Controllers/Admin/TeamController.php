@@ -13,8 +13,10 @@ use App\Application\UseCases\Admin\Team\ShowTeamUseCase;
 use App\Application\UseCases\Admin\Team\StoreTeamUseCase;
 use App\Application\UseCases\Admin\Team\UpdateTeamUseCase;
 use App\Presentation\Http\Controllers\Controller;
+use App\Presentation\Http\Requests\Admin\AddTeamRiderRequest;
+use App\Presentation\Http\Requests\Admin\StoreTeamRequest;
+use App\Presentation\Http\Requests\Admin\UpdateTeamRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,32 +34,17 @@ class TeamController extends Controller
 
     public function index(): Response
     {
-        $data = $this->listTeamsUseCase->execute();
-
-        return Inertia::render('Admin/Teams/Index', [
-            'teams' => $data['teams'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Teams/Index', $this->listTeamsUseCase->execute()->toArray());
     }
 
     public function create(): Response
     {
-        $data = $this->getTeamFormDataUseCase->execute();
-
-        return Inertia::render('Admin/Teams/Form', [
-            'team' => $data['team'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Teams/Form', $this->getTeamFormDataUseCase->execute()->toArray());
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreTeamRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'abbreviation' => 'nullable|string|size:3|unique:teams,abbreviation',
-            'country_id' => 'nullable|string|size:2|exists:countries,id',
-            'logo_url' => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $this->storeTeamUseCase->execute($validated);
 
@@ -66,49 +53,27 @@ class TeamController extends Controller
 
     public function show(string $id): Response
     {
-        $data = $this->showTeamUseCase->execute($id);
-
-        return Inertia::render('Admin/Teams/Show', [
-            'team' => $data['team'],
-            'rosters' => $data['rosters'],
-            'allRiders' => $data['allRiders'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Teams/Show', $this->showTeamUseCase->execute($id)->toArray());
     }
 
     public function edit(string $id): Response
     {
-        $data = $this->getTeamFormDataUseCase->execute($id);
-
-        return Inertia::render('Admin/Teams/Form', [
-            'team' => $data['team'],
-            'countries' => $data['countries'],
-        ]);
+        return Inertia::render('Admin/Teams/Form', $this->getTeamFormDataUseCase->execute($id)->toArray());
     }
 
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(UpdateTeamRequest $request, string $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'abbreviation' => 'nullable|string|size:3|unique:teams,abbreviation,'.$id,
-            'country_id' => 'nullable|string|size:2|exists:countries,id',
-            'logo_url' => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $this->updateTeamUseCase->execute($id, $validated);
 
         return redirect()->route('admin.teams.index');
     }
 
-    public function addRider(Request $request, string $id): RedirectResponse
+    public function addRider(AddTeamRiderRequest $request, string $id): RedirectResponse
     {
-        $validated = $request->validate([
-            'rider_id' => 'required|string|exists:riders,id',
-            'year' => 'required|integer|min:2020|max:2100',
-        ]);
-
         try {
-            $this->addRiderToTeamUseCase->execute($id, $validated['rider_id'], $validated['year']);
+            $this->addRiderToTeamUseCase->execute($id, $request->riderId(), $request->year());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['rider_id' => $e->getMessage()]);
         }

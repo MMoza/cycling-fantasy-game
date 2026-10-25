@@ -25,6 +25,7 @@ class PreRaceScoringService
     public function __construct(
         private readonly ActivityLogService $activityLog,
         private readonly NotificationService $notificationService,
+        private readonly PredictionHitService $predictionHits,
     ) {}
 
     public function scoreEdition(string $editionId, bool $force = false): array
@@ -155,16 +156,7 @@ class PreRaceScoringService
             return;
         }
 
-        $stagesWon = DB::table('predictions')
-            ->join('stage_results', function ($join) {
-                $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
-                    ->where('stage_results.position', '=', 1);
-            })
-            ->where('predictions.league_id', $league->id)
-            ->where('predictions.user_id', $winner->id)
-            ->where('predictions.category', 'stage_winner')
-            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id")
-            ->count();
+        $stagesWon = $this->predictionHits->correctWinnerPredictions($league->id, $winner->id)->count();
 
         $bestStage = DB::table('score_events')
             ->join('stages', 'stages.id', '=', 'score_events.stage_id')

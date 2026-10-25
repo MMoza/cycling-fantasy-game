@@ -842,3 +842,54 @@ invited_by (uuid FK -> users, nullable) -- quien invitó a este usuario
 - No hay límite de invitaciones por usuario (preparado para badges)
 - `invited_by` es nullable (usuarios existentes no tienen invitador)
 - No se puede invitar a uno mismo (validación implícita: código único por user)
+
+## DTOs de presentación (Inertia) y Form Requests
+
+Convención vigente para controladores, use cases y validación (rama
+`feature/typed-inertia-dtos`).
+
+### DTOs de presentación
+
+- Ubicación: `app/Application/DTOs/View/*PageDTO` / `*ViewDTO` — **una clase
+  por fichero** (PSR-4).
+- `readonly class` + `implements Arrayable`; `toArray()` emite las **claves
+  exactas del contrato JSON** (snake o camel según la página) en el mismo
+  orden. El contrato está blindado por `tests/Feature/LeaguePropsContractTest.php`
+  y no debe cambiar sin actualizar React/TS (incluidas las claves `only:` de
+  los partial reloads de `Leagues/Show`).
+- Los use cases **devuelven DTOs**, nunca arrays planos:
+  `public function execute(...): XPageDTO`.
+- Los controladores renderizan
+  `Inertia::render('Page', $useCase->execute(...)->toArray())` — sin
+  re-mapeos, sin queries y sin lógica de negocio.
+- Los sub-valores complejos pueden ser `mixed` con `@param` docblock
+  (ver `UserProfilePageDTO` como referencia).
+
+### Form Requests
+
+- Ubicación: `app/Presentation/Http/Requests/{Dominio}/*Request`
+  (League, Prediction, Profile, Push, Auth, Admin…).
+- `rules()` + acceso tipado: `toDTO()` cuando el use case recibe un DTO
+  (ver `StoreLeagueRequest`, `StoreEmailRequest`), o accesores simples
+  (`inviteCode()`, `predictions()`, `classifications()`…) en el resto.
+- **Las claves de error de validación forman parte del contrato con React**:
+  no renombrar (`plan`, `invite_code`, `settings`, `stage`, `race`…).
+
+### Servicios reutilizables
+
+- `MediaUrlResolverInterface` / `S3MediaUrlResolver`: resolución de URLs de
+  medios (sustituye a 12 copias privadas `resolveS3Url`/`resolveAvatarUrl`).
+- `LeaderboardService`: `leagueStandings()` (rank movement, behind-leader,
+  winner streaks) y `rankPoints()` (ranking genérico).
+- `PredictionHitService`: consultas de "acertó al ganador de etapa".
+
+### Datos de prueba para UI
+
+```bash
+php artisan db:seed --class=TestUIScenarioSeeder
+```
+
+Escenario completo (equipos, corredores, etapas con resultados y
+puntuación real, ligas de temporada, activity logs, notificaciones,
+estados de perfil). Login: `carlos@test.com` / `password` (incluye
+`is_admin` para el portal admin).

@@ -10,8 +10,9 @@ use App\Application\UseCases\Admin\CompetitionSetup\RemoveTeamFromCompetitionUse
 use App\Application\UseCases\Admin\CompetitionSetup\ShowSetupUseCase;
 use App\Application\UseCases\Admin\CompetitionSetup\ToggleRiderUseCase;
 use App\Presentation\Http\Controllers\Controller;
+use App\Presentation\Http\Requests\Admin\AddCompetitionTeamRequest;
+use App\Presentation\Http\Requests\Admin\ToggleCompetitionRiderRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,24 +27,13 @@ class CompetitionSetupController extends Controller
 
     public function show(string $competitionId, string $editionId): Response
     {
-        $data = $this->showSetupUseCase->execute($competitionId, $editionId);
-
-        return Inertia::render('Admin/Competitions/Setup', [
-            'competition' => $data['competition'],
-            'edition' => $data['edition'],
-            'participants' => $data['participants'],
-            'teams' => $data['teams'],
-        ]);
+        return Inertia::render('Admin/Competitions/Setup', $this->showSetupUseCase->execute($competitionId, $editionId)->toArray());
     }
 
-    public function addTeam(Request $request, string $competitionId, string $editionId): RedirectResponse
+    public function addTeam(AddCompetitionTeamRequest $request, string $competitionId, string $editionId): RedirectResponse
     {
-        $validated = $request->validate([
-            'team_id' => 'required|string|exists:teams,id',
-        ]);
-
         try {
-            $this->addTeamToCompetitionUseCase->execute($competitionId, $editionId, $validated['team_id']);
+            $this->addTeamToCompetitionUseCase->execute($competitionId, $editionId, $request->teamId());
         } catch (ApplicationException $e) {
             return redirect()->back()->withErrors(['team_id' => $e->getMessage()]);
         }
@@ -58,20 +48,14 @@ class CompetitionSetupController extends Controller
         return redirect()->route('admin.competitions.setup', [$competitionId, $editionId]);
     }
 
-    public function toggleRider(Request $request, string $competitionId, string $editionId): RedirectResponse
+    public function toggleRider(ToggleCompetitionRiderRequest $request, string $competitionId, string $editionId): RedirectResponse
     {
-        $validated = $request->validate([
-            'team_id' => 'required|string|exists:teams,id',
-            'rider_id' => 'required|string|exists:riders,id',
-            'active' => 'required|boolean',
-        ]);
-
         $this->toggleRiderUseCase->execute(
             $competitionId,
             $editionId,
-            $validated['team_id'],
-            $validated['rider_id'],
-            $validated['active'],
+            $request->teamId(),
+            $request->riderId(),
+            $request->active(),
         );
 
         return redirect()->route('admin.competitions.setup', [$competitionId, $editionId]);

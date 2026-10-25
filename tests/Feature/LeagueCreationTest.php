@@ -298,3 +298,45 @@ test('free user can join official league', function () {
         'role' => 'member',
     ]);
 });
+
+test('store league request validates the required fields', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->from(route('leagues.create'))->post(route('leagues.store'), [
+        'name' => '',
+    ]);
+
+    $response->assertSessionHasErrors(['name', 'edition_id', 'scoring_system_id', 'is_public']);
+    $this->assertDatabaseCount('leagues', 0);
+});
+
+test('join league request validates the invite code', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->from(route('leagues.index'))->post(route('leagues.join'), [
+        'invite_code' => 'DOESNOTEXIST',
+    ]);
+
+    $response->assertSessionHasErrors(['invite_code']);
+});
+
+test('join official league request validates the league id', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->from(route('leagues.index'))->post(route('leagues.join-official'), [
+        'league_id' => 'not-a-uuid',
+    ]);
+
+    $response->assertSessionHasErrors(['league_id']);
+});
+
+test('update league request validates the settings fields', function () {
+    $owner = User::factory()->create();
+    $league = createSeasonLeague('Liga Validada', (int) date('Y'), date('Y').'-07-01', $owner)['league'];
+
+    $response = $this->actingAs($owner)->from(route('leagues.show', $league->id))->put(route('leagues.update', $league->id), [
+        'name' => str_repeat('a', 300),
+    ]);
+
+    $response->assertSessionHasErrors(['name']);
+});
