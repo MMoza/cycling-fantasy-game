@@ -49,7 +49,7 @@ export default function Landing({ auth, seasonRaces, activeRaceId, currentStage 
                 <meta name="keywords" content="fantasy cycling, ciclismo fantasy, tour de francia, giro de italia, la vuelta, porras ciclismo, juego ciclismo, liga ciclismo" />
                 <meta name="robots" content="index, follow" />
                 <link rel="preload" as="image" href="/logo-pedales.png" />
-                <link rel="preload" as="image" href="/portada-landing.avif" />
+                <link rel="preload" as="image" href="/enririqueta.jpg" />
             </Head>
 
             {/* Hero with embedded carousel */}

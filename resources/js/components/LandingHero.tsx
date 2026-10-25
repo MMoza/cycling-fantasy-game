@@ -46,7 +46,7 @@ export default function LandingHero({ seasonRaces, activeRaceId, currentStage, a
         <section className="relative flex min-h-[calc(100vh-3.5rem)] flex-col overflow-hidden">
             <div
                 className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: 'url(/portada-landing.avif)' }}
+                style={{ backgroundImage: 'url(/enririqueta.jpg)' }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30" />
 
