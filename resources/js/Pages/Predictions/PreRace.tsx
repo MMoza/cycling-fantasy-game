@@ -61,6 +61,15 @@ const JERSEY_CATEGORIES = [
 
 const PODIUM_LABELS = ['1º', '2º', '3º'];
 
+const PRE_RACE_TYPES = [
+    'gc_top_5',
+    'points_winner',
+    'mountains_winner',
+    'youth_winner',
+    'teams_winner',
+    'super_combativo',
+];
+
 function initArrayPredictions(predictions: Record<string, Prediction>, key: string, length: number): string[] {
     const existing = predictions[key];
     if (!existing) return Array(length).fill('');
@@ -102,6 +111,47 @@ export default function PreRace({ league_id, league_name, competition, is_locked
         return map;
     }, [availableTeams]);
 
+    // Secciones pre-carrera derivadas de las reglas del sistema de puntuación:
+    // solo se muestran (y se envían) las categorías y posiciones que puntúan
+    // (p.ej. una carrera de una semana solo puntúa el Top 3 de la general).
+    // Si el sistema no define ninguna regla pre-carrera, se mantiene el
+    // formulario completo actual.
+    const preRaceConfig = useMemo(() => {
+        const rules = scoring_system.rules ?? [];
+        const hasPreRaceRules = rules.some((r) => PRE_RACE_TYPES.includes(r.type));
+
+        const positionsFor = (type: string): number[] => {
+            const positions = rules
+                .filter((r) => r.type === type && typeof r.position === 'number')
+                .map((r) => r.position as number);
+            return [...new Set(positions)].sort((a, b) => a - b);
+        };
+
+        const gcPositions = hasPreRaceRules
+            ? positionsFor('gc_top_5')
+            : [1, 2, 3, 4, 5];
+
+        return {
+            gcPositions,
+            gcSlots: gcPositions.map((position, index) => ({
+                label: `${position}º clasificado general`,
+                index,
+            })),
+            jerseys: JERSEY_CATEGORIES.filter(
+                ({ key }) => !hasPreRaceRules || rules.some((r) => r.type === key),
+            ).map((category) => {
+                const positions = positionsFor(category.key);
+
+                return {
+                    ...category,
+                    positions: positions.length > 0 ? positions : [1, 2, 3],
+                };
+            }),
+            hasTeams: !hasPreRaceRules || rules.some((r) => r.type === 'teams_winner'),
+            hasSuper: !hasPreRaceRules || rules.some((r) => r.type === 'super_combativo'),
+        };
+    }, [scoring_system]);
+
     const resolvePredictionValue = (value: string | string[] | Record<string, string>, category: string): string => {
         if (Array.isArray(value)) {
             return value.map((id, i) => {
@@ -126,12 +176,20 @@ export default function PreRace({ league_id, league_name, competition, is_locked
 
     const initFormData = (): Record<string, string | string[]> => {
         const data: Record<string, string | string[]> = {};
-        data.gc_top_5 = initArrayPredictions(predictions, 'gc_top_5', 5);
-        data.points_winner = initArrayPredictions(predictions, 'points_winner', 3);
-        data.mountains_winner = initArrayPredictions(predictions, 'mountains_winner', 3);
-        data.youth_winner = initArrayPredictions(predictions, 'youth_winner', 3);
-        data.teams_winner = initArrayPredictions(predictions, 'teams_winner', 1)[0] ?? '';
-        data.super_combativo = initArrayPredictions(predictions, 'super_combativo', 1)[0] ?? '';
+
+        if (preRaceConfig.gcSlots.length > 0) {
+            data.gc_top_5 = initArrayPredictions(predictions, 'gc_top_5', preRaceConfig.gcSlots.length);
+        }
+        for (const { key, positions } of preRaceConfig.jerseys) {
+            data[key] = initArrayPredictions(predictions, key, positions.length);
+        }
+        if (preRaceConfig.hasTeams) {
+            data.teams_winner = initArrayPredictions(predictions, 'teams_winner', 1)[0] ?? '';
+        }
+        if (preRaceConfig.hasSuper) {
+            data.super_combativo = initArrayPredictions(predictions, 'super_combativo', 1)[0] ?? '';
+        }
+
         return data;
     };
 
@@ -150,14 +208,27 @@ export default function PreRace({ league_id, league_name, competition, is_locked
         e.preventDefault();
         setSaving(true);
 
-        const allPredictions = [
-            { category: 'gc_top_5', value: (formData.gc_top_5 as string[]).filter(Boolean).join(',') },
-            { category: 'points_winner', value: (formData.points_winner as string[]).filter(Boolean).join(',') },
-            { category: 'mountains_winner', value: (formData.mountains_winner as string[]).filter(Boolean).join(',') },
-            { category: 'youth_winner', value: (formData.youth_winner as string[]).filter(Boolean).join(',') },
-            { category: 'teams_winner', value: formData.teams_winner as string },
-            { category: 'super_combativo', value: formData.super_combativo as string },
-        ];
+        // Solo se envían las categorías que puntúa el sistema de puntuación
+        const allPredictions: { category: string; value: string }[] = [];
+
+        if (preRaceConfig.gcSlots.length > 0) {
+            allPredictions.push({
+                category: 'gc_top_5',
+                value: ((formData.gc_top_5 as string[]) ?? []).filter(Boolean).join(','),
+            });
+        }
+        for (const { key } of preRaceConfig.jerseys) {
+            allPredictions.push({
+                category: key,
+                value: ((formData[key] as string[]) ?? []).filter(Boolean).join(','),
+            });
+        }
+        if (preRaceConfig.hasTeams) {
+            allPredictions.push({ category: 'teams_winner', value: formData.teams_winner as string });
+        }
+        if (preRaceConfig.hasSuper) {
+            allPredictions.push({ category: 'super_combativo', value: formData.super_combativo as string });
+        }
 
         const predictionsData = allPredictions.filter((p) => p.value !== '');
 
@@ -233,33 +304,35 @@ export default function PreRace({ league_id, league_name, competition, is_locked
                     <CardContent className="overflow-visible px-6">
                         {is_locked ? (
                             <div className="space-y-6">
-                                <div className="space-y-3">
-                                    <Label className="text-base font-medium">Top 5 clasificación general</Label>
-                                    {GC_TOP_5_SLOTS.map(({ label, position }) => {
-                                        const prediction = predictions['gc_top_5'];
-                                        const value = prediction ? (Array.isArray(prediction.value) ? prediction.value[position] : null) : null;
-                                        return (
-                                            <div key={`gc_${position}`} className="flex items-center gap-3">
-                                                <span className="w-8 shrink-0 text-sm font-medium text-muted-foreground">{position + 1}º</span>
-                                                <p className="flex-1 rounded-lg border bg-muted px-3 py-2 text-sm">
-                                                    {value ? resolvePredictionValue(value, 'gc_top_5') : <span className="italic text-muted-foreground">Sin pronóstico</span>}
-                                                </p>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                {preRaceConfig.gcSlots.length > 0 && (
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-medium">Top {preRaceConfig.gcSlots.length} clasificación general</Label>
+                                        {preRaceConfig.gcSlots.map(({ index }) => {
+                                            const prediction = predictions['gc_top_5'];
+                                            const value = prediction ? (Array.isArray(prediction.value) ? prediction.value[index] : null) : null;
+                                            return (
+                                                <div key={`gc_${index}`} className="flex items-center gap-3">
+                                                    <span className="w-8 shrink-0 text-sm font-medium text-muted-foreground">{index + 1}º</span>
+                                                    <p className="flex-1 rounded-lg border bg-muted px-3 py-2 text-sm">
+                                                        {value ? resolvePredictionValue(value, 'gc_top_5') : <span className="italic text-muted-foreground">Sin pronóstico</span>}
+                                                    </p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
 
-                                {JERSEY_CATEGORIES.map(({ key, label }) => {
+                                {preRaceConfig.jerseys.map(({ key, label, positions }) => {
                                     const prediction = predictions[key];
                                     const values = prediction ? (Array.isArray(prediction.value) ? prediction.value : []) : [];
                                     return (
                                         <div key={key} className="space-y-3">
                                             <Label className="text-base font-medium">{label}</Label>
-                                            {PODIUM_LABELS.map((podiumLabel, i) => {
+                                            {positions.map((position, i) => {
                                                 const value = values[i] ?? null;
                                                 return (
                                                     <div key={`${key}_${i}`} className="flex items-center gap-3">
-                                                        <span className="w-8 shrink-0 text-sm font-medium text-muted-foreground">{podiumLabel}</span>
+                                                        <span className="w-8 shrink-0 text-sm font-medium text-muted-foreground">{position}º</span>
                                                         <p className="flex-1 rounded-lg border bg-muted px-3 py-2 text-sm">
                                                             {value ? resolvePredictionValue(value, key) : <span className="italic text-muted-foreground">Sin pronóstico</span>}
                                                         </p>
@@ -270,64 +343,70 @@ export default function PreRace({ league_id, league_name, competition, is_locked
                                     );
                                 })}
 
-                                <div className="space-y-3">
-                                    <Label className="text-base font-medium">Ganador clasificación equipos</Label>
-                                    {(() => {
-                                        const prediction = predictions['teams_winner'];
-                                        const raw = prediction?.value;
-                                        const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.team_id ?? Object.values(raw)[0] : raw;
-                                        return (
-                                            <p className="rounded-lg border bg-muted px-3 py-2 text-sm">
-                                                {value ? resolvePredictionValue(prediction!.value, 'teams_winner') : <span className="italic text-muted-foreground">Sin pronóstico</span>}
-                                            </p>
-                                        );
-                                    })()}
-                                </div>
+                                {preRaceConfig.hasTeams && (
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-medium">Ganador clasificación equipos</Label>
+                                        {(() => {
+                                            const prediction = predictions['teams_winner'];
+                                            const raw = prediction?.value;
+                                            const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.team_id ?? Object.values(raw)[0] : raw;
+                                            return (
+                                                <p className="rounded-lg border bg-muted px-3 py-2 text-sm">
+                                                    {value ? resolvePredictionValue(prediction!.value, 'teams_winner') : <span className="italic text-muted-foreground">Sin pronóstico</span>}
+                                                </p>
+                                            );
+                                        })()}
+                                    </div>
+                                )}
 
-                                <div className="space-y-3">
-                                    <Label className="text-base font-medium">Supercombativo final</Label>
-                                    {(() => {
-                                        const prediction = predictions['super_combativo'];
-                                        const raw = prediction?.value;
-                                        const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.rider_id ?? Object.values(raw)[0] : raw;
-                                        return (
-                                            <p className="rounded-lg border bg-muted px-3 py-2 text-sm">
-                                                {value ? resolvePredictionValue(prediction!.value, 'super_combativo') : <span className="italic text-muted-foreground">Sin pronóstico</span>}
-                                            </p>
-                                        );
-                                    })()}
-                                </div>
+                                {preRaceConfig.hasSuper && (
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-medium">Supercombativo final</Label>
+                                        {(() => {
+                                            const prediction = predictions['super_combativo'];
+                                            const raw = prediction?.value;
+                                            const value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw.rider_id ?? Object.values(raw)[0] : raw;
+                                            return (
+                                                <p className="rounded-lg border bg-muted px-3 py-2 text-sm">
+                                                    {value ? resolvePredictionValue(prediction!.value, 'super_combativo') : <span className="italic text-muted-foreground">Sin pronóstico</span>}
+                                                </p>
+                                            );
+                                        })()}
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-8">
-                                <div className="space-y-3">
-                                    <Label className="text-base font-medium">Top 5 clasificación general</Label>
-                                    <p className="text-sm text-muted-foreground">Selecciona los 5 corredores que crees que terminarán en el Top 5 de la general.</p>
-                                    {GC_TOP_5_SLOTS.map(({ label, position }) => (
-                                        <div key={`gc_${position}`} className="flex items-center gap-3">
-                                            <span className="w-8 shrink-0 text-sm font-medium text-muted-foreground">{position + 1}º</span>
-                                            <div className="flex-1">
-                                                <SearchableSelect
-                                                    options={riderOptions}
-                                                    value={(formData.gc_top_5 as string[])[position]}
-                                                    onChange={(v) => setArrayValue('gc_top_5', position, v)}
-                                                    placeholder="Buscar corredor..."
-                                                />
+                                {preRaceConfig.gcSlots.length > 0 && (
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-medium">Top {preRaceConfig.gcSlots.length} clasificación general</Label>
+                                        <p className="text-sm text-muted-foreground">Selecciona los {preRaceConfig.gcSlots.length} corredores que crees que terminarán en el Top {preRaceConfig.gcSlots.length} de la general.</p>
+                                        {preRaceConfig.gcSlots.map(({ index }) => (
+                                            <div key={`gc_${index}`} className="flex items-center gap-3">
+                                                <span className="w-8 shrink-0 text-sm font-medium text-muted-foreground">{index + 1}º</span>
+                                                <div className="flex-1">
+                                                    <SearchableSelect
+                                                        options={riderOptions}
+                                                        value={(formData.gc_top_5 as string[])[index]}
+                                                        onChange={(v) => setArrayValue('gc_top_5', index, v)}
+                                                        placeholder="Buscar corredor..."
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                    {errors['predictions.gc_top_5'] && (
-                                        <p className="text-sm text-destructive">{errors['predictions.gc_top_5']}</p>
-                                    )}
-                                </div>
+                                        ))}
+                                        {errors['predictions.gc_top_5'] && (
+                                            <p className="text-sm text-destructive">{errors['predictions.gc_top_5']}</p>
+                                        )}
+                                    </div>
+                                )}
 
-                                {JERSEY_CATEGORIES.map(({ key, label }) => (
+                                {preRaceConfig.jerseys.map(({ key, label, positions }) => (
                                     <div key={key} className="space-y-3">
                                         <Label className="text-base font-medium">{label}</Label>
-                                        <p className="text-sm text-muted-foreground">Selecciona el podio (top 3) de esta clasificación.</p>
-                                        {PODIUM_LABELS.map((podiumLabel, i) => (
+                                        <p className="text-sm text-muted-foreground">Selecciona el podio (top {positions.length}) de esta clasificación.</p>
+                                        {positions.map((position, i) => (
                                             <div key={`${key}_${i}`} className="flex items-center gap-3">
-                                                <span className="w-8 shrink-0 text-sm font-medium text-muted-foreground">{podiumLabel}</span>
+                                                <span className="w-8 shrink-0 text-sm font-medium text-muted-foreground">{position}º</span>
                                                 <div className="flex-1">
                                                     <SearchableSelect
                                                         options={riderOptions}
@@ -344,33 +423,37 @@ export default function PreRace({ league_id, league_name, competition, is_locked
                                     </div>
                                 ))}
 
-                                <div className="space-y-3">
-                                    <Label className="text-base font-medium">Ganador clasificación equipos</Label>
-                                    <p className="text-sm text-muted-foreground">Selecciona el equipo que crees que ganará la clasificación por equipos.</p>
-                                    <SearchableSelect
-                                        options={teamOptions}
-                                        value={formData.teams_winner as string}
-                                        onChange={(v) => setFormData((prev) => ({ ...prev, teams_winner: v }))}
-                                        placeholder="Buscar equipo..."
-                                    />
-                                    {errors['predictions.teams_winner'] && (
-                                        <p className="text-sm text-destructive">{errors['predictions.teams_winner']}</p>
-                                    )}
-                                </div>
+                                {preRaceConfig.hasTeams && (
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-medium">Ganador clasificación equipos</Label>
+                                        <p className="text-sm text-muted-foreground">Selecciona el equipo que crees que ganará la clasificación por equipos.</p>
+                                        <SearchableSelect
+                                            options={teamOptions}
+                                            value={formData.teams_winner as string}
+                                            onChange={(v) => setFormData((prev) => ({ ...prev, teams_winner: v }))}
+                                            placeholder="Buscar equipo..."
+                                        />
+                                        {errors['predictions.teams_winner'] && (
+                                            <p className="text-sm text-destructive">{errors['predictions.teams_winner']}</p>
+                                        )}
+                                    </div>
+                                )}
 
-                                <div className="space-y-3">
-                                    <Label className="text-base font-medium">Supercombativo final</Label>
-                                    <p className="text-sm text-muted-foreground">Selecciona el corredor que crees que será el supercombativo de la ronda.</p>
-                                    <SearchableSelect
-                                        options={riderOptions}
-                                        value={formData.super_combativo as string}
-                                        onChange={(v) => setFormData((prev) => ({ ...prev, super_combativo: v }))}
-                                        placeholder="Buscar corredor..."
-                                    />
-                                    {errors['predictions.super_combativo'] && (
-                                        <p className="text-sm text-destructive">{errors['predictions.super_combativo']}</p>
-                                    )}
-                                </div>
+                                {preRaceConfig.hasSuper && (
+                                    <div className="space-y-3">
+                                        <Label className="text-base font-medium">Supercombativo final</Label>
+                                        <p className="text-sm text-muted-foreground">Selecciona el corredor que crees que será el supercombativo de la ronda.</p>
+                                        <SearchableSelect
+                                            options={riderOptions}
+                                            value={formData.super_combativo as string}
+                                            onChange={(v) => setFormData((prev) => ({ ...prev, super_combativo: v }))}
+                                            placeholder="Buscar corredor..."
+                                        />
+                                        {errors['predictions.super_combativo'] && (
+                                            <p className="text-sm text-destructive">{errors['predictions.super_combativo']}</p>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="flex flex-col gap-3 pt-4 pb-2">
                                     {hasPredictions && !saving && (
@@ -413,93 +496,99 @@ export default function PreRace({ league_id, league_name, competition, is_locked
                             </p>
 
                             <div className="space-y-8">
-                                <div>
-                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                                        <span className="h-px flex-1 bg-border" />
-                                        Clasificación general
-                                        <span className="h-px flex-1 bg-border" />
-                                    </h3>
-                                    <div className="space-y-1.5">
-                                        {[1, 2, 3, 4, 5].map((pos) => {
-                                            const rule = scoring_system.rules.find((r) => r.type === 'gc_top_5' && r.position === pos);
+                                {preRaceConfig.gcPositions.length > 0 && (
+                                    <div>
+                                        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                            <span className="h-px flex-1 bg-border" />
+                                            Clasificación general
+                                            <span className="h-px flex-1 bg-border" />
+                                        </h3>
+                                        <div className="space-y-1.5">
+                                            {preRaceConfig.gcPositions.map((pos) => {
+                                                const rule = scoring_system.rules.find((r) => r.type === 'gc_top_5' && r.position === pos);
+                                                return (
+                                                    <div key={pos} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
+                                                        <span className="text-sm font-medium">{pos}º clasificado</span>
+                                                        <span className="text-sm font-semibold text-accent-500">{rule?.points ?? '-'} pts</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        {(() => {
+                                            const partial = scoring_system.rules.find((r) => r.type === 'gc_top_5_partial');
+                                            return partial ? (
+                                                <p className="mt-2 text-xs text-muted-foreground">
+                                                    Si aciertas un corredor del Top {preRaceConfig.gcPositions.length} pero en posición incorrecta: <span className="font-semibold text-accent-500">{partial.points} pts</span>
+                                                </p>
+                                            ) : null;
+                                        })()}
+                                    </div>
+                                )}
+
+                                {preRaceConfig.jerseys.length > 0 && (
+                                    <div>
+                                        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                            <span className="h-px flex-1 bg-border" />
+                                            Clasificaciones secundarias
+                                            <span className="h-px flex-1 bg-border" />
+                                        </h3>
+                                        {preRaceConfig.jerseys.map(({ key, positions }) => {
+                                            const podium = positions.map((pos) =>
+                                                scoring_system.rules.find((r) => r.type === key && r.position === pos)
+                                            ).filter(Boolean);
+                                            const label = key === 'points_winner' ? 'Maillot verde' : key === 'mountains_winner' ? 'Maillot montaña' : 'Maillot blanco';
+                                            const partial = scoring_system.rules.find((r) => r.type === `${key}_partial`);
                                             return (
-                                                <div key={pos} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
-                                                    <span className="text-sm font-medium">{pos}º clasificado</span>
-                                                    <span className="text-sm font-semibold text-accent-500">{rule?.points ?? '-'} pts</span>
+                                                <div key={key} className="mb-4 last:mb-0">
+                                                    <p className="mb-2 text-sm font-medium">{label}</p>
+                                                    <div className="space-y-1.5">
+                                                        {podium.map((rule) => (
+                                                            <div key={rule!.position} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2">
+                                                                <span className="text-sm">{rule!.position}º clasificado</span>
+                                                                <span className="text-sm font-semibold text-accent-500">{rule!.points} pts</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    {partial && (
+                                                        <p className="mt-1.5 text-xs text-muted-foreground">
+                                                            Acierto parcial (corredor en el podio pero posición incorrecta): <span className="font-semibold text-accent-500">{partial.points} pts</span>
+                                                        </p>
+                                                    )}
                                                 </div>
                                             );
                                         })}
                                     </div>
-                                    {(() => {
-                                        const partial = scoring_system.rules.find((r) => r.type === 'gc_top_5_partial');
-                                        return partial ? (
-                                            <p className="mt-2 text-xs text-muted-foreground">
-                                                Si aciertas un corredor del Top 5 pero en posición incorrecta: <span className="font-semibold text-accent-500">{partial.points} pts</span>
-                                            </p>
-                                        ) : null;
-                                    })()}
-                                </div>
+                                )}
 
-                                <div>
-                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                                        <span className="h-px flex-1 bg-border" />
-                                        Clasificaciones secundarias
-                                        <span className="h-px flex-1 bg-border" />
-                                    </h3>
-                                    {['points_winner', 'mountains_winner', 'youth_winner'].map((type) => {
-                                        const podium = [1, 2, 3].map((pos) =>
-                                            scoring_system.rules.find((r) => r.type === type && r.position === pos)
-                                        ).filter(Boolean);
-                                        const label = type === 'points_winner' ? 'Maillot verde' : type === 'mountains_winner' ? 'Maillot montaña' : 'Maillot blanco';
-                                        const partial = scoring_system.rules.find((r) => r.type === `${type}_partial`);
-                                        return (
-                                            <div key={type} className="mb-4 last:mb-0">
-                                                <p className="mb-2 text-sm font-medium">{label}</p>
-                                                <div className="space-y-1.5">
-                                                    {podium.map((rule) => (
-                                                        <div key={rule!.position} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2">
-                                                            <span className="text-sm">{rule!.position}º clasificado</span>
-                                                            <span className="text-sm font-semibold text-accent-500">{rule!.points} pts</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                {partial && (
-                                                    <p className="mt-1.5 text-xs text-muted-foreground">
-                                                        Acierto parcial (corredor en el podio pero posición incorrecta): <span className="font-semibold text-accent-500">{partial.points} pts</span>
-                                                    </p>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                <div>
-                                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                                        <span className="h-px flex-1 bg-border" />
-                                        Otras predicciones pre-carrera
-                                        <span className="h-px flex-1 bg-border" />
-                                    </h3>
-                                    <div className="space-y-1.5">
-                                        {(() => {
-                                            const teamRule = scoring_system.rules.find((r) => r.type === 'teams_winner');
-                                            return (
-                                                <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
-                                                    <span className="text-sm font-medium">Ganador clasificación equipos</span>
-                                                    <span className="text-sm font-semibold text-accent-500">{teamRule?.points ?? '-'} pts</span>
-                                                </div>
-                                            );
-                                        })()}
-                                        {(() => {
-                                            const scRule = scoring_system.rules.find((r) => r.type === 'super_combativo');
-                                            return (
-                                                <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
-                                                    <span className="text-sm font-medium">Supercombativo final</span>
-                                                    <span className="text-sm font-semibold text-accent-500">{scRule?.points ?? '-'} pts</span>
-                                                </div>
-                                            );
-                                        })()}
+                                {(preRaceConfig.hasTeams || preRaceConfig.hasSuper) && (
+                                    <div>
+                                        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                            <span className="h-px flex-1 bg-border" />
+                                            Otras predicciones pre-carrera
+                                            <span className="h-px flex-1 bg-border" />
+                                        </h3>
+                                        <div className="space-y-1.5">
+                                            {preRaceConfig.hasTeams && (() => {
+                                                const teamRule = scoring_system.rules.find((r) => r.type === 'teams_winner');
+                                                return (
+                                                    <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
+                                                        <span className="text-sm font-medium">Ganador clasificación equipos</span>
+                                                        <span className="text-sm font-semibold text-accent-500">{teamRule?.points ?? '-'} pts</span>
+                                                    </div>
+                                                );
+                                            })()}
+                                            {preRaceConfig.hasSuper && (() => {
+                                                const scRule = scoring_system.rules.find((r) => r.type === 'super_combativo');
+                                                return (
+                                                    <div className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
+                                                        <span className="text-sm font-medium">Supercombativo final</span>
+                                                        <span className="text-sm font-semibold text-accent-500">{scRule?.points ?? '-'} pts</span>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 <div>
                                     <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
