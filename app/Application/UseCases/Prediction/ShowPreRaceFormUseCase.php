@@ -8,6 +8,7 @@ use App\Application\DTOs\View\PreRaceFormDTO;
 use App\Domain\ValueObjects\PredictionType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
+use App\Infrastructure\Persistence\Models\ScoringRuleModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +72,8 @@ class ShowPreRaceFormUseCase
             ->get()
             ->map(fn ($t) => ['value' => $t->id, 'label' => $t->name]);
 
+        $scoringSystem = $league->scoringSystem;
+
         return new PreRaceFormDTO(
             leagueId: $league->id,
             leagueName: $league->name,
@@ -80,7 +83,24 @@ class ShowPreRaceFormUseCase
             predictions: $predictions,
             availableRiders: $availableRiders,
             availableTeams: $availableTeams,
-            scoringSystem: $league->scoringSystem,
+            scoringSystem: [
+                'id' => $scoringSystem->id,
+                'name' => $scoringSystem->name,
+                'type' => $scoringSystem->type->value,
+                'description' => $scoringSystem->description,
+                'rules' => $scoringSystem->rules
+                    ->map(fn (ScoringRuleModel $rule) => [
+                        'id' => $rule->id,
+                        'type' => $rule->type->value,
+                        'label' => $rule->type->label(),
+                        'points' => $rule->points,
+                        'position' => $rule->position,
+                        'difficulty' => $rule->difficulty,
+                        'context' => $rule->type->context()->value,
+                    ])
+                    ->values()
+                    ->all(),
+            ],
         );
     }
 }
