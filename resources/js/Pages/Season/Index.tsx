@@ -26,6 +26,7 @@ interface SeasonCompetition {
 
 interface SeasonProps {
     year: number;
+    years: number[];
     competitions: SeasonCompetition[];
     user_joined_count: number;
     total_competitions: number;
@@ -53,11 +54,17 @@ const statusColors: Record<string, string> = {
 
 const typeOrder = ['gc', 'major', 'monument', 'classic', 'championship'];
 
-export default function Index({ year, competitions, user_joined_count, total_competitions }: SeasonProps) {
+export default function Index({ year, years, competitions, user_joined_count, total_competitions }: SeasonProps) {
     const handleJoin = (leagueId: string) => {
         router.post(route('leagues.join-official'), { league_id: leagueId }, {
             preserveScroll: true,
         });
+    };
+
+    const changeYear = (nextYear: number) => {
+        if (nextYear !== year) {
+            router.get(route('season.index', nextYear));
+        }
     };
 
     const groupedByType = competitions.reduce<Record<string, SeasonCompetition[]>>((acc, comp) => {
@@ -88,12 +95,33 @@ export default function Index({ year, competitions, user_joined_count, total_com
                         </p>
                     </div>
 
-                    <Link href={route('season.classification')}>
-                        <Button variant="outline" className="gap-2">
-                            <Trophy className="h-4 w-4" />
-                            Clasificación de temporada
-                        </Button>
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {years.length > 1 && (
+                            <div className="flex gap-1 overflow-x-auto">
+                                {years.map((seasonYear) => (
+                                    <button
+                                        key={seasonYear}
+                                        type="button"
+                                        onClick={() => changeYear(seasonYear)}
+                                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                                            seasonYear === year
+                                                ? 'bg-foreground text-background'
+                                                : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                        }`}
+                                    >
+                                        {seasonYear}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <Link href={route('season.classification')}>
+                            <Button variant="outline" className="gap-2">
+                                <Trophy className="h-4 w-4" />
+                                Clasificación de temporada
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 {user_joined_count > 0 && (

@@ -93,7 +93,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/competitions/{year?}', [UserCompetitionController::class, 'index'])->name('competitions.year');
     Route::get('/competitions/e/{edition}', [UserCompetitionController::class, 'show'])->name('competitions.show');
 
-    Route::get('/season', [SeasonController::class, 'index'])->name('season.index');
+    Route::get('/season/{year?}', [SeasonController::class, 'index'])->whereNumber('year')->name('season.index');
     Route::get('/season/classification', [SeasonController::class, 'classification'])->name('season.classification');
 });
 

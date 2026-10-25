@@ -38,6 +38,14 @@ class ShowSeasonUseCase
     {
         $year ??= (int) date('Y');
 
+        $years = EditionModel::select('year')
+            ->distinct()
+            ->whereHas('competition', fn ($q) => $q->where('active', true))
+            ->orderBy('year', 'desc')
+            ->pluck('year')
+            ->map(fn ($y) => (int) $y)
+            ->all();
+
         $editions = EditionModel::with([
             'competition.country',
             'leagues' => fn ($q) => $q->where('is_official', true)->withCount('users'),
@@ -81,6 +89,7 @@ class ShowSeasonUseCase
 
         return new SeasonIndexPageDTO(
             year: $year,
+            years: $years,
             competitions: $competitions,
             userJoinedCount: $userJoinedCount,
             totalCompetitions: count($competitions),
