@@ -893,3 +893,12 @@ Escenario completo (equipos, corredores, etapas con resultados y
 puntuación real, ligas de temporada, activity logs, notificaciones,
 estados de perfil). Login: `carlos@test.com` / `password` (incluye
 `is_admin` para el portal admin).
+
+### Comandos de datos de temporada
+
+- `php artisan season:adapt-one-week-scoring {year=2027} {--all} {--dry-run}`
+  — asigna el sistema OneWeek a las ligas de las vueltas de una semana
+  (competiciones `major`) de una temporada. Por defecto solo sustituye
+  sistemas Standard (el antiguo default); `--all` incluye cualquier sistema.
+  No recalcula puntos: ejecuta después `race:rebuild-scores {league_id}`
+  por cada liga afectada.
