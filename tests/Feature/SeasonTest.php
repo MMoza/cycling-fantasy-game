@@ -220,6 +220,36 @@ test('season use case returns only official leagues for current year', function 
     expect($result->competitions[0]->competitionName)->toBe('Tour de Francia');
 });
 
+test('one-week races auto-create official leagues with one-week scoring', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $competition = CompetitionModel::create([
+        'id' => Str::uuid()->toString(),
+        'name' => 'Paris-Nice',
+        'type' => CompetitionType::Major,
+        'country_id' => createCountry('FR', 'Francia'),
+        'active' => true,
+    ]);
+
+    ScoringSystemModel::create([
+        'id' => Str::uuid()->toString(),
+        'name' => 'Carrera de una semana',
+        'type' => ScoringSystemType::OneWeek,
+        'description' => 'Puntuación para carreras de una semana',
+    ]);
+
+    $useCase = new StoreEditionUseCase;
+    $edition = $useCase->execute($competition->id, [
+        'year' => 2027,
+        'start_date' => '2027-03-07',
+        'end_date' => '2027-03-14',
+    ], $admin->id);
+
+    $league = LeagueModel::where('edition_id', $edition->id)->where('is_official', true)->firstOrFail();
+
+    expect($league->scoringSystem->type)->toBe(ScoringSystemType::OneWeek);
+});
+
 test('season classification aggregates scores across official leagues', function () {
     $user1 = User::factory()->create(['name' => 'User 1']);
     $user2 = User::factory()->create(['name' => 'User 2']);

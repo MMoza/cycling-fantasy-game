@@ -38,6 +38,7 @@ class StoreEditionUseCase
     {
         $scoringType = match ($competition->type) {
             CompetitionType::Monument, CompetitionType::Championship, CompetitionType::Classic => ScoringSystemType::OneDay,
+            CompetitionType::Major => ScoringSystemType::OneWeek,
             default => ScoringSystemType::Standard,
         };
 
