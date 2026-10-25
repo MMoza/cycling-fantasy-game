@@ -26,7 +26,7 @@ class VueltaEspana2026Seeder extends Seeder
 
     public function run(): void
     {
-        $edition = EditionModel::whereHas('competition', fn ($q) => $q->where('name', 'La Vuelta'))
+        $edition = EditionModel::whereHas('competition', fn ($q) => $q->whereIn('name', ['Vuelta a España', 'La Vuelta']))
             ->where('year', self::YEAR)
             ->first();
 
@@ -81,7 +81,7 @@ class VueltaEspana2026Seeder extends Seeder
 
     private function createRosters(): void
     {
-        $competition = CompetitionModel::where('name', 'La Vuelta')->first();
+        $competition = CompetitionModel::whereIn('name', ['Vuelta a España', 'La Vuelta'])->first();
         if ($competition) {
             $edition = EditionModel::where('competition_id', $competition->id)
                 ->where('year', self::YEAR)
@@ -233,7 +233,7 @@ class VueltaEspana2026Seeder extends Seeder
 
     private function createParticipants(string $editionId): void
     {
-        $competition = CompetitionModel::where('name', 'La Vuelta')->first();
+        $competition = CompetitionModel::whereIn('name', ['Vuelta a España', 'La Vuelta'])->first();
         if (! $competition) {
             return;
         }

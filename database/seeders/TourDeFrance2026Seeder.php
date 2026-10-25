@@ -26,7 +26,7 @@ class TourDeFrance2026Seeder extends Seeder
 
     public function run(): void
     {
-        $edition = EditionModel::whereHas('competition', fn ($q) => $q->where('name', 'Tour de Francia'))
+        $edition = EditionModel::whereHas('competition', fn ($q) => $q->whereIn('name', ['Tour de France', 'Tour de Francia']))
             ->where('year', self::YEAR)
             ->first();
 
@@ -82,7 +82,7 @@ class TourDeFrance2026Seeder extends Seeder
     private function createRosters(): void
     {
         // Clean slate for TDF 2026 to match the exact PCS startlist
-        $competition = CompetitionModel::where('name', 'Tour de Francia')->first();
+        $competition = CompetitionModel::whereIn('name', ['Tour de France', 'Tour de Francia'])->first();
         if ($competition) {
             $edition = EditionModel::where('competition_id', $competition->id)
                 ->where('year', self::YEAR)
@@ -355,7 +355,7 @@ class TourDeFrance2026Seeder extends Seeder
 
     private function createParticipants(string $editionId): void
     {
-        $competition = CompetitionModel::where('name', 'Tour de Francia')->first();
+        $competition = CompetitionModel::whereIn('name', ['Tour de France', 'Tour de Francia'])->first();
         if (! $competition) {
             return;
         }
