@@ -8,15 +8,17 @@ use Illuminate\Contracts\Support\Arrayable;
 
 /**
  * All props of the Season/Index page:
- * {year, competitions, user_joined_count, total_competitions}.
+ * {year, competitions, user_joined_count, total_competitions, years}.
  */
 readonly class SeasonIndexPageDTO implements Arrayable
 {
     /**
+     * @param  array<int, int>  $years
      * @param  array<int, mixed>  $competitions
      */
     public function __construct(
         public int $year,
+        public array $years,
         public array $competitions,
         public int $userJoinedCount,
         public int $totalCompetitions,
@@ -29,6 +31,7 @@ readonly class SeasonIndexPageDTO implements Arrayable
             'competitions' => $this->competitions,
             'user_joined_count' => $this->userJoinedCount,
             'total_competitions' => $this->totalCompetitions,
+            'years' => $this->years,
         ];
     }
 }

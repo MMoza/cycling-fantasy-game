@@ -301,7 +301,36 @@ test('season page is accessible for authenticated users', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('Season/Index')
         ->has('year')
+        ->has('years')
         ->has('competitions')
+    );
+});
+
+test('season page navigates between seasons by year', function () {
+    $user = User::factory()->create();
+
+    createSeasonLeague('Liga 2025', 2025, '2025-07-01', $user);
+    createSeasonLeague('Liga 2027', 2027, '2027-07-01', $user);
+
+    $response = $this->actingAs($user)->get(route('season.index', 2025));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Season/Index')
+        ->where('year', 2025)
+        ->has('years', 2)
+        ->has('competitions', 1)
+        ->where('competitions.0.competitionName', 'Liga 2025')
+    );
+
+    $response2027 = $this->actingAs($user)->get(route('season.index', 2027));
+
+    $response2027->assertOk();
+    $response2027->assertInertia(fn ($page) => $page
+        ->component('Season/Index')
+        ->where('year', 2027)
+        ->has('competitions', 1)
+        ->where('competitions.0.competitionName', 'Liga 2027')
     );
 });
 

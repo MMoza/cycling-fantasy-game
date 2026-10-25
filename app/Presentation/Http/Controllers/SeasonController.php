@@ -17,9 +17,12 @@ class SeasonController extends Controller
         private readonly ShowSeasonClassificationUseCase $showSeasonClassificationUseCase,
     ) {}
 
-    public function index(Request $request): Response
+    public function index(Request $request, ?string $year = null): Response
     {
-        return Inertia::render('Season/Index', $this->showSeasonUseCase->execute($request->user())->toArray());
+        return Inertia::render('Season/Index', $this->showSeasonUseCase->execute(
+            $request->user(),
+            $year !== null ? (int) $year : null,
+        )->toArray());
     }
 
     public function classification(Request $request): Response
