@@ -151,6 +151,7 @@ test('badge service awards grand tour winners and trilogy milestones', function 
             'rider_id' => $winner->id,
         ]);
 
+        // formato real de almacenamiento: gc_top_5 se guarda como array plano
         PredictionModel::create([
             'id' => Str::uuid()->toString(),
             'user_id' => $user->id,
@@ -158,7 +159,7 @@ test('badge service awards grand tour winners and trilogy milestones', function 
             'type' => PredictionType::PreRace->value,
             'category' => PredictionCategory::GcTop5->value,
             'stage_id' => null,
-            'prediction_value' => ['rider_ids' => [$winner->id]],
+            'prediction_value' => [$winner->id],
         ]);
     }
 

@@ -78,6 +78,44 @@ class BadgeService
      */
     public function recalculate(?int $year = null, ?string $userId = null, bool $dryRun = false): array
     {
+        $report = [];
+
+        foreach ($this->userIdsFor($year, $userId) as $id) {
+            $user = User::query()->find($id);
+
+            if ($user === null) {
+                continue;
+            }
+
+            $report[$id] = $this->recalculateForUser($user, $dryRun);
+        }
+
+        return $report;
+    }
+
+    /**
+     * Borra los badges e hitos del alcance y los recalcula desde cero
+     * (para rehacerlos con las fechas reales de los logros).
+     *
+     * @return array<string, array{earned: array<int, string>, progressed: array<int, string>}>
+     */
+    public function rebuild(?int $year = null, ?string $userId = null, bool $dryRun = false): array
+    {
+        if (! $dryRun) {
+            $ids = $this->userIdsFor($year, $userId);
+
+            UserBadgeModel::whereIn('user_id', $ids)->delete();
+            BadgeEventModel::whereIn('user_id', $ids)->delete();
+        }
+
+        return $this->recalculate($year, $userId, $dryRun);
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    private function userIdsFor(?int $year, ?string $userId): Collection
+    {
         $query = User::query();
 
         if ($userId !== null) {
@@ -95,13 +133,7 @@ class BadgeService
             });
         }
 
-        $report = [];
-
-        foreach ($query->orderBy('name')->get() as $user) {
-            $report[$user->id] = $this->recalculateForUser($user, $dryRun);
-        }
-
-        return $report;
+        return $query->orderBy('name')->pluck('id');
     }
 
     /**
@@ -347,6 +379,9 @@ class BadgeService
      * Victorias en la clasificación general de una Gran Vuelta concreta:
      * la predicción pre-race gc_top_5 acierta al 1º de la final.
      *
+     * Soporta ambos formatos de prediction_value (array plano y legado
+     * ['rider_ids' => [...]]) y compara en PHP (portable entre motores).
+     *
      * @return Collection<int, EditionModel>
      */
     private function gtWinEditions(User $user, string $slug, array $names): Collection
@@ -360,22 +395,35 @@ class BadgeService
             return collect();
         }
 
-        $editionIds = DB::table('predictions')
+        $winners = DB::table('final_classifications')
+            ->join('editions', 'editions.id', '=', 'final_classifications.edition_id')
+            ->where('editions.competition_id', $competition->id)
+            ->where('final_classifications.category', 'gc_top_5')
+            ->where('final_classifications.position', 1)
+            ->pluck('final_classifications.rider_id', 'final_classifications.edition_id');
+
+        $predictions = DB::table('predictions')
             ->join('leagues', 'leagues.id', '=', 'predictions.league_id')
             ->join('editions', 'editions.id', '=', 'leagues.edition_id')
-            ->join('final_classifications as fc', function ($join) {
-                $join->on('fc.edition_id', '=', 'editions.id')
-                    ->where('fc.category', 'gc_top_5')
-                    ->where('fc.position', 1);
-            })
             ->where('predictions.user_id', $user->id)
             ->where('predictions.category', 'gc_top_5')
             ->where('editions.competition_id', $competition->id)
-            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_ids[0]') = fc.rider_id")
-            ->distinct()
-            ->pluck('editions.id');
+            ->select('editions.id as edition_id', 'predictions.prediction_value')
+            ->get();
 
-        return EditionModel::whereIn('id', $editionIds)->orderBy('end_date')->get();
+        $wonEditionIds = [];
+
+        foreach ($predictions as $prediction) {
+            $value = json_decode($prediction->prediction_value ?? 'null', true);
+            $riderIds = $value['rider_ids'] ?? $value;
+            $firstPick = is_array($riderIds) ? ($riderIds[0] ?? null) : null;
+
+            if ($firstPick !== null && $winners->get($prediction->edition_id) === $firstPick) {
+                $wonEditionIds[] = $prediction->edition_id;
+            }
+        }
+
+        return EditionModel::whereIn('id', array_unique($wonEditionIds))->orderBy('end_date')->get();
     }
 
     private function gtWins(User $user, string $slug, array $names): int

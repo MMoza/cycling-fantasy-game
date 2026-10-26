@@ -32,8 +32,7 @@ class PredictionHitService
                 $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
                     ->where('stage_results.position', '=', 1);
             })
-            ->where('predictions.category', '=', $category)
-            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id");
+            ->where('predictions.category', '=', $category);
 
         if ($leagueId !== null) {
             $query->where('predictions.league_id', $leagueId);
@@ -52,6 +51,18 @@ class PredictionHitService
                 ->where('stages.status', '!=', 'upcoming');
         }
 
-        return $query->select('predictions.user_id', 'predictions.stage_id')->get();
+        // La comparación del JSON se hace en PHP: es portable entre SQLite y
+        // MySQL y soporta los formatos reales de prediction_value
+        // (['rider_id' => x] y, en legado, arrays planos).
+        return $query->select('predictions.user_id', 'predictions.stage_id', 'predictions.prediction_value', 'stage_results.rider_id')
+            ->get()
+            ->filter(function ($row) {
+                $value = json_decode($row->prediction_value ?? 'null', true);
+                $predicted = $value['rider_id'] ?? $value;
+
+                return is_string($predicted) && $predicted === $row->rider_id;
+            })
+            ->map(fn ($row) => (object) ['user_id' => $row->user_id, 'stage_id' => $row->stage_id])
+            ->values();
     }
 }
