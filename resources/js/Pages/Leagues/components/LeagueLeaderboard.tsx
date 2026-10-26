@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Avatar from '@/components/Avatar';
+import { UserBadges } from '@/components/UserBadges';
 import { Trophy, Users, ChevronDown } from 'lucide-react';
 import { PositionChange } from './PositionChange';
 import type { LeaderboardEntry } from './types';
@@ -119,6 +120,7 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                         {entry.winner_streak}
                     </span>
                 )}
+                <UserBadges badges={entry.badges} />
                 {entry.is_current_user && (
                     <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
                 )}

@@ -2,15 +2,22 @@ import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
 import { Head } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
+import type { BadgeItem } from '@/components/UserBadges';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 import UpdateAvatarForm from './Partials/UpdateAvatarForm';
+import BadgesCard from './Partials/BadgesCard';
 
 export default function Edit({
     mustVerifyEmail,
     status,
-}: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
+    badges,
+}: PageProps<{
+    mustVerifyEmail: boolean;
+    status?: string;
+    badges?: { earned: BadgeItem[]; pending: BadgeItem[] };
+}>) {
     return (
         <AppLayout>
             <Head title="Profile" />
@@ -40,6 +47,8 @@ export default function Edit({
                         />
                     </CardContent>
                 </Card>
+
+                {badges && <BadgesCard badges={badges} />}
 
                 <Card>
                     <div className="h-1 rounded-t-xl bg-accent-500" />
