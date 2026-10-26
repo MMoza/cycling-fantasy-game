@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Avatar from '@/components/Avatar';
-import { UserBadges } from '@/components/UserBadges';
 import { Trophy, Users, ChevronDown } from 'lucide-react';
-import { PositionChange } from './PositionChange';
+import { LeaderboardRow } from './LeaderboardRow';
+import { LeaderboardCard } from './LeaderboardCard';
+import { buildVisibleLeaderboard, sortLeaderboard, type SortDir, type SortKey, type VisibleItem } from './leaderboard-utils';
 import type { LeaderboardEntry } from './types';
 
 interface LeagueLeaderboardProps {
@@ -12,70 +12,24 @@ interface LeagueLeaderboardProps {
     leaderboard: LeaderboardEntry[];
 }
 
-function buildVisibleLeaderboard(
-    leaderboard: LeaderboardEntry[],
-    currentUserId: string,
-): ({ type: 'entry'; entry: LeaderboardEntry } | { type: 'ellipsis' } | { type: 'separator' })[] {
-    if (leaderboard.length === 0) return [];
-
-    const maxVisible = 10;
-    const currentIndex = leaderboard.findIndex((e) => e.user_id === currentUserId);
-
-    if (currentIndex === -1 || currentIndex < maxVisible) {
-        return leaderboard.slice(0, maxVisible).map((entry) => ({ type: 'entry' as const, entry }));
-    }
-
-    const windowSize = maxVisible - 1;
-    const halfBefore = Math.ceil(windowSize / 2);
-    const halfAfter = windowSize - halfBefore;
-
-    let start = currentIndex - halfBefore;
-    let end = currentIndex + halfAfter;
-
-    if (start < 1) {
-        start = 1;
-        end = start + windowSize - 1;
-    }
-    if (end >= leaderboard.length) {
-        end = leaderboard.length - 1;
-        start = Math.max(1, end - windowSize + 1);
-    }
-
-    const result: ({ type: 'entry'; entry: LeaderboardEntry } | { type: 'ellipsis' } | { type: 'separator' })[] = [];
-    result.push({ type: 'entry', entry: leaderboard[0] });
-
-    if (start > 1) {
-        result.push({ type: 'ellipsis' });
-    }
-
-    for (let i = start; i <= end; i++) {
-        if (i === currentIndex) {
-            result.push({ type: 'separator' });
-        }
-        result.push({ type: 'entry', entry: leaderboard[i] });
-        if (i === currentIndex) {
-            result.push({ type: 'separator' });
-        }
-    }
-
-    return result;
-}
-
+/**
+ * Clasificación de la liga: tabla en escritorio y tarjetas en móvil.
+ * Comparte estado de orden, ventana de visibles y datos entre ambas vistas.
+ */
 export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardProps) {
     const [collapsed, setCollapsed] = useState(false);
     const [showAll, setShowAll] = useState(false);
-    const [sortKey, setSortKey] = useState<'rank' | 'user_name' | 'points'>('points');
-    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+    const [sortKey, setSortKey] = useState<SortKey>('points');
+    const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-    const sortedLeaderboard = [...leaderboard].sort((a, b) => {
-        let cmp = 0;
-        if (sortKey === 'rank') cmp = a.rank - b.rank;
-        else if (sortKey === 'user_name') cmp = a.user_name.localeCompare(b.user_name);
-        else cmp = a.points - b.points;
-        return sortDir === 'asc' ? cmp : -cmp;
-    });
+    const sortedLeaderboard = sortLeaderboard(leaderboard, sortKey, sortDir);
+    const currentUserId = (usePage().props as { auth?: { user?: { id?: string } } })?.auth?.user?.id;
 
-    const toggleSort = (key: typeof sortKey) => {
+    const items: VisibleItem[] = showAll
+        ? sortedLeaderboard.map((entry) => ({ type: 'entry' as const, entry }))
+        : buildVisibleLeaderboard(sortedLeaderboard, currentUserId);
+
+    const toggleSort = (key: SortKey) => {
         if (sortKey === key) {
             setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
         } else {
@@ -84,71 +38,51 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
         }
     };
 
-    const renderEntry = (entry: LeaderboardEntry) => (
-        <Link
-            key={entry.user_id}
-            href={route('leagues.members.show', [league_id, entry.user_id])}
-            className={`
-                flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50
-                ${entry.is_current_user
-                    ? 'bg-accent-100/50 dark:bg-accent-900/10 border-y border-accent-200 dark:border-accent-800'
-                    : 'border-b border-muted-100 dark:border-muted-800/50 last:border-b-0'
-                }
-            `}
-        >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center">
-                {entry.rank === 1 ? (
-                    <Trophy className="h-5 w-5 text-yellow-500" />
-                ) : entry.rank === 2 ? (
-                    <Trophy className="h-5 w-5 text-gray-400" />
-                ) : entry.rank === 3 ? (
-                    <Trophy className="h-5 w-5 text-amber-700" />
-                ) : (
-                    <span className="w-6 text-center text-sm font-medium text-muted-foreground">
-                        {entry.rank}º
-                    </span>
-                )}
-            </div>
-            <Avatar user={{ name: entry.user_name, avatar: entry.avatar }} size="sm" isOnline={entry.is_online} />
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="truncate text-sm">
-                    {entry.user_name}
-                </span>
-                {(entry.winner_streak ?? 0) >= 2 && (
-                    <span className="shrink-0 inline-flex items-center gap-0.5 text-[11px] font-semibold text-orange-500 dark:text-orange-400" title={`Racha de ${entry.winner_streak} aciertos`}>
-                        <svg className="h-3.5 w-3.5 animate-pulse" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-3.6 0-8-2.4-8-7.7C4 10 12 1 12 1s8 9 8 14.3c0 5.3-4.4 7.7-8 7.7zm0-18.5C9.5 7.5 6 12.6 6 15.3 6 19 8.7 21 12 21s6-2 6-5.7c0-2.7-3.5-7.8-6-10.5z"/><path d="M12 21c-1.7 0-3-1-3-2.7 0-1.4 1.5-3.3 3-5.2 1.5 1.9 3 3.8 3 5.2 0 1.7-1.3 2.7-3 2.7z"/></svg>
-                        {entry.winner_streak}
-                    </span>
-                )}
-                <UserBadges badges={entry.badges} />
-                {entry.is_current_user && (
-                    <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
-                )}
-            </div>
-            <div className="flex items-center gap-3">
-                <PositionChange change={entry.rank_change} />
-                <span className="text-sm font-medium tabular-nums">
-                    {entry.points}
-                </span>
-            </div>
-        </Link>
-    );
+    const onMobileSortChange = (value: string) => {
+        const [key, dir] = value.split(':') as [SortKey, SortDir];
+        setSortKey(key);
+        setSortDir(dir);
+    };
+
+    const sortIndicator = (key: SortKey) =>
+        sortKey === key ? <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span> : null;
 
     return (
         <Card className="border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-white dark:border-emerald-800/30 dark:from-emerald-950/20 dark:to-transparent">
-            <button
-                type="button"
-                onClick={() => setCollapsed(!collapsed)}
-                className="w-full"
-            >
-                <CardHeader className="pb-3 px-6 pt-6">
-                    <CardTitle className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        Clasificación
-                        <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${collapsed ? '' : 'rotate-180'}`} />
-                    </CardTitle>
-                </CardHeader>
-            </button>
+            <CardHeader className="pb-3 px-6 pt-6">
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                    >
+                        <Trophy className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <div className="min-w-0">
+                            <CardTitle>Clasificación</CardTitle>
+                            <p className="text-xs text-muted-foreground">
+                                {leaderboard.length} participantes
+                            </p>
+                        </div>
+                        <ChevronDown className={`ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${collapsed ? '' : 'rotate-180'}`} />
+                    </button>
+
+                    {/* Orden en móvil: la tabla de escritorio ordena por cabeceras */}
+                    <select
+                        aria-label="Ordenar clasificación"
+                        className="shrink-0 rounded-md border border-muted-200 bg-muted/50 px-2 py-1.5 text-xs font-medium text-foreground dark:border-muted-800 md:hidden"
+                        value={`${sortKey}:${sortDir}`}
+                        onChange={(e) => onMobileSortChange(e.target.value)}
+                    >
+                        <option value="points:desc">Puntos ↓</option>
+                        <option value="points:asc">Puntos ↑</option>
+                        <option value="rank:asc">Puesto ↑</option>
+                        <option value="rank:desc">Puesto ↓</option>
+                        <option value="user_name:asc">Nombre A-Z</option>
+                        <option value="user_name:desc">Nombre Z-A</option>
+                    </select>
+                </div>
+            </CardHeader>
+
             {!collapsed && (
             <CardContent className="p-0 bg-white/80">
                 {leaderboard.length === 0 ? (
@@ -160,46 +94,62 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                     </div>
                 ) : (
                     <div>
-                        <div className="flex items-center gap-3 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-muted-200 dark:border-muted-800">
-                            <button type="button" onClick={() => toggleSort('rank')} className="flex w-8 items-center justify-center gap-0.5 hover:text-foreground transition-colors">
-                                Puesto
-                                {sortKey === 'rank' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                            </button>
-                            <span className="w-8" />
-                            <button type="button" onClick={() => toggleSort('user_name')} className="flex flex-1 items-center gap-0.5 hover:text-foreground transition-colors text-left">
-                                Usuario
-                                {sortKey === 'user_name' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                            </button>
-                            <span className="w-8 text-center">Var.</span>
-                            <button type="button" onClick={() => toggleSort('points')} className="flex shrink-0 items-center gap-0.5 hover:text-foreground transition-colors">
-                                Puntos
-                                {sortKey === 'points' && <span className="text-[10px]">{sortDir === 'asc' ? '▲' : '▼'}</span>}
-                            </button>
+                        {/* Escritorio: tabla con cabeceras ordenables */}
+                        <div className="hidden md:block" data-testid="leaderboard-table">
+                            <div className="flex items-center gap-3 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-muted-200 dark:border-muted-800">
+                                <button type="button" onClick={() => toggleSort('rank')} className="flex w-8 items-center justify-center gap-0.5 hover:text-foreground transition-colors">
+                                    Puesto
+                                    {sortIndicator('rank')}
+                                </button>
+                                <span className="w-8" />
+                                <button type="button" onClick={() => toggleSort('user_name')} className="flex flex-1 items-center gap-0.5 hover:text-foreground transition-colors text-left">
+                                    Usuario
+                                    {sortIndicator('user_name')}
+                                </button>
+                                <span className="w-8 text-center">Var.</span>
+                                <button type="button" onClick={() => toggleSort('points')} className="flex shrink-0 items-center gap-0.5 hover:text-foreground transition-colors">
+                                    Puntos
+                                    {sortIndicator('points')}
+                                </button>
+                            </div>
+                            {items.map((item, i) =>
+                                item.type === 'ellipsis' ? (
+                                    <button
+                                        key={`ellipsis-${i}`}
+                                        type="button"
+                                        onClick={() => setShowAll(true)}
+                                        className="flex w-full items-center justify-center py-2 text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <span className="text-sm tracking-widest">...</span>
+                                    </button>
+                                ) : item.type === 'separator' ? (
+                                    <div key={`sep-${i}`} className="border-t border-muted-200 dark:border-muted-800" />
+                                ) : (
+                                    <LeaderboardRow key={item.entry.user_id} entry={item.entry} leagueId={league_id} />
+                                ),
+                            )}
                         </div>
-                        {showAll ? (
-                            sortedLeaderboard.map(renderEntry)
-                        ) : (
-                            buildVisibleLeaderboard(sortedLeaderboard, (usePage().props as any)?.auth?.user?.id).map((item, i) => {
-                                if (item.type === 'ellipsis') {
-                                    return (
-                                        <button
-                                            key={`ellipsis-${i}`}
-                                            type="button"
-                                            onClick={() => setShowAll(true)}
-                                            className="flex w-full items-center justify-center py-2 text-muted-foreground hover:text-foreground transition-colors"
-                                        >
-                                            <span className="text-sm tracking-widest">...</span>
-                                        </button>
-                                    );
-                                }
-                                if (item.type === 'separator') {
-                                    return (
-                                        <div key={`sep-${i}`} className="border-t border-muted-200 dark:border-muted-800" />
-                                    );
-                                }
-                                return renderEntry(item.entry);
-                            })
-                        )}
+
+                        {/* Móvil: tarjetas */}
+                        <div className="space-y-2 p-3 md:hidden" data-testid="leaderboard-cards">
+                            {items.map((item, i) =>
+                                item.type === 'ellipsis' ? (
+                                    <button
+                                        key={`ellipsis-${i}`}
+                                        type="button"
+                                        onClick={() => setShowAll(true)}
+                                        className="flex w-full items-center justify-center py-1 text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <span className="text-sm tracking-widest">...</span>
+                                    </button>
+                                ) : item.type === 'separator' ? (
+                                    <div key={`sep-${i}`} className="h-px bg-muted-200 dark:bg-muted-800" />
+                                ) : (
+                                    <LeaderboardCard key={item.entry.user_id} entry={item.entry} leagueId={league_id} />
+                                ),
+                            )}
+                        </div>
+
                         {leaderboard.length > 10 && (
                             <div className="border-t border-muted-200 dark:border-muted-800 px-6 py-3">
                                 <button
