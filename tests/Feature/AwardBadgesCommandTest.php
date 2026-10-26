@@ -1,6 +1,8 @@
 <?php
 
 use App\Domain\ValueObjects\CompetitionType;
+use App\Domain\ValueObjects\EditionStatus;
+use App\Infrastructure\Persistence\Models\BadgeEventModel;
 use App\Infrastructure\Persistence\Models\UserBadgeModel;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -45,6 +47,28 @@ test('season award-badges command filters by season year', function () {
 
     expect(UserBadgeModel::where('user_id', $user2026->id)->exists())->toBeTrue();
     expect(UserBadgeModel::where('user_id', $user2027->id)->exists())->toBeFalse();
+});
+
+test('season award-badges rebuild rewrites milestones with real achievement dates', function () {
+    $user = User::factory()->create();
+    $data = badgeLeague('Carrera Rebuild', 2027, CompetitionType::GC, EditionStatus::Finished);
+    joinSeasonLeague($data['league'], $user);
+    badgeStageWithResult($data['edition'], 1, 'rider-1', $data['league'], $user, 'rider-x', '2027-01-10');
+
+    $this->artisan('season:award-badges', ['--user' => $user->id])->assertExitCode(0);
+
+    // simula hitos ya guardados con la fecha del cálculo (p.ej. un backfill antiguo)
+    BadgeEventModel::where('user_id', $user->id)->update(['created_at' => now()]);
+
+    $this->artisan('season:award-badges', ['--user' => $user->id, '--rebuild' => true])->assertExitCode(0);
+
+    $events = BadgeEventModel::where('user_id', $user->id)
+        ->where('badge_code', 'stages_played')
+        ->where('event', 'level')
+        ->get();
+
+    expect($events)->toHaveCount(1);
+    expect($events->first()->created_at->toDateString())->toBe('2027-01-10');
 });
 
 test('season award-badges command fails for unknown users', function () {

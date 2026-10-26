@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Application\UseCases\Competition;
 
+use App\Application\Services\LeaderboardService;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
+use App\Domain\ValueObjects\EditionStatus;
 use App\Infrastructure\Persistence\Models\EditionModel;
+use App\Models\User;
 
 readonly class CompetitionDetail
 {
+    /**
+     * @param  array<int, array{leagueName: string, userId: string, userName: string, avatar: string|null, points: int}>  $champions
+     */
     public function __construct(
         public string $id,
         public string $name,
@@ -28,6 +34,7 @@ readonly class CompetitionDetail
         public int $stagesCount,
         public int $teamsCount,
         public int $ridersCount,
+        public array $champions,
     ) {}
 }
 
@@ -69,6 +76,42 @@ class ShowCompetitionUseCase
             stagesCount: $edition->stages->count(),
             teamsCount: $teamsCount,
             ridersCount: $ridersCount,
+            champions: $this->champions($edition),
         );
+    }
+
+    /**
+     * 1º de cada liga oficial decidida de la edición (mismo criterio que los
+     * badges de "Ganador": edición finalizada y liga con puntuación).
+     *
+     * @return array<int, array{leagueName: string, userId: string, userName: string, avatar: string|null, points: int}>
+     */
+    private function champions(EditionModel $edition): array
+    {
+        if ($edition->status !== EditionStatus::Finished) {
+            return [];
+        }
+
+        $champions = [];
+
+        foreach ($edition->leagues as $league) {
+            $champion = LeaderboardService::leagueChampion($league->id);
+
+            if ($champion === null) {
+                continue;
+            }
+
+            $winner = User::query()->find($champion['user_id']);
+
+            $champions[] = [
+                'leagueName' => $league->name,
+                'userId' => $champion['user_id'],
+                'userName' => $winner?->name ?? '',
+                'avatar' => $this->mediaUrls->resolve($winner?->avatar),
+                'points' => $champion['points'],
+            ];
+        }
+
+        return $champions;
     }
 }

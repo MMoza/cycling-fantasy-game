@@ -78,6 +78,44 @@ class BadgeService
      */
     public function recalculate(?int $year = null, ?string $userId = null, bool $dryRun = false): array
     {
+        $report = [];
+
+        foreach ($this->userIdsFor($year, $userId) as $id) {
+            $user = User::query()->find($id);
+
+            if ($user === null) {
+                continue;
+            }
+
+            $report[$id] = $this->recalculateForUser($user, $dryRun);
+        }
+
+        return $report;
+    }
+
+    /**
+     * Borra los badges e hitos del alcance y los recalcula desde cero
+     * (para rehacerlos con las fechas reales de los logros).
+     *
+     * @return array<string, array{earned: array<int, string>, progressed: array<int, string>}>
+     */
+    public function rebuild(?int $year = null, ?string $userId = null, bool $dryRun = false): array
+    {
+        if (! $dryRun) {
+            $ids = $this->userIdsFor($year, $userId);
+
+            UserBadgeModel::whereIn('user_id', $ids)->delete();
+            BadgeEventModel::whereIn('user_id', $ids)->delete();
+        }
+
+        return $this->recalculate($year, $userId, $dryRun);
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    private function userIdsFor(?int $year, ?string $userId): Collection
+    {
         $query = User::query();
 
         if ($userId !== null) {
@@ -95,13 +133,7 @@ class BadgeService
             });
         }
 
-        $report = [];
-
-        foreach ($query->orderBy('name')->get() as $user) {
-            $report[$user->id] = $this->recalculateForUser($user, $dryRun);
-        }
-
-        return $report;
+        return $query->orderBy('name')->pluck('id');
     }
 
     /**
@@ -237,36 +269,32 @@ class BadgeService
      */
     private function computeValues(User $user): array
     {
-        $hits = $this->winningStageHits($user);
+        $monumentTitles = $this->monumentTitleEditions($user);
 
         $values = [
             BadgeCode::StagesPlayed->value => $this->stagesPlayed($user),
-            BadgeCode::StagesWon->value => $hits['stage_count'],
+            BadgeCode::StagesWon->value => $this->wonStageCount($user),
             BadgeCode::GrandTourParticipation->value => $this->participationByType($user, 'gc'),
             BadgeCode::MonumentParticipation->value => $this->participationByType($user, 'monument'),
             BadgeCode::ChampionshipParticipation->value => $this->participationByType($user, 'championship'),
             BadgeCode::ClassicParticipation->value => $this->participationByType($user, 'classic'),
-            BadgeCode::MonumentWinner->value => $hits['monument_wins'],
-            BadgeCode::WorldChampion->value => $hits['world_champion'],
-            BadgeCode::MonumentCollection->value => $hits['monument_wins'],
+            BadgeCode::MonumentWinner->value => $monumentTitles->count(),
+            BadgeCode::WorldChampion->value => $this->titleEditionsFor($user, 'worlds')->count(),
+            BadgeCode::MonumentCollection->value => $monumentTitles->unique('competition_id')->count(),
             BadgeCode::SeasonChampion->value => $this->seasonChampionYearList($user)->count(),
             BadgeCode::Tester->value => $this->firstSeasonParticipant($user),
         ];
 
-        $gtWins = 0;
+        $gtTitles = 0;
 
-        foreach (self::SPECIAL_COMPETITIONS as $key => $special) {
-            if ($key === 'worlds') {
-                continue;
-            }
-
-            $wins = $this->gtWins($user, $special['slug'], $special['names']);
-            $values[$special['code']->value] = $wins;
-            $gtWins += $wins;
+        foreach (['tour', 'giro', 'vuelta'] as $key) {
+            $titles = $this->titleEditionsFor($user, $key)->count();
+            $values[self::SPECIAL_COMPETITIONS[$key]['code']->value] = $titles;
+            $gtTitles += $titles;
         }
 
-        // Trilogía = número de las 3 Grandes Vueltas ganadas (objetivo 3)
-        $values[BadgeCode::Trilogy->value] = $gtWins;
+        // Trilogía = número de títulos de las 3 Grandes Vueltas (objetivo 3)
+        $values[BadgeCode::Trilogy->value] = $gtTitles;
 
         return $values;
     }
@@ -285,47 +313,15 @@ class BadgeService
     }
 
     /**
-     * Aciertos de ganador de etapa del usuario en todas sus ligas, con el
-     * contexto de competición para derivar monumentos y mundial.
-     *
-     * @return array{stage_count: int, monument_wins: int, world_champion: int}
+     * Etapas con ganador acertado por el usuario en todas sus ligas.
      */
-    private function winningStageHits(User $user): array
+    private function wonStageCount(User $user): int
     {
-        $stageIds = $this->predictionHits
+        return $this->predictionHits
             ->correctWinnerPredictions(null, $user->id)
             ->pluck('stage_id')
             ->unique()
-            ->values();
-
-        if ($stageIds->isEmpty()) {
-            return ['stage_count' => 0, 'monument_wins' => 0, 'world_champion' => 0];
-        }
-
-        $stages = StageModel::with('edition.competition')
-            ->whereIn('id', $stageIds)
-            ->get();
-
-        $monumentWins = 0;
-        $worldChampion = 0;
-
-        foreach ($stages->groupBy(fn (StageModel $stage) => $stage->edition->competition_id) as $competitionStages) {
-            $competition = $competitionStages->first()->edition->competition;
-
-            if ($competition->type->value === 'monument') {
-                $monumentWins++;
-            }
-
-            if ($this->isSpecialCompetition($competition, 'worlds')) {
-                $worldChampion = 1;
-            }
-        }
-
-        return [
-            'stage_count' => $stages->count(),
-            'monument_wins' => $monumentWins,
-            'world_champion' => $worldChampion,
-        ];
+            ->count();
     }
 
     /**
@@ -344,43 +340,60 @@ class BadgeService
     }
 
     /**
-     * Victorias en la clasificación general de una Gran Vuelta concreta:
-     * la predicción pre-race gc_top_5 acierta al 1º de la final.
+     * Ediciones donde el usuario terminó 1º en la liga oficial (título de
+     * liga). Solo cuentan ediciones finalizadas y ligas con puntuación.
      *
      * @return Collection<int, EditionModel>
      */
-    private function gtWinEditions(User $user, string $slug, array $names): Collection
+    private function leagueTitleEditions(User $user): Collection
     {
-        $competition = CompetitionModel::query()
-            ->where('pcs_slug', $slug)
-            ->orWhereIn('name', $names)
-            ->first();
+        $leagueRows = DB::table('leagues')
+            ->join('league_user', 'league_user.league_id', '=', 'leagues.id')
+            ->join('editions', 'editions.id', '=', 'leagues.edition_id')
+            ->where('league_user.user_id', $user->id)
+            ->where('leagues.is_official', true)
+            ->where('editions.status', EditionStatus::Finished)
+            ->select('leagues.id as league_id', 'editions.id as edition_id')
+            ->get();
 
-        if ($competition === null) {
-            return collect();
+        $wonEditionIds = [];
+
+        foreach ($leagueRows as $row) {
+            $champion = LeaderboardService::leagueChampion($row->league_id);
+
+            if ($champion !== null && $champion['user_id'] === $user->id) {
+                $wonEditionIds[] = $row->edition_id;
+            }
         }
 
-        $editionIds = DB::table('predictions')
-            ->join('leagues', 'leagues.id', '=', 'predictions.league_id')
-            ->join('editions', 'editions.id', '=', 'leagues.edition_id')
-            ->join('final_classifications as fc', function ($join) {
-                $join->on('fc.edition_id', '=', 'editions.id')
-                    ->where('fc.category', 'gc_top_5')
-                    ->where('fc.position', 1);
-            })
-            ->where('predictions.user_id', $user->id)
-            ->where('predictions.category', 'gc_top_5')
-            ->where('editions.competition_id', $competition->id)
-            ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_ids[0]') = fc.rider_id")
-            ->distinct()
-            ->pluck('editions.id');
-
-        return EditionModel::whereIn('id', $editionIds)->orderBy('end_date')->get();
+        return EditionModel::with('competition')
+            ->whereIn('id', array_unique($wonEditionIds))
+            ->orderBy('end_date')
+            ->get();
     }
 
-    private function gtWins(User $user, string $slug, array $names): int
+    /**
+     * Títulos de liga en las ediciones de una competición concreta.
+     *
+     * @return Collection<int, EditionModel>
+     */
+    private function titleEditionsFor(User $user, string $key): Collection
     {
-        return $this->gtWinEditions($user, $slug, $names)->count();
+        return $this->leagueTitleEditions($user)
+            ->filter(fn (EditionModel $edition) => $this->isSpecialCompetition($edition->competition, $key))
+            ->values();
+    }
+
+    /**
+     * Títulos de liga en ediciones de carreras Monumento.
+     *
+     * @return Collection<int, EditionModel>
+     */
+    private function monumentTitleEditions(User $user): Collection
+    {
+        return $this->leagueTitleEditions($user)
+            ->filter(fn (EditionModel $edition) => $edition->competition->type === CompetitionType::Monument)
+            ->values();
     }
 
     /**
@@ -637,8 +650,8 @@ class BadgeService
             $definition->code === BadgeCode::TourWinner => $this->nthGtWinDate($user, 'tour', $milestone),
             $definition->code === BadgeCode::GiroWinner => $this->nthGtWinDate($user, 'giro', $milestone),
             $definition->code === BadgeCode::VueltaWinner => $this->nthGtWinDate($user, 'vuelta', $milestone),
-            $definition->code === BadgeCode::MonumentWinner,
-            $definition->code === BadgeCode::MonumentCollection => $this->nthMonumentWinDate($user, $milestone),
+            $definition->code === BadgeCode::MonumentWinner => $this->nthMonumentWinDate($user, $milestone),
+            $definition->code === BadgeCode::MonumentCollection => $this->nthMonumentCollectionDate($user, $milestone),
             $definition->code === BadgeCode::WorldChampion => $this->worldChampionDate($user),
             $definition->code === BadgeCode::Trilogy => $this->nthTrilogyDate($user, $milestone),
             $definition->code === BadgeCode::SeasonChampion => $this->nthSeasonChampionDate($user, $milestone),
@@ -695,26 +708,28 @@ class BadgeService
 
     private function nthGtWinDate(User $user, string $key, int $n): ?\DateTimeInterface
     {
-        $special = self::SPECIAL_COMPETITIONS[$key];
-
-        return $this->gtWinEditions($user, $special['slug'], $special['names'])
+        return $this->titleEditionsFor($user, $key)
             ->skip($n - 1)
             ->first()?->end_date;
     }
 
     private function nthMonumentWinDate(User $user, int $n): ?\DateTimeInterface
     {
-        return $this->monumentWinDates($user)->get($n - 1);
+        return $this->monumentTitleEditions($user)->get($n - 1)?->end_date;
+    }
+
+    private function nthMonumentCollectionDate(User $user, int $n): ?\DateTimeInterface
+    {
+        return $this->monumentTitleEditions($user)
+            ->unique('competition_id')
+            ->values()
+            ->get($n - 1)?->end_date;
     }
 
     private function nthTrilogyDate(User $user, int $n): ?\DateTimeInterface
     {
         $dates = collect(['tour', 'giro', 'vuelta'])
-            ->flatMap(function (string $key) use ($user) {
-                $special = self::SPECIAL_COMPETITIONS[$key];
-
-                return $this->gtWinEditions($user, $special['slug'], $special['names'])->pluck('end_date');
-            })
+            ->flatMap(fn (string $key) => $this->titleEditionsFor($user, $key)->pluck('end_date'))
             ->sort()
             ->values();
 
@@ -723,39 +738,7 @@ class BadgeService
 
     private function worldChampionDate(User $user): ?\DateTimeInterface
     {
-        $stageIds = $this->predictionHits->correctWinnerPredictions(null, $user->id)
-            ->pluck('stage_id')
-            ->unique()
-            ->values();
-
-        $stage = StageModel::with('edition.competition')
-            ->whereIn('id', $stageIds)
-            ->get()
-            ->first(fn (StageModel $candidate) => $this->isSpecialCompetition($candidate->edition->competition, 'worlds'));
-
-        return $stage?->date;
-    }
-
-    /**
-     * Fechas de las victorias en monumentos (una por competición), ordenadas.
-     *
-     * @return Collection<int, \DateTimeInterface>
-     */
-    private function monumentWinDates(User $user): Collection
-    {
-        $stageIds = $this->predictionHits->correctWinnerPredictions(null, $user->id)
-            ->pluck('stage_id')
-            ->unique()
-            ->values();
-
-        return StageModel::with('edition.competition')
-            ->whereIn('id', $stageIds)
-            ->get()
-            ->filter(fn (StageModel $stage) => $stage->edition->competition->type === CompetitionType::Monument)
-            ->unique(fn (StageModel $stage) => $stage->edition->competition_id)
-            ->sortBy(fn (StageModel $stage) => $stage->date)
-            ->values()
-            ->pluck('date');
+        return $this->titleEditionsFor($user, 'worlds')->first()?->end_date;
     }
 
     /**

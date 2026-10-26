@@ -13,6 +13,7 @@ class AwardBadgesCommand extends Command
     protected $signature = 'season:award-badges
         {year? : Only users with predictions in this season}
         {--user= : Recalculate a single user}
+        {--rebuild : Delete and recalculate badges/milestones from scratch (real achievement dates)}
         {--dry-run : Show what would change without applying it}';
 
     protected $description = 'Recalculate user badges and their milestone history (also awards the TESTER de Pedales badge)';
@@ -22,6 +23,7 @@ class AwardBadgesCommand extends Command
         $year = $this->argument('year') !== null ? (int) $this->argument('year') : null;
         $userId = $this->option('user') ?: null;
         $dryRun = (bool) $this->option('dry-run');
+        $rebuild = (bool) $this->option('rebuild');
 
         if ($userId !== null && User::query()->find($userId) === null) {
             $this->error("Usuario no encontrado: {$userId}");
@@ -29,10 +31,14 @@ class AwardBadgesCommand extends Command
             return self::FAILURE;
         }
 
-        $report = $badgeService->recalculate($year, $userId, $dryRun);
+        $report = $rebuild
+            ? $badgeService->rebuild($year, $userId, $dryRun)
+            : $badgeService->recalculate($year, $userId, $dryRun);
 
         if ($dryRun) {
             $this->warn('DRY RUN — no se ha guardado ningún badge.');
+        } elseif ($rebuild) {
+            $this->warn('REBUILD — badges e hitos borrados y recalculados con las fechas reales de los logros.');
         }
 
         $names = User::whereIn('id', array_keys($report))->pluck('name', 'id');

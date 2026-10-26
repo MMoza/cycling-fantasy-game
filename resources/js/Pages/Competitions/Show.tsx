@@ -5,6 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Users, Route, FileText, Trophy, Calendar, ImageIcon, Bike } from 'lucide-react';
 import { FlagIcon } from '@/components/ui/flag-icon';
+import Avatar from '@/components/Avatar';
+
+interface Champion {
+    leagueName: string;
+    userId: string;
+    userName: string;
+    avatar: string | null;
+    points: number;
+}
 
 interface CompetitionDetail {
     id: string;
@@ -25,6 +34,7 @@ interface CompetitionDetail {
     stagesCount: number;
     teamsCount: number;
     ridersCount: number;
+    champions: Champion[];
 }
 
 const typeIcons: Record<string, string> = {
@@ -125,6 +135,31 @@ export default function Show({ competition }: { competition: CompetitionDetail }
                     <Button className="w-full" size="lg" variant="outline" disabled>
                         Sin liga oficial disponible
                     </Button>
+                )}
+
+                {competition.champions.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Trophy className="h-4 w-4 text-yellow-500" />
+                                Campeones
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-3">
+                                {competition.champions.map((champion) => (
+                                    <li key={champion.userId} className="flex items-center gap-3">
+                                        <Avatar user={{ name: champion.userName, avatar: champion.avatar }} size="sm" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-semibold">{champion.userName}</p>
+                                            <p className="truncate text-xs text-muted-foreground">{champion.leagueName}</p>
+                                        </div>
+                                        <span className="shrink-0 text-sm font-bold">{champion.points} pts</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
                 )}
 
                 <div className="space-y-4">
