@@ -6,6 +6,7 @@ namespace App\Application\UseCases\Classification;
 
 use App\Application\DTOs\View\ClassificationLeaderboardEntryViewDTO;
 use App\Application\DTOs\View\ClassificationPageDTO;
+use App\Application\Services\BadgeService;
 use App\Application\Services\LeaderboardService;
 use App\Infrastructure\Persistence\Models\FinalClassificationModel;
 use App\Infrastructure\Persistence\Models\LeagueModel;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 
 class ShowClassificationUseCase
 {
+    public function __construct(private readonly BadgeService $badgeService) {}
+
     public function execute(User $user, string $leagueId): ClassificationPageDTO
     {
         $league = LeagueModel::findOrFail($leagueId);
@@ -224,6 +227,8 @@ class ShowClassificationUseCase
             $names[$member->id] = $member->name;
         }
 
+        $badgesByUser = $this->badgeService->badgesForUsers(array_keys($pointsByUser));
+
         return array_map(fn (array $row) => new ClassificationLeaderboardEntryViewDTO(
             userId: $row['user_id'],
             userName: $names[$row['user_id']],
@@ -231,6 +236,7 @@ class ShowClassificationUseCase
             isCurrentUser: $row['user_id'] === $currentUserId,
             rank: $row['rank'],
             behindLeader: $row['behind_leader'],
+            badges: $badgesByUser[$row['user_id']] ?? [],
         ), LeaderboardService::rankPoints($pointsByUser));
     }
 }

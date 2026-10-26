@@ -23,6 +23,7 @@ readonly class LeaderboardEntryViewDTO implements Arrayable
         public ?int $rankChange,
         public int $behindLeader,
         public int $winnerStreak,
+        public array $badges = [],
     ) {}
 
     public function toArray(): array
@@ -39,6 +40,7 @@ readonly class LeaderboardEntryViewDTO implements Arrayable
             'rank_change' => $this->rankChange,
             'behind_leader' => $this->behindLeader,
             'winner_streak' => $this->winnerStreak,
+            'badges' => $this->badges,
         ];
     }
 }

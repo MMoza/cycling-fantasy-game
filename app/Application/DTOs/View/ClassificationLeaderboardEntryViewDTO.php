@@ -21,6 +21,7 @@ readonly class ClassificationLeaderboardEntryViewDTO implements Arrayable
         public int $behindLeader,
         public ?int $previousRank = null,
         public ?int $rankChange = null,
+        public array $badges = [],
     ) {}
 
     public function toArray(): array
@@ -34,6 +35,7 @@ readonly class ClassificationLeaderboardEntryViewDTO implements Arrayable
             'behind_leader' => $this->behindLeader,
             'previous_rank' => $this->previousRank,
             'rank_change' => $this->rankChange,
+            'badges' => $this->badges,
         ];
     }
 }

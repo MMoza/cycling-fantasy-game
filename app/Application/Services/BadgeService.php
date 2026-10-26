@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Services;
 
+use App\Application\DTOs\View\UserBadgesViewDTO;
 use App\Domain\Entities\BadgeDefinition;
 use App\Domain\Services\BadgeCatalog;
 use App\Domain\ValueObjects\BadgeCode;
@@ -174,10 +175,8 @@ class BadgeService
     /**
      * Estado completo de un usuario: badges ganados + progreso de los
      * pendientes (para la sección "Mis badges").
-     *
-     * @return array{earned: array<int, array<string, mixed>>, pending: array<int, array<string, mixed>>}
      */
-    public function badgeStatusForUser(User $user): array
+    public function badgeStatusForUser(User $user): UserBadgesViewDTO
     {
         $rows = $this->badgesForUsers([$user->id])[$user->id] ?? [];
         $earnedCodes = array_column($rows, 'code');
@@ -206,7 +205,7 @@ class BadgeService
             ];
         }
 
-        return ['earned' => $rows, 'pending' => $pending];
+        return new UserBadgesViewDTO(earned: $rows, pending: $pending);
     }
 
     /**

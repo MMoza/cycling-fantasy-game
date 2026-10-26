@@ -257,11 +257,11 @@ test('badge status exposes earned badges and pending progress', function () {
     badgeService()->recalculateForUser($user);
     $status = badgeService()->badgeStatusForUser($user);
 
-    $earnedCodes = array_column($status['earned'], 'code');
+    $earnedCodes = array_column($status->earned, 'code');
     expect($earnedCodes)->toContain('stages_played');
     expect($earnedCodes)->toContain('tester');
 
-    $pendingCodes = array_column($status['pending'], 'code');
+    $pendingCodes = array_column($status->pending, 'code');
     expect($pendingCodes)->toContain('trilogy');
-    expect($status['pending'][array_search('trilogy', $pendingCodes)]['target'])->toBe(3);
+    expect($status->pending[array_search('trilogy', $pendingCodes)]['target'])->toBe(3);
 });

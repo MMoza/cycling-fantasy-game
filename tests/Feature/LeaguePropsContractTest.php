@@ -315,7 +315,7 @@ test('show locks the full league dashboard contract', function () {
         ->has('leaderboard.0', fn (Assert $entry) => $entry
             ->hasAll([
                 'user_id', 'user_name', 'avatar', 'points', 'is_current_user', 'is_online',
-                'rank', 'previous_rank', 'rank_change', 'behind_leader', 'winner_streak',
+                'rank', 'previous_rank', 'rank_change', 'behind_leader', 'winner_streak', 'badges',
             ])
             ->whereType('user_id', 'string')
             ->whereType('user_name', 'string')
@@ -324,7 +324,8 @@ test('show locks the full league dashboard contract', function () {
             ->whereType('is_online', 'boolean')
             ->whereType('rank', 'integer')
             ->whereType('behind_leader', 'integer')
-            ->whereType('winner_streak', 'integer'))
+            ->whereType('winner_streak', 'integer')
+            ->whereType('badges', 'array'))
         ->where('leaderboard.0.user_name', 'Rival User')
         ->where('leaderboard.0.points', 160)
         ->where('leaderboard.0.rank', 1)
