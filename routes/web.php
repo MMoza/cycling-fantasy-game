@@ -12,6 +12,7 @@ use App\Presentation\Http\Controllers\Admin\RiderController;
 use App\Presentation\Http\Controllers\Admin\TeamController;
 use App\Presentation\Http\Controllers\Admin\UserController;
 use App\Presentation\Http\Controllers\Auth\SocialiteController;
+use App\Presentation\Http\Controllers\BadgeController;
 use App\Presentation\Http\Controllers\ClassificationController;
 use App\Presentation\Http\Controllers\CompetitionController as UserCompetitionController;
 use App\Presentation\Http\Controllers\ContactController;
@@ -77,6 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/leagues/{league}/teams', [LeagueTeamController::class, 'index'])->name('leagues.teams');
     Route::get('/leagues/{league}/riders/{rider}', [LeagueRiderController::class, 'show'])->name('leagues.riders.show');
     Route::get('/leagues/{league}/members/{member}', [UserProfileController::class, 'show'])->name('leagues.members.show');
+    Route::get('/badges/{user}/{badge}', [BadgeController::class, 'show'])->name('badges.show');
 
     Route::get('/search', [SearchController::class, '__invoke'])->name('search');
 

@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace App\Application\Services;
 
+use App\Application\DTOs\View\BadgeDetailViewDTO;
 use App\Application\DTOs\View\UserBadgesViewDTO;
 use App\Domain\Entities\BadgeDefinition;
 use App\Domain\Services\BadgeCatalog;
 use App\Domain\ValueObjects\BadgeCode;
+use App\Domain\ValueObjects\BadgeDisplay;
 use App\Domain\ValueObjects\BadgeMode;
 use App\Infrastructure\Persistence\Models\BadgeEventModel;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Infrastructure\Persistence\Models\UserBadgeModel;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -168,6 +171,8 @@ class BadgeService
                         'target' => $definition->target(),
                         'level_label' => $this->levelLabel($definition, $badge->level),
                         'special' => $definition->special,
+                        'display' => $definition->display->value,
+                        'overlay' => $this->overlayValue($definition, $badge->progress, $this->levelIndex($definition, $badge->level)),
                         'awarded_at' => $badge->awarded_at?->toISOString(),
                     ];
                 })->values()->all();
@@ -211,6 +216,8 @@ class BadgeService
                 'target' => $next ?? $definition->target(),
                 'level_label' => null,
                 'special' => $definition->special,
+                'display' => $definition->display->value,
+                'overlay' => $this->overlayValue($definition, $value, 0),
             ];
         }
 
@@ -482,6 +489,77 @@ class BadgeService
         ]);
     }
 
+    /**
+     * Vista de detalle de un badge para un usuario: niveles con fechas e
+     * histórico completo de hitos.
+     */
+    public function badgeDetail(User $user, string $badgeCode): BadgeDetailViewDTO
+    {
+        $definition = BadgeCatalog::definitions()[$badgeCode] ?? null;
+
+        if ($definition === null) {
+            throw (new ModelNotFoundException)->setModel(UserBadgeModel::class, $badgeCode);
+        }
+
+        $badge = UserBadgeModel::where('user_id', $user->id)
+            ->where('badge_code', $badgeCode)
+            ->first();
+
+        $value = (int) ($this->computeValues($user)[$badgeCode] ?? 0);
+        $level = $definition->mode === BadgeMode::Once
+            ? ($value >= $definition->target() ? 1 : 0)
+            : $definition->levelFor($value);
+        $levelIndex = $this->levelIndex($definition, $level);
+
+        $events = BadgeEventModel::where('user_id', $user->id)
+            ->where('badge_code', $badgeCode)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $levelsDetail = [];
+
+        foreach ($definition->levels as $index => $tier) {
+            $reached = $value >= $tier;
+            $achievedAt = $events->first(fn (BadgeEventModel $event) => $event->event === 'level' && $event->level === $tier)?->created_at
+                ?? ($reached ? $badge?->awarded_at : null);
+
+            $levelsDetail[] = [
+                'value' => $tier,
+                'level_label' => $definition->mode === BadgeMode::Once ? 'Objetivo' : 'Nivel '.($index + 1),
+                'reached' => $reached,
+                'achieved_at' => $achievedAt?->toISOString(),
+            ];
+        }
+
+        return new BadgeDetailViewDTO(
+            badge: [
+                'code' => $definition->code->value,
+                'name' => $definition->name,
+                'description' => $definition->description,
+                'category' => $definition->category,
+                'mode' => $definition->mode->value,
+                'svg' => $definition->svg(),
+                'levels' => $definition->levels,
+                'special' => $definition->special,
+                'display' => $definition->display->value,
+                'overlay' => $this->overlayValue($definition, $value, $levelIndex),
+            ],
+            user: ['id' => $user->id, 'name' => $user->name],
+            level: $level,
+            levelIndex: $levelIndex,
+            progress: $value,
+            target: $definition->nextLevel($value) ?? $definition->target(),
+            awardedAt: $badge?->awarded_at?->toISOString(),
+            levelsDetail: $levelsDetail,
+            history: $events->map(fn (BadgeEventModel $event) => [
+                'event' => $event->event,
+                'level' => $event->level,
+                'progress' => $event->progress,
+                'created_at' => $event->created_at?->toISOString(),
+            ])->values()->all(),
+        );
+    }
+
     private function levelLabel(BadgeDefinition $definition, int $level): string
     {
         if ($definition->mode === BadgeMode::Once) {
@@ -505,5 +583,17 @@ class BadgeService
         $index = array_search($level, $definition->levels, true);
 
         return $index === false ? 0 : $index + 1;
+    }
+
+    /**
+     * Número que se superpone al icono del badge (veces conseguido o nivel).
+     */
+    private function overlayValue(BadgeDefinition $definition, int $progress, int $levelIndex): ?int
+    {
+        return match ($definition->display) {
+            BadgeDisplay::Times => $progress > 0 ? $progress : null,
+            BadgeDisplay::Level => $levelIndex > 0 ? $levelIndex : null,
+            BadgeDisplay::None => null,
+        };
     }
 }

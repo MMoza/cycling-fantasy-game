@@ -18,6 +18,7 @@ use App\Infrastructure\Persistence\Models\StageModel;
 use App\Infrastructure\Persistence\Models\StageResultModel;
 use App\Infrastructure\Persistence\Models\UserBadgeModel;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -246,6 +247,28 @@ test('badge service dry-run reports without persisting', function () {
     expect($report['earned'])->not->toBeEmpty();
     expect(UserBadgeModel::count())->toBe(0);
     expect(BadgeEventModel::count())->toBe(0);
+});
+
+test('badge detail exposes levels with dates and milestone history', function () {
+    $user = User::factory()->create();
+    $data = badgeLeague('Carrera Detalle', 2027, CompetitionType::GC);
+    joinSeasonLeague($data['league'], $user);
+    badgeStageWithResult($data['edition'], 1, 'rider-1', $data['league'], $user);
+
+    badgeService()->recalculateForUser($user);
+
+    $detail = badgeService()->badgeDetail($user, 'stages_played');
+
+    expect($detail->user['id'])->toBe($user->id);
+    expect($detail->progress)->toBe(1);
+    expect($detail->levelsDetail)->toHaveCount(5);
+    expect($detail->levelsDetail[0]['reached'])->toBeTrue();
+    expect($detail->levelsDetail[0]['achieved_at'])->not->toBeNull();
+    expect($detail->levelsDetail[1]['reached'])->toBeFalse();
+    expect($detail->history)->not->toBeEmpty();
+
+    expect(fn () => badgeService()->badgeDetail($user, 'badge-inventado'))
+        ->toThrow(ModelNotFoundException::class);
 });
 
 test('badge status exposes earned badges and pending progress', function () {

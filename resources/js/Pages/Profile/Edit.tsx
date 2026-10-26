@@ -10,6 +10,7 @@ import UpdateAvatarForm from './Partials/UpdateAvatarForm';
 import BadgesCard from './Partials/BadgesCard';
 
 export default function Edit({
+    auth,
     mustVerifyEmail,
     status,
     badges,
@@ -48,7 +49,7 @@ export default function Edit({
                     </CardContent>
                 </Card>
 
-                {badges && <BadgesCard badges={badges} />}
+                {badges && <BadgesCard badges={badges} userId={auth.user.id} />}
 
                 <Card>
                     <div className="h-1 rounded-t-xl bg-accent-500" />

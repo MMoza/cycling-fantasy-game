@@ -1,26 +1,13 @@
 import { useState } from 'react';
-import { BadgeLevelPips } from '@/components/BadgeCard';
+import { BadgeIcon, BadgeLevelPips } from '@/components/BadgeCard';
+import type { BadgeItem } from '@/components/badges';
 
-export interface BadgeItem {
-    code: string;
-    name: string;
-    description: string;
-    category: string;
-    mode: string;
-    svg: string;
-    level?: number;
-    levels?: number[];
-    level_index?: number;
-    progress: number;
-    target: number;
-    level_label?: string | null;
-    special?: boolean;
-    awarded_at?: string | null;
-}
+export type { BadgeItem };
 
 /**
  * Muestra los badges de un usuario en clasificaciones: hasta `max` iconos
- * + chip "+N" con popup (hover o tap) que lista todos.
+ * (con el número superpuesto) + chip "+N" con popup (hover o tap) que
+ * lista todos.
  */
 export function UserBadges({ badges, max = 2 }: { badges?: BadgeItem[] | null; max?: number }) {
     const [open, setOpen] = useState(false);
@@ -43,13 +30,7 @@ export function UserBadges({ badges, max = 2 }: { badges?: BadgeItem[] | null; m
             }}
         >
             {shown.map((badge) => (
-                <img
-                    key={badge.code}
-                    src={badge.svg}
-                    alt={badge.name}
-                    title={`${badge.name}${badge.level_label ? ` — ${badge.level_label}` : ''}`}
-                    className="h-5 w-5 shrink-0"
-                />
+                <BadgeIcon key={badge.code} badge={badge} size={20} />
             ))}
             {extra > 0 && (
                 <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
@@ -63,7 +44,7 @@ export function UserBadges({ badges, max = 2 }: { badges?: BadgeItem[] | null; m
                     <div className="max-h-60 space-y-2 overflow-y-auto">
                         {badges.map((badge) => (
                             <div key={badge.code} className="flex items-center gap-2">
-                                <img src={badge.svg} alt="" className="h-7 w-7 shrink-0" />
+                                <BadgeIcon badge={badge} size={28} />
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-medium">{badge.name}</p>
                                     {badge.mode === 'cumulative' ? (

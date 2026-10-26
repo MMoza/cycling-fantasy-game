@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Entities;
 
 use App\Domain\ValueObjects\BadgeCode;
+use App\Domain\ValueObjects\BadgeDisplay;
 use App\Domain\ValueObjects\BadgeMode;
 
 /**
@@ -28,6 +29,7 @@ readonly class BadgeDefinition
         public array $levels,
         public string $category,
         public bool $special = false,
+        public BadgeDisplay $display = BadgeDisplay::None,
     ) {}
 
     public function svg(): string

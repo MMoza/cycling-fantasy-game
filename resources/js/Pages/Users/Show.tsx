@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Target, Medal, ChevronDown, ChevronUp, EyeOff, Zap, Shirt, Calendar, Trophy, TrendingUp, Users } from 'lucide-react';
 import { useCountUp } from '@/hooks/useCountUp';
+import type { BadgeItem } from '@/components/badges';
+import BadgesCard from '@/Pages/Profile/Partials/BadgesCard';
 
 interface PredictionItem {
     id: string;
@@ -37,6 +39,7 @@ interface Props {
     has_stage_predictions: boolean;
     user: UserProfile;
     global_stats: GlobalStats;
+    badges?: BadgeItem[];
     points_history: PointsHistoryEntry[];
     pre_race_predictions: Prediction[];
     stage_details: StageDetail[];
@@ -384,6 +387,7 @@ export default function Show({
     points_history,
     pre_race_predictions,
     stage_details,
+    badges,
 }: Props) {
     const [expandedStage, setExpandedStage] = useState<string | null>(null);
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -462,6 +466,9 @@ export default function Show({
                     <CountUpStat icon={<Target className="h-7 w-7" />} label="Aciertos" value={global_stats.stage_winners_guessed} color="amber" />
                     <CountUpStat icon={<TrendingUp className="h-7 w-7" />} label="Puntos" value={user.points} color="emerald" />
                 </div>
+
+                {/* Badges (colapsable) — entre los datos del perfil y los de la competición */}
+                <BadgesCard badges={{ earned: badges ?? [] }} userId={user.id} collapsible />
 
                 {/* Best Stage */}
                 {global_stats.best_stage && (
