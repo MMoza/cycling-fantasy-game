@@ -902,3 +902,44 @@ estados de perfil). Login: `carlos@test.com` / `password` (incluye
   sistemas Standard (el antiguo default); `--all` incluye cualquier sistema.
   No recalcula puntos: ejecuta después `race:rebuild-scores {league_id}`
   por cada liga afectada.
+
+## Sistema de Badges (gamificación)
+
+### Catálogo
+
+`BadgeCode` (enum) + `BadgeCatalog` (`app/Domain/Services/`) con las 15
+definiciones (nombre, descripción, modo, niveles, categoría). Añadir un
+badge = caso en `BadgeCode`, definición en `BadgeCatalog` y SVG en
+`public/badges/{code}.svg`.
+
+Modos: `cumulative` (nivel = mayor tier alcanzado: etapas disputadas
+1/5/25/100/500, etapas ganadas 1/3/10/25/100, participación por tipo,
+victorias acumulativas, campeón de temporada) y `once` (objetivo único con
+progreso parcial: Trilogía 3/3, Colección de monumentos 5/5, Campeón del
+mundo, TESTER de Pedales).
+
+### Datos
+
+- `user_badges` (estado: level + progress, unique por usuario+badge)
+- `badge_events` (histórico de hitos: `event` = `level` | `progress`, con
+  contexto) — nunca se borra, permite ver progreso
+
+### Cálculo
+
+`BadgeService` (`app/Application/Services/`): `recalculateForUser()`,
+`recalculateForLeagues()`, `recalculate()` — idempotente, recalcula desde
+las fuentes (predicciones, `stage_results`, `final_classifications`,
+clasificación oficial). Disparos: `StoreStageResultUseCase`,
+`ScoreStageCommand` (fin de etapa) y `UpdateFinalClassificationsUseCase`
+(fin de competición). Cierre de temporada/backfill:
+
+```bash
+php artisan season:award-badges {year?} {--user=} {--dry-run}
+```
+
+### Visualización
+
+- `/profile`: card "Mis badges" (`BadgesCard`) con ganados + progreso
+- Perfil público (`Users/Show`): `badges` junto a `global_stats`
+- Clasificaciones (dashboard, Classification): `UserBadges` en cada fila
+  — hasta 2 iconos + chip "+N" con popup (hover/tap) que lista todos
