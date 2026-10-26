@@ -21,6 +21,7 @@ readonly class UserProfilePageDTO implements Arrayable
         public mixed $pointsHistory,
         public mixed $preRacePredictions,
         public mixed $stageDetails,
+        public mixed $badges = [],
     ) {}
 
     public function toArray(): array
@@ -35,6 +36,7 @@ readonly class UserProfilePageDTO implements Arrayable
             'points_history' => $this->pointsHistory,
             'pre_race_predictions' => $this->preRacePredictions,
             'stage_details' => $this->stageDetails,
+            'badges' => $this->badges,
         ];
     }
 }

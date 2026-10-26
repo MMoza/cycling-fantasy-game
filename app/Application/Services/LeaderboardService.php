@@ -24,6 +24,7 @@ class LeaderboardService
     public function __construct(
         private readonly MediaUrlResolverInterface $mediaUrls,
         private readonly PredictionHitService $predictionHits,
+        private readonly BadgeService $badgeService,
     ) {}
 
     /**
@@ -102,9 +103,10 @@ class LeaderboardService
 
         $topPoints = $leaderboard->first()['points'] ?? 0;
         $winnerStreaks = $this->winnerStreaks($league->id, $scoredStages);
+        $badgesByUser = $this->badgeService->badgesForUsers($members->pluck('id')->all());
 
         $entries = $leaderboard
-            ->map(function (array $entry) use ($previousRanks, $topPoints, $winnerStreaks): LeaderboardEntryViewDTO {
+            ->map(function (array $entry) use ($previousRanks, $topPoints, $winnerStreaks, $badgesByUser): LeaderboardEntryViewDTO {
                 $previousRank = $previousRanks[$entry['user_id']] ?? null;
                 $rankChange = $previousRank !== null ? $previousRank - $entry['rank'] : null;
 
@@ -120,6 +122,7 @@ class LeaderboardService
                     rankChange: $rankChange,
                     behindLeader: $topPoints - $entry['points'],
                     winnerStreak: $winnerStreaks[$entry['user_id']] ?? 0,
+                    badges: $badgesByUser[$entry['user_id']] ?? [],
                 );
             })
             ->values()

@@ -3,6 +3,8 @@ import { Link, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, ChevronDown } from 'lucide-react';
 import { PositionChange } from './PositionChange';
+import { UserBadges } from '@/components/UserBadges';
+import type { BadgeItem } from '@/components/UserBadges';
 
 interface LeaderboardEntry {
     rank: number;
@@ -13,6 +15,7 @@ interface LeaderboardEntry {
     behind_leader: number;
     previous_rank: number | null;
     rank_change: number | null;
+    badges?: BadgeItem[];
 }
 
 interface StageLeaderboardProps {
@@ -123,6 +126,7 @@ export function StageLeaderboard({ league_id, title, leaderboard, emptyMessage =
                 <span className="truncate text-sm">
                     {entry.user_name}
                 </span>
+                <UserBadges badges={entry.badges} />
                 {entry.is_current_user && (
                     <span className="shrink-0 text-xs text-muted-foreground">(tú)</span>
                 )}

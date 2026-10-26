@@ -1,3 +1,5 @@
+import type { BadgeItem } from '@/components/UserBadges';
+
 export interface League {
     id: string;
     name: string;
@@ -72,6 +74,7 @@ export interface LeaderboardEntry {
     previous_rank: number | null;
     rank_change: number | null;
     winner_streak?: number;
+    badges?: BadgeItem[];
 }
 
 export interface ActivityLog {

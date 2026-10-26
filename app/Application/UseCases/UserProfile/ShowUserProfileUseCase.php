@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\UseCases\UserProfile;
 
 use App\Application\DTOs\View\UserProfilePageDTO;
+use App\Application\Services\BadgeService;
 use App\Application\Services\PredictionHitService;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
 use App\Domain\Services\OnlineStatusService;
@@ -23,6 +24,7 @@ class ShowUserProfileUseCase
     public function __construct(
         private readonly MediaUrlResolverInterface $mediaUrls,
         private readonly PredictionHitService $predictionHits,
+        private readonly BadgeService $badgeService,
     ) {}
 
     public function execute(User $currentUser, string $leagueId, string $targetUserId): UserProfilePageDTO
@@ -308,8 +310,7 @@ class ShowUserProfileUseCase
             leagueId: $league->id,
             leagueName: $league->name,
             competitionStarted: $competitionStarted,
-            hasStagePredictions: $hasStagePredictions,
-            user: [
+            hasStagePredictions: $hasStagePredictions, user: [
                 'id' => $targetUser->id,
                 'name' => $targetUser->name,
                 'avatar' => $avatarUrl,
@@ -328,6 +329,7 @@ class ShowUserProfileUseCase
             pointsHistory: $cumulativePoints,
             preRacePredictions: $preRacePredictions,
             stageDetails: $stageDetails,
+            badges: $this->badgeService->badgesForUsers([$targetUser->id])[$targetUser->id] ?? [],
         );
     }
 

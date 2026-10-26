@@ -2,6 +2,7 @@
 
 namespace App\Presentation\Http\Controllers;
 
+use App\Application\Services\BadgeService;
 use App\Presentation\Http\Requests\Profile\DeleteAccountRequest;
 use App\Presentation\Http\Requests\Profile\UploadAvatarRequest;
 use App\Presentation\Http\Requests\ProfileUpdateRequest;
@@ -16,6 +17,8 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    public function __construct(private readonly BadgeService $badgeService) {}
+
     /**
      * Display the user's profile form.
      */
@@ -24,6 +27,7 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'badges' => $this->badgeService->badgeStatusForUser($request->user()),
         ]);
     }
 

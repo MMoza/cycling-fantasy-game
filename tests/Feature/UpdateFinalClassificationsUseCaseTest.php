@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Application\Exceptions\ApplicationException;
 use App\Application\Services\ActivityLogService;
+use App\Application\Services\BadgeService;
 use App\Application\Services\NotificationService;
 use App\Application\Services\PredictionHitService;
 use App\Application\Services\PreRaceScoringService;
@@ -102,6 +103,7 @@ beforeEach(function () {
 
     $this->useCase = new UpdateFinalClassificationsUseCase(
         new PreRaceScoringService(new ActivityLogService, new NotificationService($predictionHits), $predictionHits),
+        new BadgeService($predictionHits),
     );
 });
 

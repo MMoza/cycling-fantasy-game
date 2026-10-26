@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Admin\FinalClassification;
 
 use App\Application\Exceptions\ApplicationException;
+use App\Application\Services\BadgeService;
 use App\Application\Services\PreRaceScoringService;
 use App\Domain\ValueObjects\EditionStatus;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\FinalClassificationModel;
+use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -18,6 +20,7 @@ class UpdateFinalClassificationsUseCase
 {
     public function __construct(
         private readonly PreRaceScoringService $preRaceScoring,
+        private readonly BadgeService $badgeService,
     ) {}
 
     public function execute(string $editionId, array $classifications): array
@@ -82,6 +85,16 @@ class UpdateFinalClassificationsUseCase
             }
         });
 
-        return $this->preRaceScoring->scoreEdition($editionId, force: true);
+        $result = $this->preRaceScoring->scoreEdition($editionId, force: true);
+
+        try {
+            $this->badgeService->recalculateForLeagues(
+                LeagueModel::where('edition_id', $editionId)->pluck('id')->all(),
+            );
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return $result;
     }
 }
