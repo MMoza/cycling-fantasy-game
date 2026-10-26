@@ -40,7 +40,7 @@ export function UserBadges({ badges, max = 2 }: { badges?: BadgeItem[] | null; m
 
             {open && (
                 <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-lg border bg-background p-3 shadow-lg">
-                    <p className="mb-2 text-xs font-medium text-muted-foreground">Badges</p>
+                    <p className="mb-2 text-xs font-medium text-muted-foreground">Logros</p>
                     <div className="max-h-60 space-y-2 overflow-y-auto">
                         {badges.map((badge) => (
                             <div key={badge.code} className="flex items-center gap-2">

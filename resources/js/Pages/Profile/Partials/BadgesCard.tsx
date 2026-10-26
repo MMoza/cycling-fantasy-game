@@ -55,7 +55,7 @@ export default function BadgesCard({ badges, userId, collapsible = false, classN
             className={`flex w-full items-center gap-2 ${collapsible ? 'cursor-pointer' : 'cursor-default'}`}
         >
             <Award className="h-5 w-5 text-accent-500" />
-            <h2 className="text-lg font-semibold">Badges</h2>
+            <h2 className="text-lg font-semibold">Logros</h2>
             <span className="text-sm text-muted-foreground">
                 {earned.length} conseguido{earned.length === 1 ? '' : 's'}
             </span>
@@ -82,7 +82,7 @@ export default function BadgesCard({ badges, userId, collapsible = false, classN
                     {earned.length === 0 && pending.length === 0 && (
                         <Card>
                             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                                Aún no hay badges conseguidos.
+                                Aún no hay logros.
                             </CardContent>
                         </Card>
                     )}

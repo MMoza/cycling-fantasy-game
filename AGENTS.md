@@ -905,6 +905,8 @@ estados de perfil). Login: `carlos@test.com` / `password` (incluye
 
 ## Sistema de Badges (gamificación)
 
+> En la interfaz se muestran como **Logros** (el código interno mantiene "badge").
+
 ### Catálogo
 
 `BadgeCode` (enum) + `BadgeCatalog` (`app/Domain/Services/`) con las 15

@@ -41,7 +41,7 @@ export default function Show({ badge, user, level, level_index, progress, target
 
     return (
         <AppLayout>
-            <Head title={`${badge.name} — Badges`} />
+            <Head title={`${badge.name} — Logro`} />
 
             <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-0">
                 <button
