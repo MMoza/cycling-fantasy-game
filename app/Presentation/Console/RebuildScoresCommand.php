@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Console;
 
+use App\Application\Services\BadgeService;
 use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
@@ -28,7 +29,7 @@ class RebuildScoresCommand extends Command
 
     protected $description = 'Delete and recalculate all scores from ScoreEvents for a league or all leagues';
 
-    public function handle(): int
+    public function handle(BadgeService $badgeService): int
     {
         $leagueId = $this->argument('league_id');
 
@@ -179,6 +180,9 @@ class RebuildScoresCommand extends Command
                 }
             }
         }
+
+        // Los badges dependen de los puntos (títulos de liga): recalcularlos
+        $badgeService->recalculateForLeagues($leagues->pluck('id')->all());
 
         $this->info("Rebuild complete. Total score events created: {$totalScored}");
 

@@ -28,6 +28,31 @@ class LeaderboardService
     ) {}
 
     /**
+     * 1º de la liga (solo el primero; el desempate de empates se definirá
+     * más adelante). Null si la liga no tiene puntuación.
+     *
+     * @return array{user_id: string, points: int}|null
+     */
+    public static function leagueChampion(string $leagueId): ?array
+    {
+        $totals = DB::table('score_events')
+            ->where('league_id', $leagueId)
+            ->groupBy('user_id')
+            ->selectRaw('user_id, SUM(points) as total')
+            ->pluck('total', 'user_id')
+            ->map(fn ($total) => (int) $total)
+            ->all();
+
+        $ranked = self::rankPoints($totals);
+
+        if ($ranked === []) {
+            return null;
+        }
+
+        return ['user_id' => $ranked[0]['user_id'], 'points' => $ranked[0]['points']];
+    }
+
+    /**
      * Ranks points per user descending.
      *
      * @param  array<string, int>  $pointsByUser

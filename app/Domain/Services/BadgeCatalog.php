@@ -66,15 +66,15 @@ class BadgeCatalog
         [BadgeCode::ClassicParticipation, 'Clásicas de 1 día', 'Participaste en clásicas de un día.', BadgeMode::Cumulative, [1, 5, 25], 'participacion', false, BadgeDisplay::Level],
 
         // ── Victorias ─────────────────────────────────────────────
-        [BadgeCode::TourWinner, 'Ganador del Tour', 'Acertaste al ganador de la clasificación general del Tour.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false, BadgeDisplay::Times],
-        [BadgeCode::GiroWinner, 'Ganador del Giro', 'Acertaste al ganador de la clasificación general del Giro.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false, BadgeDisplay::Times],
-        [BadgeCode::VueltaWinner, 'Ganador de la Vuelta', 'Acertaste al ganador de la clasificación general de la Vuelta.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false, BadgeDisplay::Times],
-        [BadgeCode::MonumentWinner, 'Ganador de monumento', 'Acertaste al ganador de una carrera Monumento.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false, BadgeDisplay::Times],
-        [BadgeCode::WorldChampion, 'Campeón del mundo', 'Acertaste al ganador del Mundial en ruta.', BadgeMode::Once, [1], 'victorias', false, BadgeDisplay::None],
+        [BadgeCode::TourWinner, 'Ganador del Tour', 'Terminaste 1º en una liga oficial del Tour.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false, BadgeDisplay::Times],
+        [BadgeCode::GiroWinner, 'Ganador del Giro', 'Terminaste 1º en una liga oficial del Giro.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false, BadgeDisplay::Times],
+        [BadgeCode::VueltaWinner, 'Ganador de la Vuelta', 'Terminaste 1º en una liga oficial de la Vuelta.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false, BadgeDisplay::Times],
+        [BadgeCode::MonumentWinner, 'Ganador de monumento', 'Terminaste 1º en una liga oficial de una carrera Monumento.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false, BadgeDisplay::Times],
+        [BadgeCode::WorldChampion, 'Campeón del mundo', 'Terminaste 1º en una liga oficial del Mundial en ruta.', BadgeMode::Once, [1], 'victorias', false, BadgeDisplay::None],
 
         // ── Hitos ─────────────────────────────────────────────────
-        [BadgeCode::Trilogy, 'Trilogía', 'Ganaste las tres Grandes Vueltas: Tour, Giro y Vuelta.', BadgeMode::Once, [3], 'hitos', false, BadgeDisplay::None],
-        [BadgeCode::MonumentCollection, 'Colección de monumentos', 'Ganaste las cinco carreras Monumento.', BadgeMode::Once, [5], 'hitos', false, BadgeDisplay::None],
+        [BadgeCode::Trilogy, 'Trilogía', 'Terminaste 1º en tres ligas oficiales de Grandes Vueltas (Tour, Giro o Vuelta).', BadgeMode::Once, [3], 'hitos', false, BadgeDisplay::None],
+        [BadgeCode::MonumentCollection, 'Colección de monumentos', 'Terminaste 1º en las ligas oficiales de cinco carreras Monumento.', BadgeMode::Once, [5], 'hitos', false, BadgeDisplay::None],
 
         // ── Temporada / especial ──────────────────────────────────
         [BadgeCode::SeasonChampion, 'Campeón de temporada', 'Terminaste primero en la clasificación general de una temporada.', BadgeMode::Cumulative, [1, 2, 3], 'temporada', false, BadgeDisplay::Times],

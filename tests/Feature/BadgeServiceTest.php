@@ -9,9 +9,7 @@ use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\BadgeEventModel;
-use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
-use App\Infrastructure\Persistence\Models\FinalClassificationModel;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
 use App\Infrastructure\Persistence\Models\ScoreEventModel;
@@ -125,11 +123,9 @@ test('badge service tracks participation per race type', function () {
     expect(UserBadgeModel::where('badge_code', 'grand_tour_participation')->exists())->toBeFalse();
 });
 
-test('badge service awards grand tour winners and trilogy milestones', function () {
-    CountryModel::firstOrCreate(['id' => 'FR'], ['name' => 'Francia']);
-
+test('badge service awards grand tour league titles and trilogy milestones', function () {
     $user = User::factory()->create();
-    $winner = createTestRider('Test', 'Winner');
+    $rival = User::factory()->create();
 
     foreach ([['Tour de France', 'tour_winner'], ['Giro d\'Italia', 'giro_winner'], ['Vuelta a España', 'vuelta_winner']] as [$name, $badge]) {
         if ($badge === 'vuelta_winner') {
@@ -140,27 +136,11 @@ test('badge service awards grand tour winners and trilogy milestones', function 
             expect($trilogy->level)->toBe(0);
         }
 
-        $data = badgeLeague($name, 2027, CompetitionType::GC);
+        $data = badgeLeague($name, 2027, CompetitionType::GC, EditionStatus::Finished);
         joinSeasonLeague($data['league'], $user);
-
-        FinalClassificationModel::create([
-            'id' => Str::uuid()->toString(),
-            'edition_id' => $data['edition']->id,
-            'category' => 'gc_top_5',
-            'position' => 1,
-            'rider_id' => $winner->id,
-        ]);
-
-        // formato real de almacenamiento: gc_top_5 se guarda como array plano
-        PredictionModel::create([
-            'id' => Str::uuid()->toString(),
-            'user_id' => $user->id,
-            'league_id' => $data['league']->id,
-            'type' => PredictionType::PreRace->value,
-            'category' => PredictionCategory::GcTop5->value,
-            'stage_id' => null,
-            'prediction_value' => [$winner->id],
-        ]);
+        joinSeasonLeague($data['league'], $rival);
+        badgeScore($user, $data['league'], 100);
+        badgeScore($rival, $data['league'], 50);
     }
 
     badgeService()->recalculateForUser($user);
@@ -176,18 +156,23 @@ test('badge service awards grand tour winners and trilogy milestones', function 
     expect(BadgeEventModel::where('badge_code', 'trilogy')->where('event', 'level')->count())->toBe(1);
 });
 
-test('badge service awards monument wins, collection and world champion once', function () {
+test('badge service awards monument league titles, collection and world champion once', function () {
     $user = User::factory()->create();
+    $rival = User::factory()->create();
 
     foreach ([['Monumento A', CompetitionType::Monument], ['Monumento B', CompetitionType::Monument]] as [$name, $type]) {
-        $data = badgeLeague($name, 2027, $type);
+        $data = badgeLeague($name, 2027, $type, EditionStatus::Finished);
         joinSeasonLeague($data['league'], $user);
-        badgeStageWithResult($data['edition'], 1, 'rider-1', $data['league'], $user);
+        joinSeasonLeague($data['league'], $rival);
+        badgeScore($user, $data['league'], 100);
+        badgeScore($rival, $data['league'], 50);
     }
 
-    $worlds = badgeLeague('World Championships', 2027, CompetitionType::Championship);
+    $worlds = badgeLeague('World Championships', 2027, CompetitionType::Championship, EditionStatus::Finished);
     joinSeasonLeague($worlds['league'], $user);
-    badgeStageWithResult($worlds['edition'], 1, 'rider-1', $worlds['league'], $user);
+    joinSeasonLeague($worlds['league'], $rival);
+    badgeScore($user, $worlds['league'], 100);
+    badgeScore($rival, $worlds['league'], 50);
 
     badgeService()->recalculateForUser($user);
 
@@ -198,6 +183,100 @@ test('badge service awards monument wins, collection and world champion once', f
     $world = UserBadgeModel::where('badge_code', 'world_champion')->firstOrFail();
     expect($world->level)->toBe(1);
     expect($world->progress)->toBe(1);
+});
+
+test('league titles only count for official leagues', function () {
+    $user = User::factory()->create();
+
+    // liga de amigos ganada: no es título
+    $data = badgeLeague('Tour de France', 2027, CompetitionType::GC, EditionStatus::Finished);
+    $data['league']->update(['is_official' => false]);
+    joinSeasonLeague($data['league'], $user);
+    badgeScore($user, $data['league'], 100);
+
+    badgeService()->recalculateForUser($user);
+
+    expect(UserBadgeModel::where('badge_code', 'tour_winner')->exists())->toBeFalse();
+});
+
+test('league titles require league scores and a finished edition', function () {
+    $user = User::factory()->create();
+
+    // liga oficial sin puntuación: sin título
+    $empty = badgeLeague('Tour de France', 2027, CompetitionType::GC, EditionStatus::Finished);
+    joinSeasonLeague($empty['league'], $user);
+
+    // liga oficial con puntuación pero edición en curso: sin título
+    $open = badgeLeague('Giro d\'Italia', 2027, CompetitionType::GC);
+    joinSeasonLeague($open['league'], $user);
+    badgeScore($user, $open['league'], 100);
+
+    badgeService()->recalculateForUser($user);
+    expect(UserBadgeModel::where('badge_code', 'tour_winner')->exists())->toBeFalse();
+    expect(UserBadgeModel::where('badge_code', 'giro_winner')->exists())->toBeFalse();
+
+    // al cerrar la edición se entrega el título
+    $open['league']->edition->update(['status' => EditionStatus::Finished]);
+
+    badgeService()->recalculateForUser($user);
+    expect(UserBadgeModel::where('badge_code', 'giro_winner')->firstOrFail()->level)->toBe(1);
+    expect(UserBadgeModel::where('badge_code', 'tour_winner')->exists())->toBeFalse();
+});
+
+test('only the first of the league gets the title', function () {
+    $winner = User::factory()->create();
+    $runnerUp = User::factory()->create();
+
+    $data = badgeLeague('Tour de France', 2027, CompetitionType::GC, EditionStatus::Finished);
+    joinSeasonLeague($data['league'], $winner);
+    joinSeasonLeague($data['league'], $runnerUp);
+    badgeScore($winner, $data['league'], 100);
+    badgeScore($runnerUp, $data['league'], 80);
+
+    badgeService()->recalculateForUser($winner);
+    badgeService()->recalculateForUser($runnerUp);
+
+    expect(UserBadgeModel::where('user_id', $winner->id)->where('badge_code', 'tour_winner')->firstOrFail()->level)->toBe(1);
+    expect(UserBadgeModel::where('user_id', $runnerUp->id)->where('badge_code', 'tour_winner')->exists())->toBeFalse();
+});
+
+test('monument collection counts distinct monuments only', function () {
+    $user = User::factory()->create();
+    $rival = User::factory()->create();
+
+    $first = badgeLeague('Monumento', 2026, CompetitionType::Monument, EditionStatus::Finished);
+    joinSeasonLeague($first['league'], $user);
+    joinSeasonLeague($first['league'], $rival);
+    badgeScore($user, $first['league'], 100);
+    badgeScore($rival, $first['league'], 50);
+
+    // segunda edición del mismo monumento
+    $second = badgeLeague('Monumento', 2027, CompetitionType::Monument, EditionStatus::Finished);
+    $second['league']->edition->update(['competition_id' => $first['league']->edition->competition_id]);
+    joinSeasonLeague($second['league'], $user);
+    joinSeasonLeague($second['league'], $rival);
+    badgeScore($user, $second['league'], 100);
+    badgeScore($rival, $second['league'], 50);
+
+    badgeService()->recalculateForUser($user);
+
+    // dos títulos del mismo monumento: 2 victorias, 1 monumento distinto
+    expect(UserBadgeModel::where('badge_code', 'monument_winner')->firstOrFail()->progress)->toBe(2);
+    expect(UserBadgeModel::where('badge_code', 'monument_collection')->firstOrFail()->progress)->toBe(1);
+});
+
+test('league title milestones are dated at the edition end', function () {
+    $user = User::factory()->create();
+
+    $data = badgeLeague('Tour de France', 2027, CompetitionType::GC, EditionStatus::Finished);
+    $data['league']->edition->update(['end_date' => '2027-07-27']);
+    joinSeasonLeague($data['league'], $user);
+    badgeScore($user, $data['league'], 100);
+
+    badgeService()->recalculateForUser($user);
+
+    $event = BadgeEventModel::where('badge_code', 'tour_winner')->where('event', 'level')->firstOrFail();
+    expect($event->created_at->toDateString())->toBe('2027-07-27');
 });
 
 test('badge service counts season championships cumulatively and awards tester', function () {
