@@ -6,6 +6,7 @@ namespace App\Application\UseCases\Admin\Stage;
 
 use App\Application\Exceptions\ApplicationException;
 use App\Application\Services\ActivityLogService;
+use App\Application\Services\BadgeService;
 use App\Application\Services\PushNotificationService;
 use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoringRule;
@@ -29,6 +30,7 @@ class StoreStageResultUseCase
     public function __construct(
         private readonly ActivityLogService $activityLog,
         private readonly PushNotificationService $pushNotification,
+        private readonly BadgeService $badgeService,
     ) {}
 
     public function execute(string $editionId, string $id, array $results): void
@@ -117,6 +119,14 @@ class StoreStageResultUseCase
             report($e);
 
             throw new ApplicationException('Resultados guardados pero error al puntuar: '.$e->getMessage());
+        }
+
+        try {
+            $this->badgeService->recalculateForLeagues(
+                LeagueModel::where('edition_id', $editionId)->pluck('id')->all(),
+            );
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 

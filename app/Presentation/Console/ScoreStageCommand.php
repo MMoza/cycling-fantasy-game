@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Console;
 
 use App\Application\Services\ActivityLogService;
+use App\Application\Services\BadgeService;
 use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoreEvent;
 use App\Domain\Entities\ScoringRule;
@@ -26,7 +27,7 @@ class ScoreStageCommand extends Command
 
     protected $description = 'Calculate scores for all predictions of a stage';
 
-    public function handle(ActivityLogService $activityLog): int
+    public function handle(ActivityLogService $activityLog, BadgeService $badgeService): int
     {
         $stageId = $this->argument('stage_id');
 
@@ -144,6 +145,12 @@ class ScoreStageCommand extends Command
         }
 
         $this->info("Scored {$scored} predictions for stage {$stage->name}");
+
+        try {
+            $badgeService->recalculateForLeagues($stage->edition->leagues->pluck('id')->all());
+        } catch (\Throwable $e) {
+            $this->warn('Badge recalculation failed: '.$e->getMessage());
+        }
 
         return self::SUCCESS;
     }

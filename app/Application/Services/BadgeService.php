@@ -95,6 +95,41 @@ class BadgeService
     }
 
     /**
+     * Recalcula los badges de todos los miembros de las ligas indicadas
+     * (tras puntuar una etapa o cerrar una competición).
+     *
+     * @param  iterable<int, string>  $leagueIds
+     * @return array<string, array{earned: array<int, string>, progressed: array<int, string>}>
+     */
+    public function recalculateForLeagues(iterable $leagueIds, bool $dryRun = false): array
+    {
+        $leagueIds = is_array($leagueIds) ? $leagueIds : iterator_to_array($leagueIds, false);
+
+        if ($leagueIds === []) {
+            return [];
+        }
+
+        $userIds = DB::table('league_user')
+            ->whereIn('league_id', $leagueIds)
+            ->distinct()
+            ->pluck('user_id');
+
+        $report = [];
+
+        foreach ($userIds as $userId) {
+            $user = User::query()->find($userId);
+
+            if ($user === null) {
+                continue;
+            }
+
+            $report[$userId] = $this->recalculateForUser($user, $dryRun);
+        }
+
+        return $report;
+    }
+
+    /**
      * Badges ganados/activo de varios usuarios para mostrarlos en perfiles y
      * clasificaciones.
      *
