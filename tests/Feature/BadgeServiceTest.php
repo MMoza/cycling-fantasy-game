@@ -3,6 +3,7 @@
 use App\Application\Services\BadgeService;
 use App\Application\Services\PredictionHitService;
 use App\Domain\ValueObjects\CompetitionType;
+use App\Domain\ValueObjects\EditionStatus;
 use App\Domain\ValueObjects\PredictionCategory;
 use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageStatus;
@@ -29,23 +30,23 @@ function badgeService(): BadgeService
     return new BadgeService(new PredictionHitService);
 }
 
-function badgeLeague(string $competitionName, int $year, CompetitionType $type): array
+function badgeLeague(string $competitionName, int $year, CompetitionType $type, EditionStatus $status = EditionStatus::Upcoming): array
 {
-    $data = createSeasonLeague($competitionName, $year, $year.'-07-01', null, $competitionName);
+    $data = createSeasonLeague($competitionName, $year, $year.'-07-01', null, $competitionName, $status);
     $data['league']->edition->competition->update(['type' => $type]);
     $data['league']->load('edition.competition');
 
     return $data;
 }
 
-function badgeStageWithResult(EditionModel $edition, int $number, string $winnerRiderId, LeagueModel $league, User $user, ?string $predictedRiderId = null): StageModel
+function badgeStageWithResult(EditionModel $edition, int $number, string $winnerRiderId, LeagueModel $league, User $user, ?string $predictedRiderId = null, ?string $date = null): StageModel
 {
     $stage = StageModel::create([
         'id' => Str::uuid()->toString(),
         'edition_id' => $edition->id,
         'number' => $number,
         'name' => 'Etapa '.$number,
-        'date' => now()->subDay()->format('Y-m-d'),
+        'date' => $date ?? now()->subDay()->format('Y-m-d'),
         'type' => StageType::Hill,
         'distance' => 150.0,
         'origin' => 'A',
@@ -203,7 +204,8 @@ test('badge service counts season championships cumulatively and awards tester',
     $rival = User::factory()->create();
 
     foreach ([2026, 2027] as $year) {
-        $data = badgeLeague('Carrera Temporada '.$year, $year, CompetitionType::GC);
+        // temporadas cerradas: solo así se premia el campeón de temporada
+        $data = badgeLeague('Carrera Temporada '.$year, $year, CompetitionType::GC, EditionStatus::Finished);
         joinSeasonLeague($data['league'], $user);
         joinSeasonLeague($data['league'], $rival);
         badgeScore($user, $data['league'], 100);
@@ -269,6 +271,53 @@ test('badge detail exposes levels with dates and milestone history', function ()
 
     expect(fn () => badgeService()->badgeDetail($user, 'badge-inventado'))
         ->toThrow(ModelNotFoundException::class);
+});
+
+test('season champion is only awarded for completed seasons', function () {
+    $user = User::factory()->create();
+    $rival = User::factory()->create();
+
+    // temporada en curso: aunque el usuario lidere, no se premia
+    $open = badgeLeague('Carrera Abierta', 2027, CompetitionType::GC);
+    joinSeasonLeague($open['league'], $user);
+    joinSeasonLeague($open['league'], $rival);
+    badgeScore($user, $open['league'], 100);
+    badgeScore($rival, $open['league'], 50);
+
+    badgeService()->recalculateForUser($user);
+    expect(UserBadgeModel::where('badge_code', 'season_champion')->exists())->toBeFalse();
+
+    // al cerrarse la temporada se entrega
+    $open['league']->edition->update(['status' => EditionStatus::Finished]);
+
+    badgeService()->recalculateForUser($user);
+    expect(UserBadgeModel::where('badge_code', 'season_champion')->firstOrFail()->level)->toBe(1);
+});
+
+test('badge milestones are backdated to when they were achieved', function () {
+    $user = User::factory()->create();
+    $data = badgeLeague('Carrera Fechas', 2027, CompetitionType::GC, EditionStatus::Finished);
+    joinSeasonLeague($data['league'], $user);
+
+    // 5 etapas disputadas entre enero y mayo → niveles 1 y 5 fechados en la
+    // etapa 1 y la etapa 5
+    $dates = ['2027-01-10', '2027-02-10', '2027-03-10', '2027-04-10', '2027-05-10'];
+    foreach ($dates as $i => $date) {
+        badgeStageWithResult($data['edition'], $i + 1, 'rider-1', $data['league'], $user, 'rider-x', $date);
+    }
+
+    badgeService()->recalculateForUser($user);
+
+    $levels = BadgeEventModel::where('badge_code', 'stages_played')
+        ->where('event', 'level')
+        ->orderBy('level')
+        ->get();
+
+    expect($levels)->toHaveCount(2);
+    expect($levels[0]->level)->toBe(1);
+    expect($levels[0]->created_at->toDateString())->toBe('2027-01-10');
+    expect($levels[1]->level)->toBe(5);
+    expect($levels[1]->created_at->toDateString())->toBe('2027-05-10');
 });
 
 test('badge status exposes earned badges and pending progress', function () {

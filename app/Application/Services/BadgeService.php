@@ -11,12 +11,18 @@ use App\Domain\Services\BadgeCatalog;
 use App\Domain\ValueObjects\BadgeCode;
 use App\Domain\ValueObjects\BadgeDisplay;
 use App\Domain\ValueObjects\BadgeMode;
+use App\Domain\ValueObjects\CompetitionType;
+use App\Domain\ValueObjects\EditionStatus;
+use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\BadgeEventModel;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
+use App\Infrastructure\Persistence\Models\EditionModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Infrastructure\Persistence\Models\UserBadgeModel;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -243,7 +249,7 @@ class BadgeService
             BadgeCode::MonumentWinner->value => $hits['monument_wins'],
             BadgeCode::WorldChampion->value => $hits['world_champion'],
             BadgeCode::MonumentCollection->value => $hits['monument_wins'],
-            BadgeCode::SeasonChampion->value => $this->seasonChampionYears($user),
+            BadgeCode::SeasonChampion->value => $this->seasonChampionYearList($user)->count(),
             BadgeCode::Tester->value => $this->firstSeasonParticipant($user),
         ];
 
@@ -340,8 +346,10 @@ class BadgeService
     /**
      * Victorias en la clasificación general de una Gran Vuelta concreta:
      * la predicción pre-race gc_top_5 acierta al 1º de la final.
+     *
+     * @return Collection<int, EditionModel>
      */
-    private function gtWins(User $user, string $slug, array $names): int
+    private function gtWinEditions(User $user, string $slug, array $names): Collection
     {
         $competition = CompetitionModel::query()
             ->where('pcs_slug', $slug)
@@ -349,10 +357,10 @@ class BadgeService
             ->first();
 
         if ($competition === null) {
-            return 0;
+            return collect();
         }
 
-        return DB::table('predictions')
+        $editionIds = DB::table('predictions')
             ->join('leagues', 'leagues.id', '=', 'predictions.league_id')
             ->join('editions', 'editions.id', '=', 'leagues.edition_id')
             ->join('final_classifications as fc', function ($join) {
@@ -365,13 +373,25 @@ class BadgeService
             ->where('editions.competition_id', $competition->id)
             ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_ids[0]') = fc.rider_id")
             ->distinct()
-            ->count('editions.id');
+            ->pluck('editions.id');
+
+        return EditionModel::whereIn('id', $editionIds)->orderBy('end_date')->get();
+    }
+
+    private function gtWins(User $user, string $slug, array $names): int
+    {
+        return $this->gtWinEditions($user, $slug, $names)->count();
     }
 
     /**
      * Temporadas terminadas primero en la clasificación general oficial.
+     *
+     * Solo se premian temporadas cerradas: la de un año en curso no se
+     * toca hasta que todas sus ediciones oficiales estén `finished`.
+     *
+     * @return Collection<int, int>
      */
-    private function seasonChampionYears(User $user): int
+    private function seasonChampionYearList(User $user): Collection
     {
         $totals = DB::table('score_events')
             ->join('leagues', 'leagues.id', '=', 'score_events.league_id')
@@ -381,9 +401,13 @@ class BadgeService
             ->selectRaw('editions.year as year, score_events.user_id as user_id, SUM(score_events.points) as total')
             ->get();
 
-        $wins = 0;
+        $wins = collect();
 
-        foreach ($totals->groupBy('year') as $yearTotals) {
+        foreach ($totals->groupBy('year') as $year => $yearTotals) {
+            if (! $this->seasonCompleted((int) $year)) {
+                continue;
+            }
+
             $pointsByUser = [];
 
             foreach ($yearTotals as $row) {
@@ -393,11 +417,25 @@ class BadgeService
             $ranked = LeaderboardService::rankPoints($pointsByUser);
 
             if (($ranked[0]['user_id'] ?? null) === $user->id) {
-                $wins++;
+                $wins->push((int) $year);
             }
         }
 
-        return $wins;
+        return $wins->sort()->values();
+    }
+
+    /**
+     * Una temporada está cerrada cuando todas sus ediciones con liga
+     * oficial están `finished`.
+     */
+    private function seasonCompleted(int $year): bool
+    {
+        $incomplete = EditionModel::where('year', $year)
+            ->whereHas('leagues', fn ($q) => $q->where('is_official', true))
+            ->where('status', '!=', EditionStatus::Finished)
+            ->exists();
+
+        return ! $incomplete;
     }
 
     /**
@@ -455,28 +493,52 @@ class BadgeService
             return $level > $oldLevel ? 'earned' : 'progressed';
         }
 
+        $dateFor = fn (int $milestone): \DateTimeInterface => $this->milestoneDate($user, $definition, $milestone) ?? now();
+
         $badge->level = max($oldLevel, $level);
         $badge->progress = max($oldProgress, $value);
 
         if ($badge->awarded_at === null && $badge->level > 0) {
-            $badge->awarded_at = now();
+            $badge->awarded_at = $definition->mode === BadgeMode::Once
+                ? $dateFor($definition->target())
+                : $dateFor((int) $definition->levels[0]);
         }
 
         $badge->save();
 
-        if ($value > $oldProgress) {
-            $this->recordEvent($user, $definition, 'progress', $badge->level, $badge->progress);
+        // Progreso: los hitos intermedios con la fecha real en que se consiguieron
+        if ($definition->mode === BadgeMode::Once) {
+            for ($step = $oldProgress + 1; $step <= $badge->progress; $step++) {
+                $this->recordEvent($user, $definition, 'progress', $badge->level, $step, $dateFor($step));
+            }
+        } elseif ($badge->progress > $oldProgress) {
+            $this->recordEvent($user, $definition, 'progress', $badge->level, $badge->progress, $dateFor($badge->progress));
         }
 
-        if ($badge->level > $oldLevel) {
-            $this->recordEvent($user, $definition, 'level', $badge->level, $badge->progress);
+        // Niveles: un evento por tier alcanzado, fechado con su fecha real
+        if ($definition->mode === BadgeMode::Once) {
+            if ($badge->level > $oldLevel) {
+                $this->recordEvent($user, $definition, 'level', $definition->target(), $badge->progress, $dateFor($definition->target()));
+            }
+        } else {
+            foreach ($definition->levels as $tier) {
+                if ($tier > $oldLevel && $tier <= $badge->level) {
+                    $this->recordEvent($user, $definition, 'level', $tier, $badge->progress, $dateFor($tier));
+                }
+            }
         }
 
         return $badge->level > $oldLevel ? 'earned' : 'progressed';
     }
 
-    private function recordEvent(User $user, BadgeDefinition $definition, string $event, int $level, int $progress): void
-    {
+    private function recordEvent(
+        User $user,
+        BadgeDefinition $definition,
+        string $event,
+        int $level,
+        int $progress,
+        \DateTimeInterface $when,
+    ): void {
         BadgeEventModel::create([
             'id' => Str::uuid()->toString(),
             'user_id' => $user->id,
@@ -485,7 +547,7 @@ class BadgeService
             'level' => $level,
             'progress' => $progress,
             'context' => null,
-            'created_at' => now(),
+            'created_at' => $when,
         ]);
     }
 
@@ -558,6 +620,183 @@ class BadgeService
                 'created_at' => $event->created_at?->toISOString(),
             ])->values()->all(),
         );
+    }
+
+    /**
+     * Fecha real en la que el usuario alcanzó un hito (valor/tier) del badge.
+     */
+    private function milestoneDate(User $user, BadgeDefinition $definition, int $milestone): ?\DateTimeInterface
+    {
+        return match (true) {
+            $definition->code === BadgeCode::StagesPlayed => $this->nthPredictedStageDate($user, $milestone),
+            $definition->code === BadgeCode::StagesWon => $this->nthWonStageDate($user, $milestone),
+            $definition->code === BadgeCode::GrandTourParticipation,
+            $definition->code === BadgeCode::MonumentParticipation,
+            $definition->code === BadgeCode::ChampionshipParticipation,
+            $definition->code === BadgeCode::ClassicParticipation => $this->nthParticipationStart($user, $definition->code, $milestone),
+            $definition->code === BadgeCode::TourWinner => $this->nthGtWinDate($user, 'tour', $milestone),
+            $definition->code === BadgeCode::GiroWinner => $this->nthGtWinDate($user, 'giro', $milestone),
+            $definition->code === BadgeCode::VueltaWinner => $this->nthGtWinDate($user, 'vuelta', $milestone),
+            $definition->code === BadgeCode::MonumentWinner,
+            $definition->code === BadgeCode::MonumentCollection => $this->nthMonumentWinDate($user, $milestone),
+            $definition->code === BadgeCode::WorldChampion => $this->worldChampionDate($user),
+            $definition->code === BadgeCode::Trilogy => $this->nthTrilogyDate($user, $milestone),
+            $definition->code === BadgeCode::SeasonChampion => $this->nthSeasonChampionDate($user, $milestone),
+            $definition->code === BadgeCode::Tester => $this->firstSeasonDate($user),
+            default => null,
+        };
+    }
+
+    private function nthPredictedStageDate(User $user, int $n): ?\DateTimeInterface
+    {
+        return StageModel::whereIn('id', DB::table('predictions')->where('user_id', $user->id)->whereNotNull('stage_id')->select('stage_id'))
+            ->where('status', '!=', StageStatus::Upcoming)
+            ->orderBy('date')
+            ->offset($n - 1)
+            ->first()?->date;
+    }
+
+    private function nthWonStageDate(User $user, int $n): ?\DateTimeInterface
+    {
+        $stageIds = $this->predictionHits->correctWinnerPredictions(null, $user->id)
+            ->pluck('stage_id')
+            ->unique()
+            ->values();
+
+        return StageModel::whereIn('id', $stageIds)
+            ->orderBy('date')
+            ->offset($n - 1)
+            ->first()?->date;
+    }
+
+    private function nthParticipationStart(User $user, BadgeCode $code, int $n): ?\DateTimeInterface
+    {
+        $type = match ($code) {
+            BadgeCode::GrandTourParticipation => 'gc',
+            BadgeCode::MonumentParticipation => 'monument',
+            BadgeCode::ChampionshipParticipation => 'championship',
+            default => 'classic',
+        };
+
+        return EditionModel::query()
+            ->join('competitions', 'competitions.id', '=', 'editions.competition_id')
+            ->join('leagues', 'leagues.edition_id', '=', 'editions.id')
+            ->join('predictions', function ($join) use ($user) {
+                $join->on('predictions.league_id', '=', 'leagues.id')
+                    ->where('predictions.user_id', $user->id);
+            })
+            ->where('competitions.type', $type)
+            ->select('editions.*')
+            ->distinct()
+            ->orderBy('editions.start_date')
+            ->offset($n - 1)
+            ->first()?->start_date;
+    }
+
+    private function nthGtWinDate(User $user, string $key, int $n): ?\DateTimeInterface
+    {
+        $special = self::SPECIAL_COMPETITIONS[$key];
+
+        return $this->gtWinEditions($user, $special['slug'], $special['names'])
+            ->skip($n - 1)
+            ->first()?->end_date;
+    }
+
+    private function nthMonumentWinDate(User $user, int $n): ?\DateTimeInterface
+    {
+        return $this->monumentWinDates($user)->get($n - 1);
+    }
+
+    private function nthTrilogyDate(User $user, int $n): ?\DateTimeInterface
+    {
+        $dates = collect(['tour', 'giro', 'vuelta'])
+            ->flatMap(function (string $key) use ($user) {
+                $special = self::SPECIAL_COMPETITIONS[$key];
+
+                return $this->gtWinEditions($user, $special['slug'], $special['names'])->pluck('end_date');
+            })
+            ->sort()
+            ->values();
+
+        return $dates->get($n - 1);
+    }
+
+    private function worldChampionDate(User $user): ?\DateTimeInterface
+    {
+        $stageIds = $this->predictionHits->correctWinnerPredictions(null, $user->id)
+            ->pluck('stage_id')
+            ->unique()
+            ->values();
+
+        $stage = StageModel::with('edition.competition')
+            ->whereIn('id', $stageIds)
+            ->get()
+            ->first(fn (StageModel $candidate) => $this->isSpecialCompetition($candidate->edition->competition, 'worlds'));
+
+        return $stage?->date;
+    }
+
+    /**
+     * Fechas de las victorias en monumentos (una por competición), ordenadas.
+     *
+     * @return Collection<int, \DateTimeInterface>
+     */
+    private function monumentWinDates(User $user): Collection
+    {
+        $stageIds = $this->predictionHits->correctWinnerPredictions(null, $user->id)
+            ->pluck('stage_id')
+            ->unique()
+            ->values();
+
+        return StageModel::with('edition.competition')
+            ->whereIn('id', $stageIds)
+            ->get()
+            ->filter(fn (StageModel $stage) => $stage->edition->competition->type === CompetitionType::Monument)
+            ->unique(fn (StageModel $stage) => $stage->edition->competition_id)
+            ->sortBy(fn (StageModel $stage) => $stage->date)
+            ->values()
+            ->pluck('date');
+    }
+
+    /**
+     * Fecha de cierre de la última edición oficial del año ganado (fallback:
+     * fin del año).
+     */
+    private function nthSeasonChampionDate(User $user, int $n): ?\DateTimeInterface
+    {
+        $year = $this->seasonChampionYearList($user)->get($n - 1);
+
+        if ($year === null) {
+            return null;
+        }
+
+        $lastEdition = EditionModel::where('year', $year)
+            ->whereHas('leagues', fn ($q) => $q->where('is_official', true))
+            ->orderByDesc('end_date')
+            ->first();
+
+        return $lastEdition?->end_date ?? Carbon::create((int) $year, 12, 31);
+    }
+
+    /**
+     * Fecha de la primera participación en la primera temporada del juego.
+     */
+    private function firstSeasonDate(User $user): ?\DateTimeInterface
+    {
+        $firstYear = DB::table('editions')->min('year');
+
+        if ($firstYear === null) {
+            return null;
+        }
+
+        $date = DB::table('predictions')
+            ->join('leagues', 'leagues.id', '=', 'predictions.league_id')
+            ->join('editions', 'editions.id', '=', 'leagues.edition_id')
+            ->where('predictions.user_id', $user->id)
+            ->where('editions.year', (int) $firstYear)
+            ->min('predictions.created_at');
+
+        return $date === null ? null : Carbon::parse($date);
     }
 
     private function levelLabel(BadgeDefinition $definition, int $level): string

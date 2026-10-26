@@ -883,6 +883,12 @@ Convención vigente para controladores, use cases y validación (rama
   winner streaks) y `rankPoints()` (ranking genérico).
 - `PredictionHitService`: consultas de "acertó al ganador de etapa".
 
+Notas de cálculo:
+
+- **Campeón de temporada**: solo se premian temporadas **cerradas** (todas
+  las ediciones oficiales del año `finished`); la del año en curso queda
+  pendiente hasta que se cierre.
+
 ### Datos de prueba para UI
 
 ```bash
@@ -923,8 +929,10 @@ mundo, TESTER de Pedales).
 ### Datos
 
 - `user_badges` (estado: level + progress, unique por usuario+badge)
-- `badge_events` (histórico de hitos: `event` = `level` | `progress`, con
-  contexto) — nunca se borra, permite ver progreso
+- `badge_events` (histórico de hitos: `event` = `level` | `progress`) —
+  nunca se borra; cada hito se fecha con la **fecha real en que se consiguió**
+  (fecha de la etapa, fin de edición, inicio de edición, primera predicción…),
+  no con la del cálculo
 
 ### Cálculo
 
