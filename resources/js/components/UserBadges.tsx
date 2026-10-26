@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BadgeLevelPips } from '@/components/BadgeCard';
 
 export interface BadgeItem {
     code: string;
@@ -8,9 +9,12 @@ export interface BadgeItem {
     mode: string;
     svg: string;
     level?: number;
+    levels?: number[];
+    level_index?: number;
     progress: number;
     target: number;
     level_label?: string | null;
+    special?: boolean;
     awarded_at?: string | null;
 }
 
@@ -61,11 +65,14 @@ export function UserBadges({ badges, max = 2 }: { badges?: BadgeItem[] | null; m
                             <div key={badge.code} className="flex items-center gap-2">
                                 <img src={badge.svg} alt="" className="h-7 w-7 shrink-0" />
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-medium">
-                                        {badge.name}
-                                        {badge.level_label ? ` · ${badge.level_label}` : ''}
-                                    </p>
-                                    <p className="truncate text-xs text-muted-foreground">{badge.description}</p>
+                                    <p className="truncate text-sm font-medium">{badge.name}</p>
+                                    {badge.mode === 'cumulative' ? (
+                                        <div className="mt-1">
+                                            <BadgeLevelPips levels={badge.levels} levelIndex={badge.level_index} />
+                                        </div>
+                                    ) : (
+                                        <p className="truncate text-xs text-muted-foreground">{badge.description}</p>
+                                    )}
                                 </div>
                             </div>
                         ))}

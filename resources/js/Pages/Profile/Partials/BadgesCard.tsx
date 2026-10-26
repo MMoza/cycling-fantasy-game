@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Award } from 'lucide-react';
+import { BadgeCard } from '@/components/BadgeCard';
 import type { BadgeItem } from '@/components/UserBadges';
 
 interface BadgesCardProps {
@@ -57,21 +58,9 @@ export default function BadgesCard({ badges, className }: BadgesCardProps) {
                             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 {CATEGORY_LABELS[category] ?? category}
                             </p>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 {items.map((badge) => (
-                                    <div
-                                        key={badge.code}
-                                        className="flex items-center gap-3 rounded-xl border bg-card p-3"
-                                        title={badge.description}
-                                    >
-                                        <img src={badge.svg} alt="" className="h-10 w-10 shrink-0" />
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium">{badge.name}</p>
-                                            <p className="truncate text-xs text-accent-600 dark:text-accent-400">
-                                                {badge.level_label ?? ''}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    <BadgeCard key={badge.code} badge={badge} variant="earned" />
                                 ))}
                             </div>
                         </div>
@@ -84,32 +73,10 @@ export default function BadgesCard({ badges, className }: BadgesCardProps) {
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         En progreso
                     </p>
-                    <div className="space-y-3">
-                        {pending.map((badge) => {
-                            const percent = badge.target > 0 ? Math.min(100, Math.round((badge.progress / badge.target) * 100)) : 0;
-
-                            return (
-                                <div key={badge.code} className="rounded-xl border bg-card p-3" title={badge.description}>
-                                    <div className="flex items-center gap-3">
-                                        <img src={badge.svg} alt="" className="h-8 w-8 shrink-0 opacity-70" />
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <p className="truncate text-sm font-medium">{badge.name}</p>
-                                                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                                                    {badge.progress}/{badge.target}
-                                                </span>
-                                            </div>
-                                            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                                                <div
-                                                    className="h-full rounded-full bg-accent-500 transition-all"
-                                                    style={{ width: `${percent}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {pending.map((badge) => (
+                            <BadgeCard key={badge.code} badge={badge} variant="pending" />
+                        ))}
                     </div>
                 </div>
             )}

@@ -21,7 +21,7 @@ class BadgeCatalog
     {
         $definitions = [];
 
-        foreach (self::DEFINITIONS as [$code, $name, $description, $mode, $levels, $category]) {
+        foreach (self::DEFINITIONS as [$code, $name, $description, $mode, $levels, $category, $special]) {
             $definition = new BadgeDefinition(
                 code: $code,
                 name: $name,
@@ -29,6 +29,7 @@ class BadgeCatalog
                 mode: $mode,
                 levels: $levels,
                 category: $category,
+                special: $special,
             );
 
             $definitions[$code->value] = $definition;
@@ -49,32 +50,32 @@ class BadgeCatalog
     }
 
     /**
-     * @var array<int, array{BadgeCode, string, string, BadgeMode, array<int, int>, string}>
+     * @var array<int, array{BadgeCode, string, string, BadgeMode, array<int, int>, string, bool}>
      */
     private const DEFINITIONS = [
         // ── Etapas ────────────────────────────────────────────────
-        [BadgeCode::StagesPlayed, 'Etapas disputadas', 'Etapa disputada con al menos un pronóstico tuyo.', BadgeMode::Cumulative, [1, 5, 25, 100, 500], 'etapas'],
-        [BadgeCode::StagesWon, 'Etapas ganadas', 'Acertaste al ganador de la etapa.', BadgeMode::Cumulative, [1, 3, 10, 25, 100], 'etapas'],
+        [BadgeCode::StagesPlayed, 'Etapas disputadas', 'Etapa disputada con al menos un pronóstico tuyo.', BadgeMode::Cumulative, [1, 5, 25, 100, 500], 'etapas', false],
+        [BadgeCode::StagesWon, 'Etapas ganadas', 'Acertaste al ganador de la etapa.', BadgeMode::Cumulative, [1, 3, 10, 25, 100], 'etapas', false],
 
         // ── Participación ─────────────────────────────────────────
-        [BadgeCode::GrandTourParticipation, 'Grandes Vueltas', 'Participaste en Grandes Vueltas (Tour, Giro o Vuelta).', BadgeMode::Cumulative, [1, 3, 10], 'participacion'],
-        [BadgeCode::MonumentParticipation, 'Monumentos', 'Participaste en carreras Monumento.', BadgeMode::Cumulative, [1, 5, 15], 'participacion'],
-        [BadgeCode::ChampionshipParticipation, 'Campeonatos', 'Participaste en campeonatos (Mundial o Europeo).', BadgeMode::Cumulative, [1, 3, 10], 'participacion'],
-        [BadgeCode::ClassicParticipation, 'Clásicas de 1 día', 'Participaste en clásicas de un día.', BadgeMode::Cumulative, [1, 5, 25], 'participacion'],
+        [BadgeCode::GrandTourParticipation, 'Grandes Vueltas', 'Participaste en Grandes Vueltas (Tour, Giro o Vuelta).', BadgeMode::Cumulative, [1, 3, 10], 'participacion', false],
+        [BadgeCode::MonumentParticipation, 'Monumentos', 'Participaste en carreras Monumento.', BadgeMode::Cumulative, [1, 5, 15], 'participacion', false],
+        [BadgeCode::ChampionshipParticipation, 'Campeonatos', 'Participaste en campeonatos (Mundial o Europeo).', BadgeMode::Cumulative, [1, 3, 10], 'participacion', false],
+        [BadgeCode::ClassicParticipation, 'Clásicas de 1 día', 'Participaste en clásicas de un día.', BadgeMode::Cumulative, [1, 5, 25], 'participacion', false],
 
         // ── Victorias ─────────────────────────────────────────────
-        [BadgeCode::TourWinner, 'Ganador del Tour', 'Acertaste al ganador de la clasificación general del Tour.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias'],
-        [BadgeCode::GiroWinner, 'Ganador del Giro', 'Acertaste al ganador de la clasificación general del Giro.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias'],
-        [BadgeCode::VueltaWinner, 'Ganador de la Vuelta', 'Acertaste al ganador de la clasificación general de la Vuelta.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias'],
-        [BadgeCode::MonumentWinner, 'Ganador de monumento', 'Acertaste al ganador de una carrera Monumento.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias'],
-        [BadgeCode::WorldChampion, 'Campeón del mundo', 'Acertaste al ganador del Mundial en ruta.', BadgeMode::Once, [1], 'victorias'],
+        [BadgeCode::TourWinner, 'Ganador del Tour', 'Acertaste al ganador de la clasificación general del Tour.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false],
+        [BadgeCode::GiroWinner, 'Ganador del Giro', 'Acertaste al ganador de la clasificación general del Giro.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false],
+        [BadgeCode::VueltaWinner, 'Ganador de la Vuelta', 'Acertaste al ganador de la clasificación general de la Vuelta.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false],
+        [BadgeCode::MonumentWinner, 'Ganador de monumento', 'Acertaste al ganador de una carrera Monumento.', BadgeMode::Cumulative, [1, 2, 3, 4, 5], 'victorias', false],
+        [BadgeCode::WorldChampion, 'Campeón del mundo', 'Acertaste al ganador del Mundial en ruta.', BadgeMode::Once, [1], 'victorias', false],
 
         // ── Hitos ─────────────────────────────────────────────────
-        [BadgeCode::Trilogy, 'Trilogía', 'Ganaste las tres Grandes Vueltas: Tour, Giro y Vuelta.', BadgeMode::Once, [3], 'hitos'],
-        [BadgeCode::MonumentCollection, 'Colección de monumentos', 'Ganaste las cinco carreras Monumento.', BadgeMode::Once, [5], 'hitos'],
+        [BadgeCode::Trilogy, 'Trilogía', 'Ganaste las tres Grandes Vueltas: Tour, Giro y Vuelta.', BadgeMode::Once, [3], 'hitos', false],
+        [BadgeCode::MonumentCollection, 'Colección de monumentos', 'Ganaste las cinco carreras Monumento.', BadgeMode::Once, [5], 'hitos', false],
 
         // ── Temporada / especial ──────────────────────────────────
-        [BadgeCode::SeasonChampion, 'Campeón de temporada', 'Terminaste primero en la clasificación general de una temporada.', BadgeMode::Cumulative, [1, 2, 3], 'temporada'],
-        [BadgeCode::Tester, 'TESTER de Pedales', 'Participaste en la primera temporada del juego.', BadgeMode::Once, [1], 'especial'],
+        [BadgeCode::SeasonChampion, 'Campeón de temporada', 'Terminaste primero en la clasificación general de una temporada.', BadgeMode::Cumulative, [1, 2, 3], 'temporada', false],
+        [BadgeCode::Tester, 'TESTER de Pedales', 'Participaste en la primera temporada del juego.', BadgeMode::Once, [1], 'especial', true],
     ];
 }

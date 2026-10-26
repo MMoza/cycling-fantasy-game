@@ -16,6 +16,9 @@ readonly class BadgeDefinition
      * @param  array<int, int>  $levels  tiers alcanzables; en modo `once` el
      *                                   objetivo es el único nivel (y además
      *                                   se guarda progreso parcial)
+     * @param  bool  $special  badge especial (TESTER, futuros…) que solo se
+     *                         consigue por un evento concreto: nunca aparece
+     *                         en la lista de pendientes
      */
     public function __construct(
         public BadgeCode $code,
@@ -24,6 +27,7 @@ readonly class BadgeDefinition
         public BadgeMode $mode,
         public array $levels,
         public string $category,
+        public bool $special = false,
     ) {}
 
     public function svg(): string

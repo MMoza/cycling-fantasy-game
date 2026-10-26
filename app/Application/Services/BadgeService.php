@@ -162,9 +162,12 @@ class BadgeService
                         'mode' => $definition->mode->value,
                         'svg' => $definition->svg(),
                         'level' => $badge->level,
+                        'levels' => $definition->levels,
+                        'level_index' => $this->levelIndex($definition, $badge->level),
                         'progress' => $badge->progress,
                         'target' => $definition->target(),
                         'level_label' => $this->levelLabel($definition, $badge->level),
+                        'special' => $definition->special,
                         'awarded_at' => $badge->awarded_at?->toISOString(),
                     ];
                 })->values()->all();
@@ -185,7 +188,9 @@ class BadgeService
         $pending = [];
 
         foreach (BadgeCatalog::definitions() as $definition) {
-            if (in_array($definition->code->value, $earnedCodes, true)) {
+            // Los badges especiales (TESTER, futuros…) solo se consiguen por
+            // eventos concretos: nunca aparecen como pendientes.
+            if ($definition->special || in_array($definition->code->value, $earnedCodes, true)) {
                 continue;
             }
 
@@ -199,9 +204,13 @@ class BadgeService
                 'category' => $definition->category,
                 'mode' => $definition->mode->value,
                 'svg' => $definition->svg(),
+                'level' => 0,
+                'levels' => $definition->levels,
+                'level_index' => 0,
                 'progress' => $value,
                 'target' => $next ?? $definition->target(),
                 'level_label' => null,
+                'special' => $definition->special,
             ];
         }
 
@@ -482,5 +491,19 @@ class BadgeService
         $index = array_search($level, $definition->levels, true);
 
         return $index === false ? '' : 'Nivel '.($index + 1);
+    }
+
+    /**
+     * Número de niveles alcanzados (para el relleno/hueco de la UI).
+     */
+    private function levelIndex(BadgeDefinition $definition, int $level): int
+    {
+        if ($level <= 0) {
+            return 0;
+        }
+
+        $index = array_search($level, $definition->levels, true);
+
+        return $index === false ? 0 : $index + 1;
     }
 }

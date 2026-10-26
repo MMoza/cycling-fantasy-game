@@ -263,5 +263,12 @@ test('badge status exposes earned badges and pending progress', function () {
 
     $pendingCodes = array_column($status->pending, 'code');
     expect($pendingCodes)->toContain('trilogy');
+    // los badges especiales (TESTER) nunca aparecen como pendientes
+    expect($pendingCodes)->not->toContain('tester');
     expect($status->pending[array_search('trilogy', $pendingCodes)]['target'])->toBe(3);
+
+    // los badges por niveles exponen sus tiers para el relleno/hueco de la UI
+    $stagesPlayed = $status->earned[array_search('stages_played', $earnedCodes)];
+    expect($stagesPlayed['levels'])->toBe([1, 5, 25, 100, 500]);
+    expect($stagesPlayed['level_index'])->toBe(1);
 });
