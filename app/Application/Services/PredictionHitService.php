@@ -14,13 +14,14 @@ use Illuminate\Support\Facades\DB;
 class PredictionHitService
 {
     /**
+     * @param  string|null  $leagueId  limit to a league (null = every league)
      * @param  string  $category  prediction category ('stage_winner', 'stage_position_N'…)
      * @param  array<int, string>|null  $stageIds  restrict to specific stages
      * @param  bool  $excludeUpcomingStages  skip stages that have not started
      * @return Collection<int, object{user_id: string, stage_id: string}>
      */
     public function correctWinnerPredictions(
-        string $leagueId,
+        ?string $leagueId = null,
         ?string $userId = null,
         string $category = 'stage_winner',
         ?array $stageIds = null,
@@ -31,9 +32,12 @@ class PredictionHitService
                 $join->on('predictions.stage_id', '=', 'stage_results.stage_id')
                     ->where('stage_results.position', '=', 1);
             })
-            ->where('predictions.league_id', $leagueId)
             ->where('predictions.category', '=', $category)
             ->whereRaw("JSON_EXTRACT(predictions.prediction_value, '$.rider_id') = stage_results.rider_id");
+
+        if ($leagueId !== null) {
+            $query->where('predictions.league_id', $leagueId);
+        }
 
         if ($userId !== null) {
             $query->where('predictions.user_id', $userId);
