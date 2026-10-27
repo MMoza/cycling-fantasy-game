@@ -35,7 +35,7 @@ export function LeaderboardCard({
         <Link
             href={route('leagues.members.show', [leagueId, entry.user_id])}
             className={`
-                flex items-center gap-3 rounded-xl border px-3 py-3 transition-colors
+                flex items-center gap-2 rounded-xl border px-2.5 py-2.5 transition-colors
                 ${entry.is_current_user
                     ? 'border-accent-400 bg-accent-100/60 dark:border-accent-700 dark:bg-accent-900/20'
                     : isPodium
@@ -45,7 +45,7 @@ export function LeaderboardCard({
             `}
         >
             {/* Puesto */}
-            <div className="flex w-9 shrink-0 flex-col items-center">
+            <div className="flex w-8 shrink-0 flex-col items-center">
                 {isPodium ? (
                     <>
                         <Trophy className={`h-5 w-5 ${podiumTrophy[entry.rank]}`} />
@@ -63,10 +63,10 @@ export function LeaderboardCard({
                 isOnline={entry.is_online}
             />
 
-            {/* Nombre, racha y badges */}
+            {/* Nombre + variación (misma fila), racha y badges */}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex min-w-0 items-center gap-1.5">
-                    <span className="truncate text-base font-semibold leading-tight" title={entry.user_name}>
+                <div data-testid="entry-name-row" className="flex min-w-0 items-center gap-1.5">
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-tight sm:text-base" title={entry.user_name}>
                         {entry.user_name}
                     </span>
                     {entry.is_current_user && (
@@ -75,6 +75,9 @@ export function LeaderboardCard({
                         </span>
                     )}
                     <WinnerStreakChip streak={entry.winner_streak} />
+                    <span className="shrink-0">
+                        <PositionChange change={entry.rank_change} />
+                    </span>
                 </div>
                 {entry.badges && entry.badges.length > 0 && (
                     <div className="flex items-center">
@@ -83,15 +86,10 @@ export function LeaderboardCard({
                 )}
             </div>
 
-            {/* Variación */}
-            <div className="flex w-8 shrink-0 justify-center">
-                <PositionChange change={entry.rank_change} />
-            </div>
-
             {/* Puntuación */}
-            <div className="flex w-16 shrink-0 flex-col items-end border-l border-muted-200/70 pl-3 dark:border-muted-800/50">
-                <span className="text-xl font-bold leading-none tabular-nums">{entry.points}</span>
-                <span className="mt-0.5 text-[11px] text-muted-foreground">puntos</span>
+            <div className="flex w-14 shrink-0 flex-col items-end border-l border-muted-200/70 pl-2.5 dark:border-muted-800/50">
+                <span className="text-lg font-bold leading-none tabular-nums sm:text-xl">{entry.points}</span>
+                <span className="mt-0.5 text-[10px] text-muted-foreground">puntos</span>
             </div>
         </Link>
     );

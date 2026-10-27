@@ -82,6 +82,21 @@ describe('LeagueLeaderboard mobile cards', () => {
         expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1);
     });
 
+    it('keeps the position change on the same row as the name', () => {
+        render(<LeagueLeaderboard league_id="league-1" leaderboard={[
+            entry({ rank: 1, user_id: 'a', user_name: 'Guille', rank_change: 1 }),
+            entry({ rank: 2, user_id: 'b', user_name: 'Pablo', rank_change: null }),
+        ]} />);
+
+        // cada fila de nombre contiene nombre + variación (subida o guion)
+        const nameRows = screen.getAllByTestId('entry-name-row');
+        expect(nameRows).toHaveLength(2);
+        expect(within(nameRows[0]).getByText('Guille')).toBeInTheDocument();
+        expect(nameRows[0].querySelector('.lucide-chevron-up')).not.toBeNull();
+        expect(within(nameRows[1]).getByText('Pablo')).toBeInTheDocument();
+        expect(nameRows[1].querySelector('.lucide-minus')).not.toBeNull();
+    });
+
     it('shows up to 3 badges plus the +N chip on cards', () => {
         render(<LeagueLeaderboard league_id="league-1" leaderboard={[
             entry({ badges: [badge('b1'), badge('b2'), badge('b3'), badge('b4'), badge('b5')] }),

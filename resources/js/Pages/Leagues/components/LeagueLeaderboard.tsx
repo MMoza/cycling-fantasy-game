@@ -131,7 +131,7 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                         </div>
 
                         {/* Móvil: tarjetas */}
-                        <div className="space-y-2 p-3 md:hidden" data-testid="leaderboard-cards">
+                        <div className="space-y-2 p-1.5 md:hidden" data-testid="leaderboard-cards">
                             {items.map((item, i) =>
                                 item.type === 'ellipsis' ? (
                                     <button
