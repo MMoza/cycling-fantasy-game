@@ -14,25 +14,25 @@ const podiumTrophy: Record<number, string> = {
 
 /**
  * Fila de participante para escritorio (presentación tabular actual).
+ * Con `href` enlaza al perfil del miembro; sin él, es un contenedor simple.
  */
 export function LeaderboardRow({
     entry,
-    leagueId,
+    href,
 }: {
     entry: LeaderboardEntry;
-    leagueId: string;
+    href?: string;
 }) {
-    return (
-        <Link
-            href={route('leagues.members.show', [leagueId, entry.user_id])}
-            className={`
-                flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50
-                ${entry.is_current_user
-                    ? 'bg-accent-100/50 dark:bg-accent-900/10 border-y border-accent-200 dark:border-accent-800'
-                    : 'border-b border-muted-100 dark:border-muted-800/50 last:border-b-0'
-                }
-            `}
-        >
+    const className = `
+        flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50
+        ${entry.is_current_user
+            ? 'bg-accent-100/50 dark:bg-accent-900/10 border-y border-accent-200 dark:border-accent-800'
+            : 'border-b border-muted-100 dark:border-muted-800/50 last:border-b-0'
+        }
+    `;
+
+    const content = (
+        <>
             <div className="flex h-8 w-8 shrink-0 items-center justify-center">
                 {entry.rank <= 3 ? (
                     <Trophy className={`h-5 w-5 ${podiumTrophy[entry.rank]}`} />
@@ -59,6 +59,16 @@ export function LeaderboardRow({
                     {entry.points}
                 </span>
             </div>
+        </>
+    );
+
+    if (href === undefined) {
+        return <div className={className}>{content}</div>;
+    }
+
+    return (
+        <Link href={href} className={className}>
+            {content}
         </Link>
     );
 }
