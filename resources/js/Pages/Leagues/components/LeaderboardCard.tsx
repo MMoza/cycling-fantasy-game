@@ -21,29 +21,29 @@ const podiumBg: Record<number, string> = {
 /**
  * Tarjeta de participante para móvil: puesto, avatar, nombre con racha,
  * badges (+N), variación de posición y puntuación.
+ * Con `href` enlaza al perfil del miembro; sin él, es un contenedor simple.
  */
 export function LeaderboardCard({
     entry,
-    leagueId,
+    href,
 }: {
     entry: LeaderboardEntry;
-    leagueId: string;
+    href?: string;
 }) {
     const isPodium = entry.rank <= 3;
 
-    return (
-        <Link
-            href={route('leagues.members.show', [leagueId, entry.user_id])}
-            className={`
-                flex items-center gap-2 rounded-xl border px-2.5 py-2.5 transition-colors
-                ${entry.is_current_user
-                    ? 'border-accent-400 bg-accent-100/60 dark:border-accent-700 dark:bg-accent-900/20'
-                    : isPodium
-                        ? podiumBg[entry.rank]
-                        : 'border-muted-200/70 bg-white dark:border-muted-800/50 dark:bg-background'
-                }
-            `}
-        >
+    const className = `
+        flex items-center gap-2 rounded-xl border px-2.5 py-2.5 transition-colors
+        ${entry.is_current_user
+            ? 'border-accent-400 bg-accent-100/60 dark:border-accent-700 dark:bg-accent-900/20'
+            : isPodium
+                ? podiumBg[entry.rank]
+                : 'border-muted-200/70 bg-white dark:border-muted-800/50 dark:bg-background'
+        }
+    `;
+
+    const content = (
+        <>
             {/* Puesto */}
             <div className="flex w-8 shrink-0 flex-col items-center">
                 {isPodium ? (
@@ -91,6 +91,16 @@ export function LeaderboardCard({
                 <span className="text-lg font-bold leading-none tabular-nums sm:text-xl">{entry.points}</span>
                 <span className="mt-0.5 text-[10px] text-muted-foreground">puntos</span>
             </div>
+        </>
+    );
+
+    if (href === undefined) {
+        return <div className={className}>{content}</div>;
+    }
+
+    return (
+        <Link href={href} className={className}>
+            {content}
         </Link>
     );
 }

@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users, ChevronDown } from 'lucide-react';
-import { LeaderboardRow } from './LeaderboardRow';
-import { LeaderboardCard } from './LeaderboardCard';
+import { LeaderboardList } from './LeaderboardList';
 import { buildVisibleLeaderboard, sortLeaderboard, type SortDir, type SortKey, type VisibleItem } from './leaderboard-utils';
 import type { LeaderboardEntry } from './types';
 
@@ -94,61 +93,29 @@ export function LeagueLeaderboard({ league_id, leaderboard }: LeagueLeaderboardP
                     </div>
                 ) : (
                     <div>
-                        {/* Escritorio: tabla con cabeceras ordenables */}
-                        <div className="hidden md:block" data-testid="leaderboard-table">
-                            <div className="flex items-center gap-3 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-muted-200 dark:border-muted-800">
-                                <button type="button" onClick={() => toggleSort('rank')} className="flex w-8 items-center justify-center gap-0.5 hover:text-foreground transition-colors">
-                                    Puesto
-                                    {sortIndicator('rank')}
-                                </button>
-                                <span className="w-8" />
-                                <button type="button" onClick={() => toggleSort('user_name')} className="flex flex-1 items-center gap-0.5 hover:text-foreground transition-colors text-left">
-                                    Usuario
-                                    {sortIndicator('user_name')}
-                                </button>
-                                <span className="w-8 text-center">Var.</span>
-                                <button type="button" onClick={() => toggleSort('points')} className="flex shrink-0 items-center gap-0.5 hover:text-foreground transition-colors">
-                                    Puntos
-                                    {sortIndicator('points')}
-                                </button>
-                            </div>
-                            {items.map((item, i) =>
-                                item.type === 'ellipsis' ? (
-                                    <button
-                                        key={`ellipsis-${i}`}
-                                        type="button"
-                                        onClick={() => setShowAll(true)}
-                                        className="flex w-full items-center justify-center py-2 text-muted-foreground hover:text-foreground transition-colors"
-                                    >
-                                        <span className="text-sm tracking-widest">...</span>
+                        <LeaderboardList
+                            items={items}
+                            hrefFor={(entry) => route('leagues.members.show', [league_id, entry.user_id])}
+                            onExpand={() => setShowAll(true)}
+                            desktopHeader={
+                                <div className="flex items-center gap-3 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-muted-200 dark:border-muted-800">
+                                    <button type="button" onClick={() => toggleSort('rank')} className="flex w-8 items-center justify-center gap-0.5 hover:text-foreground transition-colors">
+                                        Puesto
+                                        {sortIndicator('rank')}
                                     </button>
-                                ) : item.type === 'separator' ? (
-                                    <div key={`sep-${i}`} className="border-t border-muted-200 dark:border-muted-800" />
-                                ) : (
-                                    <LeaderboardRow key={item.entry.user_id} entry={item.entry} leagueId={league_id} />
-                                ),
-                            )}
-                        </div>
-
-                        {/* Móvil: tarjetas */}
-                        <div className="space-y-2 p-1.5 md:hidden" data-testid="leaderboard-cards">
-                            {items.map((item, i) =>
-                                item.type === 'ellipsis' ? (
-                                    <button
-                                        key={`ellipsis-${i}`}
-                                        type="button"
-                                        onClick={() => setShowAll(true)}
-                                        className="flex w-full items-center justify-center py-1 text-muted-foreground hover:text-foreground transition-colors"
-                                    >
-                                        <span className="text-sm tracking-widest">...</span>
+                                    <span className="w-8" />
+                                    <button type="button" onClick={() => toggleSort('user_name')} className="flex flex-1 items-center gap-0.5 hover:text-foreground transition-colors text-left">
+                                        Usuario
+                                        {sortIndicator('user_name')}
                                     </button>
-                                ) : item.type === 'separator' ? (
-                                    <div key={`sep-${i}`} className="h-px bg-muted-200 dark:bg-muted-800" />
-                                ) : (
-                                    <LeaderboardCard key={item.entry.user_id} entry={item.entry} leagueId={league_id} />
-                                ),
-                            )}
-                        </div>
+                                    <span className="w-8 text-center">Var.</span>
+                                    <button type="button" onClick={() => toggleSort('points')} className="flex shrink-0 items-center gap-0.5 hover:text-foreground transition-colors">
+                                        Puntos
+                                        {sortIndicator('points')}
+                                    </button>
+                                </div>
+                            }
+                        />
 
                         {leaderboard.length > 10 && (
                             <div className="border-t border-muted-200 dark:border-muted-800 px-6 py-3">

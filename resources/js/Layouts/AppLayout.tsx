@@ -1,10 +1,11 @@
 import PedalesLogo from '@/components/PedalesLogo';
 import { NotificationModal } from '@/components/NotificationModal';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Route, Trophy, Shield, Bell, BellOff, Calendar } from 'lucide-react';
+import { Bell, BellOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserMenu from '@/components/UserMenu';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { buildNavItems } from '@/Layouts/navItems';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const page = usePage();
@@ -17,28 +18,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const { isSupported, isSubscribed, subscribe, unsubscribe, loading } = usePushNotifications();
 
-    const navItems = [
-        { route: 'dashboard', href: route('dashboard'), label: 'Dashboard', icon: LayoutDashboard },
-        { route: 'season.index', href: route('season.index'), label: 'Temporada', icon: Calendar },
-        ...(activeLeague
-            ? [
-                  { route: 'stages.index', href: route('stages.index', activeLeague.id), label: 'Etapa', icon: Route },
-                  { route: 'classification.index', href: route('classification.index', activeLeague.id), label: 'Clasificación', icon: Trophy },
-              ]
-            : []),
-        ...(auth.user?.is_admin
-            ? [{ route: 'admin', href: '/admin', label: 'Admin', icon: Shield }]
-            : []),
-        // TODO: Descomentar para añadir Pedales al nav
-        // { route: 'pedales', href: route('pedales'), label: 'Pedales', icon: PedalesLogo },
-    ];
+    const navItems = buildNavItems(activeLeague, auth.user?.is_admin ?? false);
 
     function isActive(item: typeof navItems[number]): boolean {
         if (item.route === 'admin') {
             return url.startsWith('/admin');
-        }
-        if (item.route === 'season.index') {
-            return route().current('season.*');
         }
         return route().current(item.route);
     }
