@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LeaderboardList } from '@/Pages/Leagues/components/LeaderboardList';
 import type { LeaderboardEntry } from '@/Pages/Leagues/components/types';
 import type { VisibleItem } from '@/Pages/Leagues/components/leaderboard-utils';
-import { Trophy, Users, Mountain, Flag, Landmark, Star, Bike } from 'lucide-react';
+import { Trophy, Users, Mountain, Flag, Landmark, Star, Bike, Layers } from 'lucide-react';
 
 interface BreakdownEntry {
     competition_name: string;
@@ -175,9 +175,9 @@ export default function Classification({ year, aggregated_leaderboard, per_compe
     );
 
     const tabs = [
-        { key: 'aggregated' as const, label: 'General' },
-        { key: 'per_competition' as const, label: 'Por competición' },
-        { key: 'by_type' as const, label: 'Por tipo' },
+        { key: 'aggregated' as const, label: 'General', icon: Trophy },
+        { key: 'per_competition' as const, label: 'Por competición', icon: Flag },
+        { key: 'by_type' as const, label: 'Por tipo', icon: Layers },
     ];
 
     return (
@@ -195,20 +195,30 @@ export default function Classification({ year, aggregated_leaderboard, per_compe
                     </p>
                 </div>
 
-                <div className="flex gap-1 rounded-lg bg-muted p-1">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key)}
-                            className={`flex-1 rounded-md px-2 py-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
-                                activeTab === tab.key
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                <div className="flex gap-1 rounded-lg bg-muted p-1" role="group" aria-label="Tipo de clasificación">
+                    {tabs.map((tab) => {
+                        const active = activeTab === tab.key;
+                        const Icon = tab.icon;
+
+                        return (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                onClick={() => setActiveTab(tab.key)}
+                                aria-label={tab.label}
+                                aria-pressed={active}
+                                title={tab.label}
+                                className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+                                    active
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                <span className="hidden truncate sm:inline-block">{tab.label}</span>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {activeTab === 'aggregated' && (
