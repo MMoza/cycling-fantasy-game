@@ -87,6 +87,20 @@ describe('Season/Classification', () => {
         expect(screen.getByText('Por tipo')).toBeInTheDocument();
     });
 
+    it('renders tab icons with accessible labels and titles hidden on mobile', () => {
+        render(<Classification {...baseProps} />);
+
+        for (const label of ['General', 'Por competición', 'Por tipo']) {
+            const button = screen.getByRole('button', { name: label });
+            // etiqueta accesible para el icono cuando el título no se ve
+            expect(button).toHaveAttribute('aria-label', label);
+            expect(button.querySelector('svg')).not.toBeNull();
+
+            // el título se oculta en móvil y se muestra cuando hay espacio (sm+)
+            expect(screen.getByText(label)).toHaveClass('hidden', 'sm:inline-block');
+        }
+    });
+
     it('shows the general classification reusing mobile cards', () => {
         render(<Classification {...baseProps} />);
 
