@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Trophy, ImageIcon, Check, Calendar } from 'lucide-react';
+import { Users, ImageIcon, Check, AlertCircle, UserPlus } from 'lucide-react';
 import { FlagIcon } from '@/components/ui/flag-icon';
+import SeasonHeader from './components/SeasonHeader';
 
 interface SeasonCompetition {
     editionId: string;
@@ -55,6 +57,11 @@ const statusColors: Record<string, string> = {
 const typeOrder = ['gc', 'major', 'monument', 'classic', 'championship'];
 
 export default function Index({ year, years, competitions, user_joined_count, total_competitions }: SeasonProps) {
+    const [isJoiningAll, setIsJoiningAll] = useState(false);
+    const { flash } = usePage().props as {
+        flash?: { success?: string; error?: string };
+    };
+
     const handleJoin = (leagueId: string) => {
         router.post(route('leagues.join-official'), { league_id: leagueId }, {
             preserveScroll: true,
@@ -66,6 +73,20 @@ export default function Index({ year, years, competitions, user_joined_count, to
             router.get(route('season.index', nextYear));
         }
     };
+
+    const handleJoinAll = () => {
+        setIsJoiningAll(true);
+        router.post(
+            route('season.join-all'),
+            { year },
+            {
+                preserveScroll: true,
+                onFinish: () => setIsJoiningAll(false),
+            },
+        );
+    };
+
+    const pendingCount = competitions.filter((comp) => !comp.isUserMember && comp.canJoin).length;
 
     const groupedByType = competitions.reduce<Record<string, SeasonCompetition[]>>((acc, comp) => {
         if (!acc[comp.competitionType]) {
@@ -84,65 +105,59 @@ export default function Index({ year, years, competitions, user_joined_count, to
             <Head title={`Temporada ${year}`} />
 
             <div className="space-y-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <Calendar className="h-6 w-6 text-accent-500" />
-                            <h1 className="text-2xl font-semibold tracking-tight">Temporada {year}</h1>
+                <SeasonHeader year={year} years={years} onYearChange={changeYear} />
+
+                <div className="space-y-3">
+                    {flash?.success && (
+                        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800/50 dark:bg-green-950/20 dark:text-green-300">
+                            <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+                            <span>{flash.success}</span>
                         </div>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Competiciones oficiales de la temporada
-                        </p>
-                    </div>
+                    )}
+                    {flash?.error && (
+                        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800/50 dark:bg-red-950/20 dark:text-red-300">
+                            <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                            <span>{flash.error}</span>
+                        </div>
+                    )}
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        {years.length > 1 && (
-                            <div className="flex gap-1 overflow-x-auto">
-                                {years.map((seasonYear) => (
-                                    <button
-                                        key={seasonYear}
-                                        type="button"
-                                        onClick={() => changeYear(seasonYear)}
-                                        className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                                            seasonYear === year
-                                                ? 'bg-foreground text-background'
-                                                : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                                        }`}
-                                    >
-                                        {seasonYear}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                    {total_competitions > 0 && (
+                        <Card className="border-accent-200 bg-accent-50 dark:border-accent-800/50 dark:bg-accent-950/20">
+                            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/30">
+                                        {user_joined_count === total_competitions ? (
+                                            <Check className="h-5 w-5 text-accent-600 dark:text-accent-400" />
+                                        ) : (
+                                            <Users className="h-5 w-5 text-accent-600 dark:text-accent-400" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium">
+                                            {user_joined_count === 0
+                                                ? `Aún no estás inscrito en ninguna de las ${total_competitions} competiciones`
+                                                : `Estás en ${user_joined_count} de ${total_competitions} competiciones`}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {user_joined_count === total_competitions
+                                                ? '¡Participas en todas las competiciones oficiales!'
+                                                : pendingCount > 0
+                                                  ? 'Únete a más competiciones para mejorar tu posición en la temporada'
+                                                  : 'Las competiciones restantes ya han finalizado'}
+                                        </p>
+                                    </div>
+                                </div>
 
-                        <Link href={route('season.classification')}>
-                            <Button variant="outline" className="gap-2">
-                                <Trophy className="h-4 w-4" />
-                                Clasificación de temporada
-                            </Button>
-                        </Link>
-                    </div>
+                                {pendingCount > 0 && (
+                                    <Button onClick={handleJoinAll} disabled={isJoiningAll} className="w-full gap-2 sm:w-auto">
+                                        <UserPlus className="h-4 w-4" aria-hidden="true" />
+                                        {isJoiningAll ? 'Inscribiéndote…' : `Inscribirme en las ${pendingCount} que faltan`}
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
-
-                {user_joined_count > 0 && (
-                    <Card className="border-accent-200 bg-accent-50 dark:border-accent-800/50 dark:bg-accent-950/20">
-                        <CardContent className="flex items-center gap-3 p-4">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-100 dark:bg-accent-900/30">
-                                <Check className="h-5 w-5 text-accent-600 dark:text-accent-400" />
-                            </div>
-                            <div>
-                                <p className="font-medium">
-                                    Estás en {user_joined_count} de {total_competitions} competiciones
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                    {user_joined_count === total_competitions
-                                        ? '¡Participas en todas las competiciones oficiales!'
-                                        : 'Únete a más competiciones para mejorar tu posición en la temporada'}
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
 
                 {competitions.length === 0 ? (
                     <Card>

@@ -394,6 +394,54 @@ Seeder completo que genera datos de prueba realistas llamando al motor de puntua
 6. FinalClassifications para pre-race
 7. Llama a `race:rebuild-scores` para generar ScoreEvents reales
 
+## Página de temporada (`/season`)
+
+### Estructura (`resources/js/Pages/Season/Index.tsx`)
+
+1. **Cabecera navegable** (`Season/components/SeasonHeader.tsx`):
+   - Título centrado `‹ Temporada XXXX ›` con chevrons (deshabilitados en extremos,
+     `aria-label` "Temporada anterior/siguiente"), funciona igual en móvil y desktop.
+   - Flechas calculadas sobre `years`: anterior = `max(y < year)`, siguiente =
+     `min(y > year)` (si el año actual no tiene ediciones, navega al más cercano).
+   - Pills de años centrados debajo, solo si `years.length > 1`.
+   - Control segmentado `grid-cols-2`: **Clasificación** (link a `season.classification`)
+     y **Estadísticas** deshabilitado (`title="Próximamente"`), ya preparado para el
+     segundo botón futuro.
+2. **Card de resumen** "Estás en X de Y competiciones" (visible si `total_competitions > 0`)
+   con variantes 0 inscrito / parcial / todas, **botón de inscripción masiva**
+   ("Inscribirme en las N que faltan", N calculado en frontend con `!isUserMember && canJoin`)
+   y feedback **inline** (`props.flash.success` / `props.flash.error`).
+3. Listado agrupado por tipo con tarjetas y botón "Unirse" individual (sin cambios).
+
+### Inscripción masiva
+
+- Ruta: `POST /season/join-all` (`season.join-all`) — grupo `auth`.
+- `JoinAllSeasonRequest` → `JoinAllMissingCompetitionsUseCase` → `SeasonController::joinAll()`.
+- Criterios (mismos que `ShowSeasonUseCase`): edición del año con competición activa,
+  liga oficial, `status !== finished`; salta las ligas en las que ya estás.
+- Reutiliza `JoinLeagueUseCase::executeById` (respeta límites de plan: Free = 5 ligas).
+  Si una liga falla se **conservan las uniones hechas** y se reporta el primer error.
+- Feedback vía `Inertia::flash('success'|'error', ...)` (única vía que llega a
+  `props.flash`; `redirect()->with('success')` NO llega).
+
+### Archivos
+
+| Archivo | Descripción |
+|---|---|
+| `app/Application/UseCases/Season/JoinAllMissingCompetitionsUseCase.php` | Inscripción masiva |
+| `app/Application/DTOs/JoinAllSeasonResultDTO.php` | `{joined, alreadyMember, notJoinable, error}` |
+| `app/Presentation/Http/Requests/Season/JoinAllSeasonRequest.php` | Validación de `year` |
+| `app/Presentation/Http/Controllers/SeasonController.php` | `joinAll()` + mensajes flash |
+| `resources/js/Pages/Season/components/SeasonHeader.tsx` | Título navegable + pills + segmentado |
+| `resources/js/Pages/Season/Index.tsx` | Resumen, inscripción masiva y feedback inline |
+
+### Tests
+
+- `tests/Feature/SeasonJoinAllTest.php` (7 tests): masivo, no duplicados, ignora
+  `finished` e inactivas, límite de plan sin perder uniones, ya inscrito, auth, validación.
+- `resources/js/__tests__/SeasonIndex.test.tsx` (9 tests): título centrado, flechas,
+  pills, segmentado con "Estadísticas" deshabilitado, conteo del botón masivo, flash inline.
+
 ## ScoringEngine
 
 ### Bugs corregidos
