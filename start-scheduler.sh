@@ -18,9 +18,14 @@ APP_MAINTENANCE_DRIVER="${APP_MAINTENANCE_DRIVER:-file}"
 BCRYPT_ROUNDS="${BCRYPT_ROUNDS:-12}"
 
 LOG_CHANNEL="${LOG_CHANNEL:-stack}"
-LOG_STACK="${LOG_STACK:-single}"
+LOG_STACK="${LOG_STACK:-single,sentry_logs}"
 LOG_DEPRECATIONS_CHANNEL="${LOG_DEPRECATIONS_CHANNEL:-null}"
 LOG_LEVEL="${LOG_LEVEL:-error}"
+
+SENTRY_LARAVEL_DSN="${SENTRY_LARAVEL_DSN:-}"
+SENTRY_ENABLE_LOGS="${SENTRY_ENABLE_LOGS:-true}"
+SENTRY_LOG_LEVEL="${SENTRY_LOG_LEVEL:-info}"
+SENTRY_ENVIRONMENT="${SENTRY_ENVIRONMENT:-production}"
 
 DB_CONNECTION="${DB_CONNECTION:-mysql}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
@@ -58,6 +63,11 @@ MAIL_PASSWORD="${MAIL_PASSWORD:-}"
 MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-hello@example.com}"
 MAIL_FROM_NAME="${MAIL_FROM_NAME:-Laravel}"
 EOF
+
+# Sentry performance tracing only when configured (an empty value would override the config null)
+if [ -n "${SENTRY_TRACES_SAMPLE_RATE}" ]; then
+    echo "SENTRY_TRACES_SAMPLE_RATE=${SENTRY_TRACES_SAMPLE_RATE}" >> /app/.env
+fi
 
 # Generate app key if not set
 if [ -z "${APP_KEY}" ]; then
