@@ -15,6 +15,7 @@
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.35",
         "resend/resend-php": "^1.7",
+        "sentry/sentry-laravel": "^4.29",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
