@@ -39,7 +39,7 @@ return [
     'strict_trace_continuation' => env('SENTRY_STRICT_TRACE_CONTINUATION', false),
 
     // @see: https://docs.sentry.io/platforms/php/guides/laravel/configuration/options/#enable_logs
-    'enable_logs' => env('SENTRY_ENABLE_LOGS', false),
+    'enable_logs' => env('SENTRY_ENABLE_LOGS', true),
 
     // @see: https://docs.sentry.io/platforms/php/guides/laravel/configuration/options/#enable_metrics
     'enable_metrics' => env('SENTRY_ENABLE_METRICS', true),
