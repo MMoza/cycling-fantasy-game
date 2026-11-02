@@ -5,18 +5,24 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Prediction;
 
 use App\Application\Exceptions\ApplicationException;
+use App\Domain\ValueObjects\PredictionCategory;
 use App\Domain\ValueObjects\PredictionType;
 use App\Domain\ValueObjects\StageType;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
+use App\Infrastructure\Persistence\Models\RiderModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Infrastructure\Persistence\Models\StageParticipantModel;
+use App\Infrastructure\Persistence\Models\TeamModel;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class StoreStagePredictionUseCase
 {
+    /** Categorías que pueden repetir corredor respecto al resto de posiciones. */
+    private const DUPLICABLE_CATEGORIES = ['stage_leader', 'stage_combativo'];
+
     public function execute(User $user, string $leagueId, string $stageId, array $predictions): void
     {
         $league = LeagueModel::findOrFail($leagueId);
@@ -33,6 +39,8 @@ class StoreStagePredictionUseCase
         }
 
         $isTTT = $stage->type === StageType::TeamTimeTrial;
+
+        $this->validateNoDuplicates($predictions, $isTTT);
 
         foreach ($predictions as $prediction) {
             $isTeamPick = $isTTT && $prediction['category'] !== 'stage_leader';
@@ -59,6 +67,57 @@ class StoreStagePredictionUseCase
         }
 
         $user->update(['last_visited_league_id' => $leagueId]);
+    }
+
+    /**
+     * Impide guardar el mismo corredor (o equipo) en varias posiciones.
+     *
+     * `stage_leader` y `stage_combativo` pueden repetir respecto al resto.
+     *
+     * @param  array<int, mixed>  $predictions
+     */
+    private function validateNoDuplicates(array $predictions, bool $isTTT): void
+    {
+        $categoriesByValue = [];
+
+        foreach ($predictions as $prediction) {
+            if (in_array($prediction['category'], self::DUPLICABLE_CATEGORIES, true)) {
+                continue;
+            }
+
+            $categoriesByValue[$prediction['value']][] = $prediction['category'];
+        }
+
+        $duplicated = array_filter(
+            $categoriesByValue,
+            fn (array $categories) => count($categories) > 1,
+        );
+
+        if ($duplicated === []) {
+            return;
+        }
+
+        $problems = [];
+
+        foreach ($duplicated as $value => $categories) {
+            $isTeamPick = $isTTT && $categories[0] !== 'stage_leader';
+
+            $name = $isTeamPick
+                ? TeamModel::find($value)?->name
+                : RiderModel::find($value)?->full_name;
+
+            $labels = implode(', ', array_map(
+                fn (string $category) => PredictionCategory::from($category)->label(),
+                $categories,
+            ));
+
+            $problems[] = sprintf('«%s» está seleccionado en varias posiciones (%s)', $name ?? $value, $labels);
+        }
+
+        throw new ApplicationException(sprintf(
+            'No se puede guardar el pronóstico: %s. Corrige las posiciones antes de guardar.',
+            implode('; ', $problems),
+        ));
     }
 
     private function validateRider(string $riderId, string $editionId, string $stageId): void

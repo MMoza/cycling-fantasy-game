@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/ui/searchable-select';
 import { StageTypeIcon } from '@/components/ui/stage-type-icon';
 import { StageLeaderboard } from '@/Pages/Leagues/components/StageLeaderboard';
-import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck, Trophy, Medal, Users, Crown, Flame, ChevronDown, ChevronUp, Route, Mountain, Clock, MapPin, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock, Save, Star, FileCheck, Trophy, Medal, Users, Crown, Flame, ChevronDown, ChevronUp, Route, Mountain, Clock, MapPin, ExternalLink, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Stage {
@@ -320,9 +320,58 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
     );
 
     const [saving, setSaving] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState<string | null>(null);
+    const [aiGenerated, setAiGenerated] = useState(false);
+
+    /**
+     * Un mismo corredor puede seleccionarse en varias posiciones a la hora
+     * de editar, pero el pronóstico no se guarda hasta corregir los duplicados
+     * (excepto líder GC y combativo, que pueden repetirse).
+     */
+    const findDuplicateErrors = (): string | null => {
+        const labelByKey: Record<string, string> = {};
+        for (const { key, label } of categories) {
+            labelByKey[key] = label;
+        }
+
+        const categoriesByValue: Record<string, string[]> = {};
+
+        for (const { key } of categories) {
+            const value = formData[key];
+            if (!value || DUPLICABLE_KEYS.includes(key)) continue;
+
+            (categoriesByValue[value] ??= []).push(key);
+        }
+
+        const problems = Object.entries(categoriesByValue)
+            .filter(([, keys]) => keys.length > 1)
+            .map(([value, keys]) => {
+                const name = riderMap[value] ?? teamMap[value] ?? value;
+                const labels = keys.map((k) => labelByKey[k] ?? k).join(', ');
+                return `«${name}» está seleccionado en varias posiciones (${labels})`;
+            });
+
+        return problems.length > 0
+            ? `No se puede guardar el pronóstico: ${problems.join('; ')}. Corrige las posiciones antes de guardar.`
+            : null;
+    };
+
+    const handleFieldChange = (key: string, value: string) => {
+        setFormError(null);
+        setAiError(null);
+        setAiGenerated(false);
+        setFormData((prev) => ({ ...prev, [key]: value }));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        const duplicateMessage = findDuplicateErrors();
+        setFormError(duplicateMessage);
+        if (duplicateMessage) return;
+
         setSaving(true);
 
         const predictionsData = categories
@@ -343,27 +392,64 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                     setSavedVersion((v) => v + 1);
                     setSaving(false);
                 },
-                onError: () => setSaving(false),
+                onError: (errors) => {
+                    setSaving(false);
+                    setFormError(errors.stage ?? 'No se pudieron guardar los pronósticos. Revisa el formulario e inténtalo de nuevo.');
+                },
             }
         );
     };
 
-    const getFilteredOptions = (key: string) => {
-        const allOptions = getOptions(key);
-        const currentValue = formData[key];
+    const handleAiProposal = async () => {
+        setAiLoading(true);
+        setAiError(null);
+        setAiGenerated(false);
 
-        return allOptions.filter((o) => {
-            if (o.value === currentValue) return true;
+        try {
+            const xsrfToken = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/)?.[1];
 
-            if (DUPLICABLE_KEYS.includes(key)) {
-                return true;
+            const response = await fetch(route('predictions.ai.generate', [league_id, stage.id]), {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-XSRF-TOKEN': xsrfToken ? decodeURIComponent(xsrfToken) : '',
+                },
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                throw new Error(
+                    response.status === 429
+                        ? 'Demasiadas peticiones al asistente de IA. Inténtalo en unos minutos o haz tu pronóstico manualmente.'
+                        : (data?.message ?? 'No se pudo generar la propuesta. Puedes hacer tu pronóstico manualmente.'),
+                );
             }
 
-            const otherNonDuplicableSelected = Object.entries(formData)
-                .filter(([k, v]) => !DUPLICABLE_KEYS.includes(k) && k !== key && v)
-                .map(([, v]) => v);
-            return !otherNonDuplicableSelected.includes(o.value);
-        });
+            const proposed = (data?.predictions ?? {}) as Record<string, string>;
+
+            setFormData((prev) => {
+                const next = { ...prev };
+                for (const key of Object.keys(proposed)) {
+                    if (categories.some((c) => c.key === key)) {
+                        next[key] = proposed[key];
+                    }
+                }
+                return next;
+            });
+            setFormError(null);
+            setAiGenerated(true);
+        } catch (error) {
+            setAiError(
+                error instanceof Error
+                    ? error.message
+                    : 'No se pudo generar la propuesta. Puedes hacer tu pronóstico manualmente.',
+            );
+        } finally {
+            setAiLoading(false);
+        }
     };
 
     const myStagePoints = stage_classification.find((e) => e.user_id === auth?.user?.id)?.total_points ?? 0;
@@ -556,10 +642,49 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-5">
+                                {formError && (
+                                    <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                                        {formError}
+                                    </div>
+                                )}
                                 {total_possible_points > 0 && (
                                     <div className="rounded-lg bg-muted/50 px-4 py-2.5 text-center">
                                         <span className="text-sm text-muted-foreground">Puntos máximos posibles: </span>
                                         <span className="text-sm font-semibold">{total_possible_points} pts</span>
+                                    </div>
+                                )}
+                                {!isTTT && (
+                                    <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 px-4 py-3">
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium">¿No sabes qué pronosticar?</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Genera una propuesta con IA y revísala. Nada se guarda hasta que pulses guardar.
+                                                </p>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={handleAiProposal}
+                                                disabled={aiLoading || saving}
+                                                aria-busy={aiLoading}
+                                            >
+                                                {aiLoading ? (
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Sparkles className="mr-2 h-4 w-4" />
+                                                )}
+                                                {aiLoading ? 'Generando propuesta...' : 'Hacer pronóstico con IA'}
+                                            </Button>
+                                        </div>
+                                        {aiError && (
+                                            <p className="mt-2 text-sm text-destructive">{aiError}</p>
+                                        )}
+                                        {aiGenerated && !aiError && (
+                                            <p className="mt-2 text-sm text-green-600">
+                                                Propuesta generada por IA. Revísala y modifica lo que quieras antes de guardar.
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                                 {categories.map(({ key, label, points }) => {
@@ -571,9 +696,9 @@ export default function Show({ league_id, league_name, stage, is_finished, is_lo
                                                 <span className="ml-1.5 text-xs font-normal text-muted-foreground">(+{points} pts)</span>
                                             </Label>
                                             <SearchableSelect
-                                                options={getFilteredOptions(key)}
+                                                options={getOptions(key)}
                                                 value={formData[key]}
-                                                onChange={(v) => setFormData((prev) => ({ ...prev, [key]: v }))}
+                                                onChange={(v) => handleFieldChange(key, v)}
                                                 placeholder={`Seleccionar ${isTeamPick ? 'equipo' : 'corredor'}...`}
                                             />
                                             {errors[`predictions.${key}`] && (

@@ -7,11 +7,10 @@ namespace App\Application\UseCases\Stage;
 use App\Application\DTOs\PredictionDTO;
 use App\Application\DTOs\StageDetailDTO;
 use App\Application\DTOs\View\StageShowDTO;
-use App\Domain\ValueObjects\ScoringRuleContext;
+use App\Application\Services\StagePredictionCategoryService;
 use App\Domain\ValueObjects\StageStatus;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\PredictionModel;
-use App\Infrastructure\Persistence\Models\ScoringSystemModel;
 use App\Infrastructure\Persistence\Models\StageModel;
 use App\Infrastructure\Persistence\Models\StageParticipantModel;
 use App\Infrastructure\Persistence\Models\TeamModel;
@@ -20,6 +19,10 @@ use Illuminate\Support\Facades\DB;
 
 class ShowStageUseCase
 {
+    public function __construct(
+        private readonly StagePredictionCategoryService $stagePredictionCategoryService,
+    ) {}
+
     public function execute(User $user, string $leagueId, string $stageId): StageShowDTO
     {
         $league = LeagueModel::with('edition')->findOrFail($leagueId);
@@ -105,20 +108,7 @@ class ShowStageUseCase
             ->get()
             ->map(fn ($t) => ['value' => $t->id, 'label' => $t->name]);
 
-        $scoringSystem = ScoringSystemModel::with('rules')->find($league->scoring_system_id);
-
-        $stageRules = $scoringSystem->rules
-            ->filter(fn ($rule) => $rule->context === ScoringRuleContext::PreStage)
-            ->filter(fn ($rule) => ! str_starts_with($rule->type->value, 'stage_partial_pos_'))
-            ->filter(fn ($rule) => $rule->type->value !== 'stage_top_3_partial')
-            ->filter(fn ($rule) => $rule->difficulty === null || $rule->difficulty === $stage->difficulty)
-            ->map(fn ($rule) => [
-                'category' => $this->mapRuleTypeToCategory($rule->type->value),
-                'label' => $rule->type->label(),
-                'points' => $rule->points,
-            ])
-            ->values()
-            ->toArray();
+        $stageRules = $this->stagePredictionCategoryService->forStage($league, $stage);
 
         $totalPossiblePoints = array_sum(array_column($stageRules, 'points'));
 
@@ -213,22 +203,5 @@ class ShowStageUseCase
             stageRules: $stageRules,
             totalPossiblePoints: $totalPossiblePoints,
         );
-    }
-
-    private function mapRuleTypeToCategory(string $ruleTypeValue): string
-    {
-        return match ($ruleTypeValue) {
-            'stage_exact_pos_1' => 'stage_position_1',
-            'stage_exact_pos_2' => 'stage_position_2',
-            'stage_exact_pos_3' => 'stage_position_3',
-            'stage_exact_pos_4' => 'stage_position_4',
-            'stage_exact_pos_5' => 'stage_position_5',
-            'stage_exact_pos_6' => 'stage_position_6',
-            'stage_exact_pos_7' => 'stage_position_7',
-            'stage_exact_pos_8' => 'stage_position_8',
-            'stage_exact_pos_9' => 'stage_position_9',
-            'stage_exact_pos_10' => 'stage_position_10',
-            default => $ruleTypeValue,
-        };
     }
 }

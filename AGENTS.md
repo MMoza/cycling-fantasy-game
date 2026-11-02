@@ -1001,3 +1001,113 @@ php artisan season:award-badges {year?} {--user=} {--dry-run}
 - Perfil público (`Users/Show`): `badges` junto a `global_stats`
 - Clasificaciones (dashboard, Classification): `UserBadges` en cada fila
   — hasta 2 iconos + chip "+N" con popup (hover/tap) que lista todos
+
+## Pronósticos de etapa: selección libre y asistente IA
+
+Sección «Mis pronósticos» (`resources/js/Pages/Stages/Show.tsx`).
+
+### Selección de corredores con duplicados
+
+- El formulario **no filtra** opciones: se puede seleccionar el mismo corredor en
+  varias posiciones para facilitar los cambios.
+- La validación de unicidad se hace **al guardar**, en frontend y backend.
+- Regla: las posiciones de resultado (`stage_winner`, `stage_second`,
+  `stage_third`, `stage_position_1..10`, y equipos en TTT) no pueden repetir
+  valor. `stage_leader` y `stage_combativo` sí pueden repetir (y coincidir con
+  el podio).
+- El error nombra al corredor/equipo duplicado y las posiciones afectadas:
+  `«X» está seleccionado en varias posiciones (…)`. Se muestra en un alert
+  (`formError`) y los datos del formulario se conservan para corregir.
+
+| Archivo | Cambio |
+|---|---|
+| `resources/js/Pages/Stages/Show.tsx` | `findDuplicateErrors()` (validación cliente), `formError`, sin filtrado de opciones |
+| `app/Application/UseCases/Prediction/StoreStagePredictionUseCase.php` | `validateNoDuplicates()` → `ApplicationException` (controlador → `errors.stage`) |
+
+### Generación de pronósticos con IA (Google Gemini)
+
+Botón «Hacer pronóstico con IA» en el formulario de etapa (oculto en TTT).
+Genera una propuesta (ganador, 2º, 3º, líder GC, combativo) que se vuelca en el
+formulario **sin guardarse**: el usuario la revisa, edita y guarda manualmente.
+
+Arquitectura desacoplada (cambiar de proveedor = nueva implementación):
+
+```
+AiPredictionProviderInterface (Domain/Interfaces)
+  └─ GeminiAiPredictionProvider (Infrastructure/Services) — REST, sin SDK
+GenerateAiStagePredictionUseCase (Application/UseCases/Prediction)
+  └─ valida propuesta y la mapea a categorías del formulario
+PredictionController::generateAiProposal → JSON { predictions: {category: rider_id} }
+```
+
+- Ruta: `POST /leagues/{league}/stage/{stage}/predict/ai`
+  (`predictions.ai.generate`), `throttle:6,1`, auth + membresía de liga.
+- Contexto del prompt: competición, edición, datos reales de la etapa y lista
+  de participantes (nombre + equipo). El modelo devuelve refs `R1..Rn` de esa
+  lista; el use case las resuelve a UUIDs y **valida** que no haya refs
+  inválidas ni duplicados en el podio. Mapeo a categorías: `stage_winner`→
+  `stage_position_1` (etc.) si el ScoringSystem usa posiciones exactas.
+- No persiste nada. Errores → `422 { message }` con texto amable; el usuario
+  puede seguir haciendo el pronóstico a mano. Etapa empezada/finalizada → error.
+- No se pide combativo en etapas contrarreloj (`time_trial`/`team_time_trial`).
+
+### Configuración (proveedor)
+
+```env
+GEMINI_API_KEY=   # https://aistudio.google.com/apikey
+GEMINI_MODEL=gemini-3.6-flash
+```
+
+- `config/services.php` → clave `gemini`. Credenciales solo en servidor.
+- Modelos con **tier gratuito** (Nov 2026): `gemini-3.6-flash` (default) y
+  `gemini-3.1-flash-lite`; los 2.5 requieren haberlos usado antes. Pro modelos
+  sin tier gratuito desde abril 2026. Errores 429 del proveedor se traducen a
+  mensaje de «saturado».
+
+### Tests
+
+- `tests/Feature/PredictionDuplicateValidationTest.php` (8): duplicados
+  bloqueados (podio, posiciones exactas, TTT), mensaje con nombre, líder/
+  combativo exentos, no pisar guardados previos.
+- `tests/Feature/AiStagePredictionTest.php` (11): fake provider inyectado por
+  interfaz; propuesta sin guardar, contexto real al proveedor, refs inválidas,
+  podio duplicado, propuesta incompleta, proveedor caído, etapa empezada, TT
+  sin combativo, mapping a posiciones exactas.
+- `resources/js/__tests__/StagesShow.test.tsx` (9): selección libre, bloqueo de
+  guardado con duplicados (datos conservados), botón IA (rellena sin guardar,
+  loading, errores, rate limit).
+
+Nota: `StagePredictionCategoryService` (`app/Application/Services/`) centraliza
+el cálculo de categorías de pronóstico por etapa desde el `ScoringSystem`
+(extraído de `ShowStageUseCase`, reutilizado por el use case de IA).
+
+### Datos de prueba: competición abierta (`TestOpenPredictionsSeeder`)
+
+```bash
+php artisan db:seed --class=TestOpenPredictionsSeeder
+```
+
+Escenario **abierto** (sin bloqueos) para probar «Mis pronósticos» y el
+asistente IA en local:
+
+- Competición `Carrera Abierta de Prueba` + edición `upcoming` (pre-race abierto)
+- Liga `Liga Abierta de Prueba` (Standard) con `carlos@test.com` / `password`
+  (y `ana@test.com`)
+- 15 corredores de prueba en 3 equipos (rosters + participantes de edición)
+- 3 etapas con `scheduled_start` futuro (llana d1, media montaña d2, alta
+  montaña d3) y `stage_participants` completos → formulario con las 5 categorías
+- Imprime por consola las URLs directas de cada etapa y de pre-race
+- Idempotente (se puede ejecutar varias veces)
+
+Tests: `tests/Feature/TestOpenPredictionsSeederTest.php` (5).
+
+### Proveedor IA mock para local
+
+`GEMINI_API_KEY=mock` en `.env` activa `MockAiPredictionProvider`
+(`app/Infrastructure/Services/`) en lugar de Gemini: devuelve una propuesta
+determinista (primeros participantes de la lista) para probar el flujo completo
+del botón sin llamadas externas ni clave real. Binding condicional en
+`AppServiceProvider`.
+
+⚠️ Nunca poner la clave real de Gemini en `.env.example` (se commitea al repo):
+va en `.env` (ignorado por git) o en las variables de entorno de Railway.
