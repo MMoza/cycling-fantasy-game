@@ -8,6 +8,7 @@ use App\Presentation\Http\Controllers\Admin\CompetitionSetupController;
 use App\Presentation\Http\Controllers\Admin\EditionController;
 use App\Presentation\Http\Controllers\Admin\EmailController;
 use App\Presentation\Http\Controllers\Admin\FinalClassificationController;
+use App\Presentation\Http\Controllers\Admin\FinancialMovementController;
 use App\Presentation\Http\Controllers\Admin\RiderController;
 use App\Presentation\Http\Controllers\Admin\TeamController;
 use App\Presentation\Http\Controllers\Admin\UserController;
@@ -169,6 +170,12 @@ Route::middleware(['auth', 'super-admin'])->prefix('admin')->name('admin.')->gro
     Route::patch('/emails/{email}', [EmailController::class, 'update'])->name('emails.update');
     Route::delete('/emails/{email}', [EmailController::class, 'destroy'])->name('emails.destroy');
     Route::post('/emails/{email}/send-now', [EmailController::class, 'sendNow'])->name('emails.send-now');
+
+    // Finance
+    Route::get('/finance', [FinancialMovementController::class, 'index'])->name('finance.index');
+    Route::post('/finance', [FinancialMovementController::class, 'store'])->name('finance.store');
+    Route::patch('/finance/{movement}', [FinancialMovementController::class, 'update'])->name('finance.update');
+    Route::delete('/finance/{movement}', [FinancialMovementController::class, 'destroy'])->name('finance.destroy');
 });
 
 Route::get('/auth/{provider}/redirect', [SocialiteController::class, 'redirect'])->name('socialite.redirect');

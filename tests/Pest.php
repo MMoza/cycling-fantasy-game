@@ -23,6 +23,7 @@ use App\Infrastructure\Persistence\Models\CompetitionModel;
 use App\Infrastructure\Persistence\Models\CompetitionParticipantModel;
 use App\Infrastructure\Persistence\Models\CountryModel;
 use App\Infrastructure\Persistence\Models\EditionModel;
+use App\Infrastructure\Persistence\Models\FinancialMovementModel;
 use App\Infrastructure\Persistence\Models\LeagueModel;
 use App\Infrastructure\Persistence\Models\RiderModel;
 use App\Infrastructure\Persistence\Models\ScoringSystemModel;
@@ -77,6 +78,20 @@ function createTestStageParticipant(string $stageId, string $riderId, string $te
         ['stage_id' => $stageId, 'rider_id' => $riderId],
         ['id' => Str::uuid()->toString(), 'team_id' => $teamId]
     );
+}
+
+function createFinancialMovement(array $attributes = []): FinancialMovementModel
+{
+    return FinancialMovementModel::create(array_merge([
+        'id' => Str::uuid()->toString(),
+        'type' => 'income',
+        'amount' => '10.00',
+        'concept' => 'Movimiento de prueba',
+        'category' => 'other',
+        'occurred_on' => date('Y').'-03-15',
+        'source' => 'manual',
+        'status' => 'confirmed',
+    ], $attributes));
 }
 
 /**
