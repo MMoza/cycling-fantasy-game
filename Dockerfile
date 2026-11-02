@@ -41,6 +41,12 @@ RUN npm ci --ignore-scripts
 
 COPY . .
 
+# Sentry: Railway inyecta las variables de servicio como build args (docs.railway.com/builds/dockerfiles)
+# Sin estos ARG, Vite no ve las variables y el bundle sale sin DSN ni source maps.
+ARG VITE_SENTRY_DSN
+ARG VITE_SENTRY_TRACES_SAMPLE_RATE
+ARG SENTRY_AUTH_TOKEN
+
 # Build frontend assets
 RUN npm run build
 
