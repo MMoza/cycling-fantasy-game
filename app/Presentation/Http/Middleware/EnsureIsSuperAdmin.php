@@ -13,7 +13,7 @@ class EnsureIsSuperAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()?->is_admin) {
-            abort(404);
+            abort(403);
         }
 
         return $next($request);

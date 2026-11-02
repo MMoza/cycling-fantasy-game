@@ -1111,3 +1111,101 @@ del botón sin llamadas externas ni clave real. Binding condicional en
 
 ⚠️ Nunca poner la clave real de Gemini en `.env.example` (se commitea al repo):
 va en `.env` (ignorado por git) o en las variables de entorno de Railway.
+
+## Módulo financiero (PED-256)
+
+Gestión de gastos e ingresos del proyecto (temporadas = años naturales).
+Base para el dashboard financiero avanzado (FIN-003), la importación
+automatizada (FIN-005) y la publicación del balance (FIN-006).
+
+### Modelo de datos
+
+Tabla `financial_movements` (migración `2026_11_02_000001`):
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| `id` | UUID PK | |
+| `type` | string(16) | `income` / `expense` |
+| `amount` | decimal(12,2) | siempre ≥ 0; el signo lo da el tipo |
+| `concept` | string(160) | |
+| `category` | string(60) | enum `MovementCategory` |
+| `occurred_on` | date | fecha económica; determina la temporada |
+| `source` | string(16) | `manual` (default) / `imported` / `api` |
+| `external_id` | string nullable | deduplicación de importaciones |
+| `status` | string(16) | `confirmed` (default) / `pending` |
+| `notes` | text nullable | |
+| `created_by` | UUID nullable FK → users | `nullOnDelete` |
+
+Índices: `occurred_on`, `type`, `category` y **único compuesto
+(`source`, `external_id`)** — permite repetidos con `external_id = NULL`
+en MySQL y SQLite (movimientos manuales).
+
+Modelo `FinancialMovementModel` (`app/Infrastructure/Persistence/Models/`):
+casts a enums de `type`, `category`, `source`, `status`; `amount` a
+`decimal:2`; `occurred_on` a `date`; relación `creator()`. Sin lógica de
+negocio.
+
+### Enums de dominio (`app/Domain/ValueObjects/`)
+
+-   `MovementType`: `income` / `expense` — `label()` y `sign()` (+1 / −1).
+    `balance = income_total - expense_total`; los importes se guardan
+    siempre positivos (un reembolso es un ingreso).
+-   `MovementCategory`: `hosting`, `domains`, `software`, `marketing`
+    (gastos); `sponsorships`, `donations`, `advertising` (ingresos);
+    `other` (ambos). `label(MovementType)` ("Otros gastos"/"Otros ingresos"),
+    `supports(MovementType)` y `forType(MovementType)`. Sin tabla ni CRUD.
+-   `MovementSource` (`manual`/`imported`/`api`) y `MovementStatus`
+    (`confirmed`/`pending`).
+-   `Money`: VO en **céntimos enteros** (`fromDecimalString`,
+    `fromCentsAggregate`, `toDecimalString`). Sin aritmética float.
+
+### Precisión monetaria
+
+Las agregaciones se calculan en céntimos con SQL portable
+`SUM(ROUND(amount * 100))` (válido en MySQL y SQLite) y se serializan con
+dos decimales. La validación de importes usa `decimal:0,2`, `min:0`.
+
+### Casos de uso (`app/Application/UseCases/Finance/`)
+
+| Use case | Responsabilidad |
+|---|---|
+| `CreateMovementUseCase` | Alta manual: `source=manual`, `status=confirmed`, `created_by`; rechaza importes negativos y categorías incompatibles |
+| `UpdateMovementUseCase` | Actualiza solo campos editables; conserva id, source, external_id, status y creador |
+| `DeleteMovementUseCase` | Borrado con guard de autorización (`is_admin`) |
+| `ListMovementsUseCase` | Filtros (año default actual, tipo, categoría, `from`/`to`), orden `occurred_on` DESC, paginación de 50; compone `AdminFinancePageDTO`; valida el rango de fechas (`ApplicationException`) |
+| `GetFinanceSummaryUseCase` | Resumen por año: `year`, `period`, `income_total`, `expense_total`, `balance`, `by_category[]`, `top_expenses[5]`, `movements_count` |
+
+`app/Application/Services/MovementValidationService.php` centraliza las
+reglas de negocio compartidas (normaliza importe + compatibilidad
+tipo/categoría).
+
+**Solo los movimientos `confirmed` participan del resumen**; los
+`pending` aparecen en el listado administrativo pero no alteran el
+balance. `GetFinanceSummaryUseCase` es la única fuente de cálculos
+financieros: FIN-003 y FIN-006 deben reutilizarlo.
+
+### Presentación
+
+-   `Admin/FinancialMovementController` (`admin.finance.*`, prefijo
+    `admin`, middleware `['auth', 'super-admin']`): `index`, `store`,
+    `update`, `destroy`. Escrituras → redirect con `Inertia::flash()`.
+-   Form Requests `StoreFinancialMovementRequest` /
+    `UpdateFinancialMovementRequest` + regla `MovementCategoryRule`
+    (`app/Presentation/Http/Rules/`) que valida la combinación
+    tipo/categoría. `source` y `status` no son editables por el usuario.
+-   `AdminFinancePageDTO` (`app/Application/DTOs/View/`): claves
+    snake_case `summary`, `movements`, `filters`, `categories`.
+-   Página `resources/js/Pages/Admin/Finance.tsx`: resumen (ingresos,
+    gastos, balance), filtros, tabla, alta/edición en dialog, borrado con
+    confirmación y paginación. Importes formateados a mano (sin floats).
+-   Entrada "Finanzas" en el sidebar de `AdminLayout`.
+
+### Tests
+
+`tests/Feature/FinanceSummaryTest.php` (7), `FinanceMovementFiltersTest.php`
+(9), `FinanceMovementUseCasesTest.php` (10), `FinanceMovementValidationTest.php`
+(9), `FinanceAdminPageTest.php` (8). Helper `createFinancialMovement()` en
+`tests/Pest.php`.
+
+Nota: `EnsureIsSuperAdmin` responde **403** a usuarios no administradores
+(decisión PED-256; antes hacía `abort(404)`).
