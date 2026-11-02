@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Application\Exceptions\ApplicationException;
+use App\Application\Services\StagePredictionCategoryService;
 use App\Application\UseCases\Admin\Stage\GetStageFormDataUseCase;
 use App\Application\UseCases\Admin\Stage\ShowAdminStageUseCase;
 use App\Application\UseCases\Admin\Stage\StoreStageUseCase;
@@ -296,7 +297,7 @@ describe('ShowStageUseCase with stage_participants', function () {
         createTestStageParticipant($this->roadStage->id, $this->riders[0]->id, $this->team->id);
         createTestStageParticipant($this->roadStage->id, $this->riders[1]->id, $this->team->id);
 
-        $useCase = new ShowStageUseCase;
+        $useCase = new ShowStageUseCase(new StagePredictionCategoryService);
 
         $result = $useCase->execute($this->user, $this->league->id, $this->roadStage->id);
 
@@ -308,7 +309,7 @@ describe('ShowStageUseCase with stage_participants', function () {
     });
 
     test('falls back to competition_participants when no stage_participants', function () {
-        $useCase = new ShowStageUseCase;
+        $useCase = new ShowStageUseCase(new StagePredictionCategoryService);
 
         $result = $useCase->execute($this->user, $this->league->id, $this->roadStage->id);
 
@@ -324,7 +325,7 @@ describe('ShowStageUseCase with stage_participants', function () {
         createTestStageParticipant($this->roadStage->id, $this->riders[3]->id, $this->team->id);
         createTestStageParticipant($this->roadStage->id, $this->riders[4]->id, $this->team->id);
 
-        $useCase = new ShowStageUseCase;
+        $useCase = new ShowStageUseCase(new StagePredictionCategoryService);
 
         $ttResult = $useCase->execute($this->user, $this->league->id, $this->ttStage->id);
         $ttRiderIds = array_column($ttResult->availableRiders->toArray(), 'value');

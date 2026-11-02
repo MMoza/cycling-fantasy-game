@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Application\Services\PushNotificationService;
+use App\Domain\Interfaces\AiPredictionProviderInterface;
 use App\Domain\Interfaces\CyclingDataFetcherInterface;
 use App\Domain\Interfaces\MediaUrlResolverInterface;
+use App\Infrastructure\Services\GeminiAiPredictionProvider;
+use App\Infrastructure\Services\MockAiPredictionProvider;
 use App\Infrastructure\Services\MockCyclingDataFetcher;
 use App\Infrastructure\Services\S3MediaUrlResolver;
 use App\Presentation\Console\CleanPushSubscriptionsCommand;
@@ -30,6 +33,12 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(CyclingDataFetcherInterface::class, MockCyclingDataFetcher::class);
         $this->app->bind(MediaUrlResolverInterface::class, S3MediaUrlResolver::class);
+        $this->app->bind(AiPredictionProviderInterface::class, function (): AiPredictionProviderInterface {
+            // GEMINI_API_KEY=mock → proveedor de prueba para local (sin llamadas externas)
+            return config('services.gemini.api_key') === 'mock'
+                ? new MockAiPredictionProvider
+                : new GeminiAiPredictionProvider;
+        });
 
         $this->app->bind(PushNotificationService::class, function (): PushNotificationService {
             try {
