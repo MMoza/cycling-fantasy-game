@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Models;
 
+use App\Domain\Entities\FinancialMovement;
+use App\Domain\ValueObjects\Money;
 use App\Domain\ValueObjects\MovementCategory;
 use App\Domain\ValueObjects\MovementSource;
 use App\Domain\ValueObjects\MovementStatus;
@@ -63,5 +65,36 @@ class FinancialMovementModel extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+
+    /**
+     * Mapea la persistencia hacia la entidad de dominio.
+     */
+    public function toEntity(): FinancialMovement
+    {
+        /** @var MovementType $type */
+        $type = $this->type;
+        /** @var MovementCategory $category */
+        $category = $this->category;
+        /** @var MovementSource $source */
+        $source = $this->source;
+        /** @var MovementStatus $status */
+        $status = $this->status;
+
+        return new FinancialMovement(
+            id: $this->id,
+            type: $type,
+            amount: Money::fromDecimalString((string) $this->amount),
+            concept: $this->concept,
+            category: $category,
+            occurredOn: $this->occurred_on->toImmutable(),
+            source: $source,
+            externalId: $this->external_id,
+            status: $status,
+            notes: $this->notes,
+            createdBy: $this->created_by,
+            createdAt: $this->created_at?->toImmutable(),
+            updatedAt: $this->updated_at?->toImmutable(),
+        );
     }
 }
