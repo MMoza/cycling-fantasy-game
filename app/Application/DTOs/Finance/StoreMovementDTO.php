@@ -6,7 +6,7 @@ namespace App\Application\DTOs\Finance;
 
 use App\Domain\ValueObjects\MovementCategory;
 use App\Domain\ValueObjects\MovementType;
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 
 /**
  * Datos de alta manual de un movimiento financiero. El origen y el estado
@@ -19,7 +19,7 @@ readonly class StoreMovementDTO
         public string $amount,
         public string $concept,
         public MovementCategory $category,
-        public CarbonImmutable $occurredOn,
+        public DateTimeImmutable $occurredOn,
         public ?string $notes,
         public string $createdBy,
     ) {}

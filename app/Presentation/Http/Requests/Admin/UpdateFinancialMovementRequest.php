@@ -8,7 +8,7 @@ use App\Application\DTOs\Finance\UpdateMovementDTO;
 use App\Domain\ValueObjects\MovementCategory;
 use App\Domain\ValueObjects\MovementType;
 use App\Presentation\Http\Rules\MovementCategoryRule;
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateFinancialMovementRequest extends FormRequest
@@ -43,7 +43,7 @@ class UpdateFinancialMovementRequest extends FormRequest
             amount: (string) $validated['amount'],
             concept: $validated['concept'],
             category: MovementCategory::from($validated['category']),
-            occurredOn: CarbonImmutable::parse($validated['occurred_on']),
+            occurredOn: new DateTimeImmutable($validated['occurred_on']),
             notes: $validated['notes'] ?? null,
         );
     }

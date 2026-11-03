@@ -7,7 +7,8 @@ namespace App\Application\UseCases\Finance;
 use App\Application\DTOs\Finance\UpdateMovementDTO;
 use App\Application\Exceptions\ApplicationException;
 use App\Application\Services\MovementValidationService;
-use App\Infrastructure\Persistence\Models\FinancialMovementModel;
+use App\Domain\Entities\FinancialMovement;
+use App\Domain\Interfaces\FinancialMovementRepositoryInterface;
 
 /**
  * Modifica los campos editables de un movimiento financiero. La
@@ -16,25 +17,36 @@ use App\Infrastructure\Persistence\Models\FinancialMovementModel;
  */
 final class UpdateMovementUseCase
 {
-    public function __construct(private readonly MovementValidationService $validation) {}
+    public function __construct(
+        private readonly MovementValidationService $validation,
+        private readonly FinancialMovementRepositoryInterface $movements,
+    ) {}
 
     /**
-     * @throws ApplicationException cuando las reglas de negocio no se cumplen
+     * @throws ApplicationException cuando el movimiento no existe o las reglas
+     *                              de negocio no se cumplen
      */
-    public function execute(UpdateMovementDTO $dto): FinancialMovementModel
+    public function execute(UpdateMovementDTO $dto): FinancialMovement
     {
-        $movement = FinancialMovementModel::findOrFail($dto->id);
+        $movement = $this->movements->find($dto->id);
+
+        if ($movement === null) {
+            throw new ApplicationException('El movimiento solicitado no existe');
+        }
+
         $amount = $this->validation->validate($dto->type, $dto->amount, $dto->category);
 
-        $movement->update([
-            'type' => $dto->type,
-            'amount' => $amount->toDecimalString(),
-            'concept' => $dto->concept,
-            'category' => $dto->category,
-            'occurred_on' => $dto->occurredOn,
-            'notes' => $dto->notes,
-        ]);
+        $updated = $movement->update(
+            type: $dto->type,
+            amount: $amount,
+            concept: $dto->concept,
+            category: $dto->category,
+            occurredOn: $dto->occurredOn,
+            notes: $dto->notes,
+        );
 
-        return $movement;
+        $this->movements->save($updated);
+
+        return $updated;
     }
 }

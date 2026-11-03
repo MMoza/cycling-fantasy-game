@@ -10,6 +10,12 @@ interface UserRepositoryInterface
 {
     public function find(string $id): ?User;
 
+    /**
+     * @param  list<string>  $ids
+     * @return list<User>
+     */
+    public function findMany(array $ids): array;
+
     public function findByEmail(string $email): ?User;
 
     /**

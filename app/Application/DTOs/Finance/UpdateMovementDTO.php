@@ -6,7 +6,7 @@ namespace App\Application\DTOs\Finance;
 
 use App\Domain\ValueObjects\MovementCategory;
 use App\Domain\ValueObjects\MovementType;
-use Carbon\CarbonImmutable;
+use DateTimeImmutable;
 
 /**
  * Datos de modificación de un movimiento financiero. La identificación, el
@@ -20,7 +20,7 @@ readonly class UpdateMovementDTO
         public string $amount,
         public string $concept,
         public MovementCategory $category,
-        public CarbonImmutable $occurredOn,
+        public DateTimeImmutable $occurredOn,
         public ?string $notes,
     ) {}
 }

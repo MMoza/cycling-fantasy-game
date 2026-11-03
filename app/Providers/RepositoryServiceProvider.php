@@ -6,11 +6,15 @@ namespace App\Providers;
 
 use App\Domain\Interfaces\CompetitionRepositoryInterface;
 use App\Domain\Interfaces\EditionRepositoryInterface;
+use App\Domain\Interfaces\FinanceSummaryQueryInterface;
+use App\Domain\Interfaces\FinancialMovementRepositoryInterface;
 use App\Domain\Interfaces\TransactionManagerInterface;
 use App\Domain\Interfaces\UserRepositoryInterface;
 use App\Infrastructure\Persistence\DatabaseTransactionManager;
+use App\Infrastructure\Queries\EloquentFinanceSummaryQuery;
 use App\Infrastructure\Repositories\EloquentCompetitionRepository;
 use App\Infrastructure\Repositories\EloquentEditionRepository;
+use App\Infrastructure\Repositories\EloquentFinancialMovementRepository;
 use App\Infrastructure\Repositories\EloquentUserRepository;
 use Illuminate\Support\ServiceProvider;
 
@@ -26,5 +30,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(UserRepositoryInterface::class, EloquentUserRepository::class);
         $this->app->bind(CompetitionRepositoryInterface::class, EloquentCompetitionRepository::class);
         $this->app->bind(EditionRepositoryInterface::class, EloquentEditionRepository::class);
+        $this->app->bind(FinancialMovementRepositoryInterface::class, EloquentFinancialMovementRepository::class);
+        $this->app->bind(FinanceSummaryQueryInterface::class, EloquentFinanceSummaryQuery::class);
     }
 }

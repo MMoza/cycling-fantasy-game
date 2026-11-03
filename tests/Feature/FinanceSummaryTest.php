@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->useCase = new GetFinanceSummaryUseCase;
+    $this->useCase = app(GetFinanceSummaryUseCase::class);
 });
 
 test('calcula el balance con decimales sin errores de coma flotante', function () {
