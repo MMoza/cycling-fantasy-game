@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use Illuminate\Support\Str;
+use App\Domain\Support\Random;
 
 readonly class StageResult
 {
@@ -29,7 +29,7 @@ readonly class StageResult
         bool $isCombativo = false,
     ): self {
         return new self(
-            id: Str::uuid()->toString(),
+            id: Random::uuid(),
             stageId: $stageId,
             riderId: $riderId,
             position: $position,

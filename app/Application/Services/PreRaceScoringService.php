@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Application\Services;
 
-use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoreEvent;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
@@ -98,7 +97,7 @@ class PreRaceScoringService
             }
 
             foreach ($predictions as $predictionModel) {
-                $prediction = Prediction::fromModel($predictionModel);
+                $prediction = $predictionModel->toEntity();
 
                 $events = match ($prediction->category) {
                     PredictionCategory::GcTop5 => $gcTop5 ? $engine->calculateGcTop5Score($prediction, $gcTop5) : [],

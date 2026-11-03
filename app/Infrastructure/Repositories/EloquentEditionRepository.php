@@ -7,7 +7,6 @@ namespace App\Infrastructure\Repositories;
 use App\Domain\Entities\Edition;
 use App\Domain\Interfaces\EditionRepositoryInterface;
 use App\Infrastructure\Persistence\Models\EditionModel;
-use Illuminate\Support\Collection;
 
 class EloquentEditionRepository implements EditionRepositoryInterface
 {
@@ -18,19 +17,23 @@ class EloquentEditionRepository implements EditionRepositoryInterface
         return $model ? $this->toEntity($model) : null;
     }
 
-    public function findByCompetition(string $competitionId): Collection
+    public function findByCompetition(string $competitionId): array
     {
         return EditionModel::where('competition_id', $competitionId)
             ->orderBy('year', 'desc')
             ->get()
-            ->map(fn ($model) => $this->toEntity($model));
+            ->map(fn ($model) => $this->toEntity($model))
+            ->values()
+            ->all();
     }
 
-    public function findByYear(int $year): Collection
+    public function findByYear(int $year): array
     {
         return EditionModel::where('year', $year)
             ->get()
-            ->map(fn ($model) => $this->toEntity($model));
+            ->map(fn ($model) => $this->toEntity($model))
+            ->values()
+            ->all();
     }
 
     public function save(Edition $edition): void

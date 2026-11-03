@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\Support\Random;
 use App\Domain\ValueObjects\EditionStatus;
-use Illuminate\Support\Str;
 
 readonly class Edition
 {
@@ -25,7 +25,7 @@ readonly class Edition
         string $endDate,
     ): self {
         return new self(
-            id: Str::uuid()->toString(),
+            id: Random::uuid(),
             competitionId: $competitionId,
             year: $year,
             startDate: $startDate,

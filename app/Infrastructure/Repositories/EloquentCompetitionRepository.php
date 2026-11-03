@@ -7,7 +7,6 @@ namespace App\Infrastructure\Repositories;
 use App\Domain\Entities\Competition;
 use App\Domain\Interfaces\CompetitionRepositoryInterface;
 use App\Infrastructure\Persistence\Models\CompetitionModel;
-use Illuminate\Support\Collection;
 
 class EloquentCompetitionRepository implements CompetitionRepositoryInterface
 {
@@ -18,16 +17,21 @@ class EloquentCompetitionRepository implements CompetitionRepositoryInterface
         return $model ? $this->toEntity($model) : null;
     }
 
-    public function findAll(): Collection
+    public function findAll(): array
     {
-        return CompetitionModel::all()->map(fn ($model) => $this->toEntity($model));
+        return CompetitionModel::all()
+            ->map(fn ($model) => $this->toEntity($model))
+            ->values()
+            ->all();
     }
 
-    public function findByType(string $type): Collection
+    public function findByType(string $type): array
     {
         return CompetitionModel::where('type', $type)
             ->get()
-            ->map(fn ($model) => $this->toEntity($model));
+            ->map(fn ($model) => $this->toEntity($model))
+            ->values()
+            ->all();
     }
 
     public function save(Competition $competition): void

@@ -148,6 +148,39 @@ No depende de Laravel.
 -   API Controllers
 -   Console Commands
 
+### Repositorios y desacoplamiento de persistencia
+
+Convención vigente desde la Fase 0 del desacoplamiento de Application:
+
+-   Interfaces de persistencia en `app/Domain/Interfaces/`
+    (`XxxRepositoryInterface`, `TransactionManagerInterface`): devuelven
+    entidades de dominio o `PaginatedResult`, nunca clases de Eloquent ni
+    utilidades de Laravel.
+-   Implementaciones en `app/Infrastructure/Repositories/`
+    (`EloquentXxxRepository`) con mapeo `toEntity()`. Los modelos pueden
+    exponer `toEntity()` para reutilizar el mapeo (p. ej.
+    `PredictionModel::toEntity()`).
+-   Las consultas informe (agregados, dashboards, clasificaciones) se
+    resolverán con interfaces de consulta dedicadas implementadas en
+    `app/Infrastructure/Queries/` (CQRS-lite) en las fases siguientes.
+-   `PaginatedResult` (`app/Domain/ValueObjects/`) sustituye a
+    `LengthAwarePaginator` en las fronteras de Application.
+-   `TransactionManagerInterface` sustituye a `DB::transaction` en los use
+    cases (implementación `DatabaseTransactionManager`).
+-   `App\Domain\Support\Random` (`uuid()`, `alnum()`) sustituye a `Str` de
+    Laravel en entidades y value objects de Domain.
+-   Los bindings viven en `App\Providers\RepositoryServiceProvider`.
+
+Tests de arquitectura (`tests/Feature/ArchitectureTest.php`): `App\Domain`
+no depende de `App\Infrastructure`, `App\Models`, `Illuminate\Database` ni
+de las utilidades `Str`/`Collection`. El ámbito del candado se amplía a
+`App\Application` según se migren los módulos (Fase 1: Finance; Fases 2-5:
+resto).
+
+Deuda pendiente: `Carbon` y el helper `now()` siguen usándose en
+`ScheduledEmail`, `Invitation`, `ActivityLog::create` y
+`OnlineStatusService`; se retirarán en un ticket de seguimiento.
+
 ## Entidades
 
 -   User

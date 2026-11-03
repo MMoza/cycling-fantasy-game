@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace App\Domain\Interfaces;
 
 use App\Domain\Entities\Competition;
-use Illuminate\Support\Collection;
 
 interface CompetitionRepositoryInterface
 {
     public function find(string $id): ?Competition;
 
-    public function findAll(): Collection;
+    /**
+     * @return list<Competition>
+     */
+    public function findAll(): array;
 
-    public function findByType(string $type): Collection;
+    /**
+     * @return list<Competition>
+     */
+    public function findByType(string $type): array;
 
     public function save(Competition $competition): void;
 

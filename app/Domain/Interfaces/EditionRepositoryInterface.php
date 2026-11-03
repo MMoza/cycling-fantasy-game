@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace App\Domain\Interfaces;
 
 use App\Domain\Entities\Edition;
-use Illuminate\Support\Collection;
 
 interface EditionRepositoryInterface
 {
     public function find(string $id): ?Edition;
 
-    public function findByCompetition(string $competitionId): Collection;
+    /**
+     * @return list<Edition>
+     */
+    public function findByCompetition(string $competitionId): array;
 
-    public function findByYear(int $year): Collection;
+    /**
+     * @return list<Edition>
+     */
+    public function findByYear(int $year): array;
 
     public function save(Edition $edition): void;
 

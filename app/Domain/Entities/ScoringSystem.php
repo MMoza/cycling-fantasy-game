@@ -4,23 +4,22 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\Support\Random;
 use App\Domain\ValueObjects\ScoringRuleContext;
 use App\Domain\ValueObjects\ScoringRuleType;
 use App\Domain\ValueObjects\ScoringSystemType;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 
 readonly class ScoringSystem
 {
     /**
-     * @param  Collection<ScoringRule>  $rules
+     * @param  list<ScoringRule>  $rules
      */
     public function __construct(
         public string $id,
         public string $name,
         public ScoringSystemType $type,
         public string $description,
-        public Collection $rules = new Collection,
+        public array $rules = [],
     ) {}
 
     public static function create(
@@ -29,7 +28,7 @@ readonly class ScoringSystem
         string $description,
     ): self {
         return new self(
-            id: Str::uuid()->toString(),
+            id: Random::uuid(),
             name: $name,
             type: $type,
             description: $description,
@@ -43,19 +42,29 @@ readonly class ScoringSystem
             name: $this->name,
             type: $this->type,
             description: $this->description,
-            rules: $this->rules->push($rule),
+            rules: [...$this->rules, $rule],
         );
     }
 
     public function getPointsForRule(ScoringRuleType $type): int
     {
-        $rule = $this->rules->first(fn (ScoringRule $rule) => $rule->type === $type);
+        foreach ($this->rules as $rule) {
+            if ($rule->type === $type) {
+                return $rule->points;
+            }
+        }
 
-        return $rule?->points ?? 0;
+        return 0;
     }
 
-    public function getRulesForContext(ScoringRuleContext $context): Collection
+    /**
+     * @return list<ScoringRule>
+     */
+    public function getRulesForContext(ScoringRuleContext $context): array
     {
-        return $this->rules->filter(fn (ScoringRule $rule) => $rule->context === $context);
+        return array_values(array_filter(
+            $this->rules,
+            fn (ScoringRule $rule): bool => $rule->context === $context,
+        ));
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use Illuminate\Support\Str;
+use App\Domain\Support\Random;
 
 readonly class League
 {
@@ -26,12 +26,12 @@ readonly class League
         bool $isOfficial = false,
     ): self {
         return new self(
-            id: Str::uuid()->toString(),
+            id: Random::uuid(),
             name: $name,
             editionId: $editionId,
             scoringSystemId: $scoringSystemId,
             ownerId: $ownerId,
-            inviteCode: Str::random(8),
+            inviteCode: Random::alnum(8),
             isOfficial: $isOfficial,
         );
     }
@@ -44,7 +44,7 @@ readonly class League
             editionId: $this->editionId,
             scoringSystemId: $this->scoringSystemId,
             ownerId: $this->ownerId,
-            inviteCode: Str::random(8),
+            inviteCode: Random::alnum(8),
             isOfficial: $this->isOfficial,
         );
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\ValueObjects;
 
-use Illuminate\Support\Str;
+use App\Domain\Support\Random;
 
 final class InvitationCode
 {
@@ -14,7 +14,7 @@ final class InvitationCode
 
     public static function generate(): self
     {
-        return new self(Str::upper(Str::random(12)));
+        return new self(strtoupper(Random::alnum(12)));
     }
 
     public static function fromString(string $value): self

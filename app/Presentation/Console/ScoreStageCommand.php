@@ -6,7 +6,6 @@ namespace App\Presentation\Console;
 
 use App\Application\Services\ActivityLogService;
 use App\Application\Services\BadgeService;
-use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoreEvent;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
@@ -111,7 +110,7 @@ class ScoreStageCommand extends Command
             $engine = new ScoringEngine($scoringSystem, $riderTeamMap);
 
             foreach ($leaguePredictions as $predictionModel) {
-                $prediction = Prediction::fromModel($predictionModel);
+                $prediction = $predictionModel->toEntity();
 
                 foreach ($stageResults as $stageResult) {
                     $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageDifficulty, $stageId);
