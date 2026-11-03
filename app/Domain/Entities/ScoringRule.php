@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\Support\Random;
 use App\Domain\ValueObjects\ScoringRuleContext;
 use App\Domain\ValueObjects\ScoringRuleType;
-use Illuminate\Support\Str;
 
 readonly class ScoringRule
 {
@@ -28,7 +28,7 @@ readonly class ScoringRule
         ?int $position = null,
     ): self {
         return new self(
-            id: Str::uuid()->toString(),
+            id: Random::uuid(),
             scoringSystemId: $scoringSystemId,
             type: $type,
             context: $type->context(),

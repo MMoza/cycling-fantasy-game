@@ -67,11 +67,11 @@ test('calculates total score from events', function () {
     $system = ScoringSystem::create('Test', ScoringSystemType::Standard, 'Test');
     $engine = new ScoringEngine($system);
 
-    $events = collect([
+    $events = [
         ScoreEvent::create('user-uuid', 'league-uuid', 'rule-1', 50, 'Test', 'context'),
         ScoreEvent::create('user-uuid', 'league-uuid', 'rule-2', 30, 'Test', 'context'),
         ScoreEvent::create('user-uuid', 'league-uuid', 'rule-3', 20, 'Test', 'context'),
-    ]);
+    ];
 
     $total = $engine->calculateTotalScore($events);
 

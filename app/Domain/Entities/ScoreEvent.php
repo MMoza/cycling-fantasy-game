@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
-use Illuminate\Support\Str;
+use App\Domain\Support\Random;
 
 readonly class ScoreEvent
 {
@@ -29,7 +29,7 @@ readonly class ScoreEvent
         ?string $stageId = null,
     ): self {
         return new self(
-            id: Str::uuid()->toString(),
+            id: Random::uuid(),
             userId: $userId,
             leagueId: $leagueId,
             scoringRuleId: $scoringRuleId,

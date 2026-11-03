@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Presentation\Console;
 
 use App\Application\Services\BadgeService;
-use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
 use App\Domain\Entities\StageResult;
@@ -104,7 +103,7 @@ class RebuildScoresCommand extends Command
                     ->get();
 
                 foreach ($predictions as $predictionModel) {
-                    $prediction = Prediction::fromModel($predictionModel);
+                    $prediction = $predictionModel->toEntity();
 
                     foreach ($stageResults as $stageResult) {
                         $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageDifficulty, $stage->id);
@@ -147,7 +146,7 @@ class RebuildScoresCommand extends Command
                     ->get();
 
                 foreach ($preRacePredictions as $predictionModel) {
-                    $prediction = Prediction::fromModel($predictionModel);
+                    $prediction = $predictionModel->toEntity();
 
                     $events = match ($prediction->category) {
                         PredictionCategory::GcTop5 => $gcTop5 ? $engine->calculateGcTop5Score($prediction, $gcTop5) : [],

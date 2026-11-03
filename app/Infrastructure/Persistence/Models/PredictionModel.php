@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Persistence\Models;
 
+use App\Domain\Entities\Prediction;
 use App\Domain\ValueObjects\PredictionCategory;
 use App\Domain\ValueObjects\PredictionType;
 use App\Models\User;
@@ -49,5 +50,28 @@ class PredictionModel extends Model
     public function stage(): BelongsTo
     {
         return $this->belongsTo(StageModel::class, 'stage_id', 'id');
+    }
+
+    /**
+     * Mapea la persistencia hacia la entidad de dominio.
+     */
+    public function toEntity(): Prediction
+    {
+        $value = $this->prediction_value;
+
+        if (is_string($value)) {
+            $value = ['rider_id' => $value];
+        }
+
+        return new Prediction(
+            id: $this->id,
+            userId: $this->user_id,
+            leagueId: $this->league_id,
+            type: $this->type,
+            category: $this->category,
+            stageId: $this->stage_id,
+            predictionValue: $value ?? [],
+            lockedAt: $this->locked_at?->toIso8601String(),
+        );
     }
 }

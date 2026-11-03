@@ -8,7 +8,6 @@ use App\Application\Exceptions\ApplicationException;
 use App\Application\Services\ActivityLogService;
 use App\Application\Services\BadgeService;
 use App\Application\Services\PushNotificationService;
-use App\Domain\Entities\Prediction;
 use App\Domain\Entities\ScoringRule;
 use App\Domain\Entities\ScoringSystem;
 use App\Domain\Entities\StageResult as StageResultEntity;
@@ -172,7 +171,7 @@ class StoreStageResultUseCase
                     ->delete();
 
                 foreach ($predictions as $predictionModel) {
-                    $prediction = Prediction::fromModel($predictionModel);
+                    $prediction = $predictionModel->toEntity();
 
                     foreach ($stageResults as $stageResult) {
                         $scoreEvent = $engine->calculateStageScore($prediction, $stageResult, $stageDifficulty, $stage->id);

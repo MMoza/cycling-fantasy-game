@@ -11,7 +11,6 @@ use App\Domain\Entities\ScoringSystem;
 use App\Domain\Entities\StageResult;
 use App\Domain\ValueObjects\PredictionCategory;
 use App\Domain\ValueObjects\ScoringRuleType;
-use Illuminate\Support\Collection;
 
 class ScoringEngine
 {
@@ -232,18 +231,25 @@ class ScoringEngine
         );
     }
 
-    public function calculateTotalScore(Collection $scoreEvents): int
+    /**
+     * @param  list<ScoreEvent>  $scoreEvents
+     */
+    public function calculateTotalScore(array $scoreEvents): int
     {
-        return $scoreEvents->sum(fn (ScoreEvent $event) => $event->points);
+        return array_sum(array_map(fn (ScoreEvent $event): int => $event->points, $scoreEvents));
     }
 
     private function findRule(ScoringRuleType $type, ?int $difficulty = null, ?int $position = null): ?ScoringRule
     {
-        return $this->scoringSystem->rules->first(
-            fn (ScoringRule $rule) => $rule->type === $type
+        foreach ($this->scoringSystem->rules as $rule) {
+            if ($rule->type === $type
                 && ($difficulty === null || $rule->difficulty === $difficulty || $rule->difficulty === null)
-                && ($position === null || $rule->position === $position)
-        );
+                && ($position === null || $rule->position === $position)) {
+                return $rule;
+            }
+        }
+
+        return null;
     }
 
     private function getRuleTypeFromCategory(PredictionCategory $category): ScoringRuleType

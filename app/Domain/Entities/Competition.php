@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\Support\Random;
 use App\Domain\ValueObjects\CompetitionType;
-use Illuminate\Support\Str;
 
 readonly class Competition
 {
@@ -27,7 +27,7 @@ readonly class Competition
         ?string $logoImage = null,
     ): self {
         return new self(
-            id: Str::uuid()->toString(),
+            id: Random::uuid(),
             name: $name,
             type: $type,
             country: $country,

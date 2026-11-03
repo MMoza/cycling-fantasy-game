@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Entities;
 
+use App\Domain\Support\Random;
 use App\Domain\ValueObjects\StageStatus;
 use App\Domain\ValueObjects\StageType;
-use Illuminate\Support\Str;
 
 readonly class Stage
 {
@@ -40,7 +40,7 @@ readonly class Stage
         ?int $difficulty = null,
     ): self {
         return new self(
-            id: Str::uuid()->toString(),
+            id: Random::uuid(),
             editionId: $editionId,
             number: $number,
             name: $name,
