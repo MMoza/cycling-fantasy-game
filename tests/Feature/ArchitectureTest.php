@@ -20,3 +20,14 @@ arch('Domain no usa utilidades de Laravel')
     ->expect('App\Domain')
     ->not->toUse('Illuminate\Support\Str')
     ->not->toUse('Illuminate\Support\Collection');
+
+arch('el módulo Finance de Application no conoce la persistencia')
+    ->expect('App\Application\UseCases\Finance')
+    ->not->toUse('App\Infrastructure')
+    ->not->toUse('Illuminate\Database')
+    ->not->toUse('Illuminate\Support\Facades');
+
+arch('los DTOs de Finance no conocen la persistencia')
+    ->expect('App\Application\DTOs\Finance')
+    ->not->toUse('App\Infrastructure')
+    ->not->toUse('Illuminate\Database');

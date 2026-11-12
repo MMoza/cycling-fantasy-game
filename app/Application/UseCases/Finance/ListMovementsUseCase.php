@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Finance;
 
 use App\Application\DTOs\Finance\MovementDTO;
-use App\Application\DTOs\Finance\MovementFiltersDTO;
 use App\Application\DTOs\View\AdminFinancePageDTO;
 use App\Application\Exceptions\ApplicationException;
+use App\Domain\Entities\FinancialMovement;
+use App\Domain\Interfaces\FinancialMovementRepositoryInterface;
+use App\Domain\Interfaces\UserRepositoryInterface;
 use App\Domain\ValueObjects\MovementCategory;
+use App\Domain\ValueObjects\MovementFilters;
 use App\Domain\ValueObjects\MovementType;
-use App\Infrastructure\Persistence\Models\FinancialMovementModel;
 
 /**
  * Listado paginado de movimientos financieros con filtros combinables
@@ -22,57 +24,46 @@ final class ListMovementsUseCase
 {
     private const PER_PAGE = 50;
 
-    public function __construct(private readonly GetFinanceSummaryUseCase $summaryUseCase) {}
+    public function __construct(
+        private readonly GetFinanceSummaryUseCase $summaryUseCase,
+        private readonly FinancialMovementRepositoryInterface $movements,
+        private readonly UserRepositoryInterface $users,
+    ) {}
 
     /**
      * @throws ApplicationException cuando el rango de fechas no es válido
      */
-    public function execute(MovementFiltersDTO $filters): AdminFinancePageDTO
+    public function execute(MovementFilters $filters): AdminFinancePageDTO
     {
         $this->assertValidRange($filters);
 
-        $query = FinancialMovementModel::query()->with('creator');
+        $result = $this->movements->search($filters, self::PER_PAGE);
+        $creatorNames = $this->creatorNames($result->items);
 
-        $query->whereDate('occurred_on', '>=', sprintf('%04d-01-01', $filters->year));
-        $query->whereDate('occurred_on', '<=', sprintf('%04d-12-31', $filters->year));
-
-        if ($filters->type !== null) {
-            $query->where('type', $filters->type->value);
-        }
-
-        if ($filters->category !== null) {
-            $query->where('category', $filters->category->value);
-        }
-
-        if ($filters->from !== null) {
-            $query->whereDate('occurred_on', '>=', $filters->from);
-        }
-
-        if ($filters->to !== null) {
-            $query->whereDate('occurred_on', '<=', $filters->to);
-        }
-
-        $paginator = $query
-            ->orderByDesc('occurred_on')
-            ->orderByDesc('id')
-            ->paginate(self::PER_PAGE, ['*'], 'page', $filters->page)
-            ->withQueryString();
-
-        $paginator->setCollection(
-            $paginator->getCollection()
-                ->map(fn (FinancialMovementModel $movement): array => MovementDTO::fromModel($movement)->toArray())
+        $rows = array_map(
+            fn (FinancialMovement $movement): array => MovementDTO::fromEntity(
+                $movement,
+                $movement->createdBy !== null ? $creatorNames[$movement->createdBy] ?? null : null,
+            )->toArray(),
+            $result->items,
         );
 
         return new AdminFinancePageDTO(
             summary: $this->summaryUseCase->execute($filters->year),
-            movements: $paginator->toArray(),
+            movements: [
+                'data' => $rows,
+                'current_page' => $result->currentPage,
+                'last_page' => $result->lastPage(),
+                'per_page' => $result->perPage,
+                'total' => $result->total,
+            ],
             filters: [
                 'year' => $filters->year,
                 'type' => $filters->type?->value,
                 'category' => $filters->category?->value,
-                'from' => $filters->from,
-                'to' => $filters->to,
-                'page' => $paginator->currentPage(),
+                'from' => $filters->from?->format('Y-m-d'),
+                'to' => $filters->to?->format('Y-m-d'),
+                'page' => $result->currentPage,
             ],
             categories: $this->availableCategories(),
         );
@@ -81,13 +72,40 @@ final class ListMovementsUseCase
     /**
      * @throws ApplicationException cuando el rango de fechas no es válido
      */
-    private function assertValidRange(MovementFiltersDTO $filters): void
+    private function assertValidRange(MovementFilters $filters): void
     {
         if ($filters->from !== null && $filters->to !== null && $filters->from > $filters->to) {
             throw new ApplicationException(
                 'El rango de fechas no es válido: la fecha inicial debe ser anterior o igual a la final',
             );
         }
+    }
+
+    /**
+     * @param  list<FinancialMovement>  $movements
+     * @return array<string, string>
+     */
+    private function creatorNames(array $movements): array
+    {
+        $ids = [];
+
+        foreach ($movements as $movement) {
+            if ($movement->createdBy !== null) {
+                $ids[$movement->createdBy] = true;
+            }
+        }
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $names = [];
+
+        foreach ($this->users->findMany(array_keys($ids)) as $user) {
+            $names[$user->id] = $user->name;
+        }
+
+        return $names;
     }
 
     /**

@@ -18,6 +18,14 @@ class EloquentUserRepository implements UserRepositoryInterface
         return $model ? $this->toEntity($model) : null;
     }
 
+    public function findMany(array $ids): array
+    {
+        return UserModel::whereIn('id', $ids)
+            ->get()
+            ->map(fn (UserModel $model): UserEntity => $this->toEntity($model))
+            ->all();
+    }
+
     public function findByEmail(string $email): ?UserEntity
     {
         $model = UserModel::where('email', $email)->first();

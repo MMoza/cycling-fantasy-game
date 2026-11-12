@@ -174,8 +174,8 @@ Convención vigente desde la Fase 0 del desacoplamiento de Application:
 Tests de arquitectura (`tests/Feature/ArchitectureTest.php`): `App\Domain`
 no depende de `App\Infrastructure`, `App\Models`, `Illuminate\Database` ni
 de las utilidades `Str`/`Collection`. El ámbito del candado se amplía a
-`App\Application` según se migren los módulos (Fase 1: Finance; Fases 2-5:
-resto).
+`App\Application` según se migren los módulos (**Fase 1 — Finance —
+completada**; Fases 2-5: resto).
 
 Deuda pendiente: `Carbon` y el helper `now()` siguen usándose en
 `ScheduledEmail`, `Invitation`, `ActivityLog::create` y
@@ -1175,8 +1175,33 @@ en MySQL y SQLite (movimientos manuales).
 
 Modelo `FinancialMovementModel` (`app/Infrastructure/Persistence/Models/`):
 casts a enums de `type`, `category`, `source`, `status`; `amount` a
-`decimal:2`; `occurred_on` a `date`; relación `creator()`. Sin lógica de
-negocio.
+`decimal:2`; `occurred_on` a `date`; relación `creator()` y mapeo
+`toEntity()` hacia la entidad de dominio. Sin lógica de negocio.
+
+### Dominio y persistencia (Fase 1 del desacoplamiento)
+
+El módulo Finance es el piloto del desacoplamiento de Application:
+
+-   Entidad `FinancialMovement` (`app/Domain/Entities/`): `create()` fija
+    `source=manual`, `status=confirmed` y `external_id=null`; `update()`
+    solo toca los campos editables y preserva identidad, origen, estado y
+    creador. Importes como VO `Money`.
+-   `MovementFilters` (`app/Domain/ValueObjects/`): criterios de consulta
+    (año, tipo, categoría, rango `DateTimeImmutable`, página) que viajan al
+    repositorio — sustituye al antiguo `MovementFiltersDTO`.
+-   `FinancialMovementRepositoryInterface` +
+    `EloquentFinancialMovementRepository`: `find`, `save`, `delete` y
+    `search(MovementFilters, perPage): PaginatedResult<FinancialMovement>`.
+-   `FinanceSummaryQueryInterface` +
+    `EloquentFinanceSummaryQuery` (`app/Infrastructure/Queries/`): la
+    consulta informe devuelve `FinanceSummary` (con `FinanceCategoryTotal`
+    y `Money` en céntimos); el SQL `SUM(ROUND(amount * 100))` no sale de
+    Infrastructure.
+-   `MovementDTO::fromEntity()` (Application) y resolución de nombres del
+    creador vía `UserRepositoryInterface::findMany()`.
+-   Los use cases se resuelven por contenedor (bindings en
+    `RepositoryServiceProvider`) y no importan modelos Eloquent —
+    blindado por los tests `arch()`.
 
 ### Enums de dominio (`app/Domain/ValueObjects/`)
 
@@ -1236,7 +1261,7 @@ financieros: FIN-003 y FIN-006 deben reutilizarlo.
 ### Tests
 
 `tests/Feature/FinanceSummaryTest.php` (7), `FinanceMovementFiltersTest.php`
-(9), `FinanceMovementUseCasesTest.php` (10), `FinanceMovementValidationTest.php`
+(9), `FinanceMovementUseCasesTest.php` (12), `FinanceMovementValidationTest.php`
 (9), `FinanceAdminPageTest.php` (8). Helper `createFinancialMovement()` en
 `tests/Pest.php`.
 

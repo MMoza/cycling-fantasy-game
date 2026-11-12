@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace App\Application\UseCases\Finance;
 
 use App\Application\DTOs\Finance\MovementDTO;
-use App\Domain\ValueObjects\Money;
-use App\Domain\ValueObjects\MovementCategory;
-use App\Domain\ValueObjects\MovementStatus;
-use App\Domain\ValueObjects\MovementType;
-use App\Infrastructure\Persistence\Models\FinancialMovementModel;
-use Illuminate\Database\Eloquent\Builder;
+use App\Domain\Entities\FinancialMovement;
+use App\Domain\Interfaces\FinanceSummaryQueryInterface;
+use App\Domain\Interfaces\UserRepositoryInterface;
+use App\Domain\ValueObjects\FinanceCategoryTotal;
 
 /**
  * Resumen financiero de una temporada (año natural). Es la fuente común de
@@ -23,7 +21,10 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class GetFinanceSummaryUseCase
 {
-    private const TOP_EXPENSES_LIMIT = 5;
+    public function __construct(
+        private readonly FinanceSummaryQueryInterface $summaryQuery,
+        private readonly UserRepositoryInterface $users,
+    ) {}
 
     /**
      * @return array{
@@ -39,103 +40,63 @@ final class GetFinanceSummaryUseCase
      */
     public function execute(int $year): array
     {
-        $incomeTotal = Money::fromCents(0);
-        $expenseTotal = Money::fromCents(0);
-        $movementsCount = 0;
-
-        foreach ($this->confirmedQuery($year)
-            ->selectRaw('type, SUM(ROUND(amount * 100)) AS cents, COUNT(*) AS movements')
-            ->groupBy('type')
-            ->get() as $row) {
-            $total = Money::fromCentsAggregate($row->cents);
-            $movementsCount += (int) $row->movements;
-
-            if ($row->type === MovementType::Income) {
-                $incomeTotal = $total;
-            } else {
-                $expenseTotal = $total;
-            }
-        }
+        $summary = $this->summaryQuery->summarizeYear($year);
+        $creatorNames = $this->creatorNames($summary->topExpenses);
 
         return [
-            'year' => $year,
+            'year' => $summary->year,
             'period' => [
-                'from' => $this->periodStart($year),
-                'to' => $this->periodEnd($year),
+                'from' => sprintf('%04d-01-01', $year),
+                'to' => sprintf('%04d-12-31', $year),
             ],
-            'income_total' => $incomeTotal->toDecimalString(),
-            'expense_total' => $expenseTotal->toDecimalString(),
-            'balance' => $incomeTotal->subtract($expenseTotal)->toDecimalString(),
-            'by_category' => $this->totalsByCategory($year),
-            'top_expenses' => $this->topExpenses($year),
-            'movements_count' => $movementsCount,
+            'income_total' => $summary->incomeTotal->toDecimalString(),
+            'expense_total' => $summary->expenseTotal->toDecimalString(),
+            'balance' => $summary->balance()->toDecimalString(),
+            'by_category' => array_map(
+                fn (FinanceCategoryTotal $total): array => [
+                    'type' => $total->type->value,
+                    'category' => $total->category->value,
+                    'label' => $total->category->label($total->type),
+                    'total' => $total->total->toDecimalString(),
+                    'count' => $total->count,
+                ],
+                $summary->byCategory,
+            ),
+            'top_expenses' => array_map(
+                fn (FinancialMovement $movement): array => MovementDTO::fromEntity(
+                    $movement,
+                    $movement->createdBy !== null ? $creatorNames[$movement->createdBy] ?? null : null,
+                )->toArray(),
+                $summary->topExpenses,
+            ),
+            'movements_count' => $summary->movementsCount,
         ];
     }
 
     /**
-     * @return list<array{type: string, category: string, label: string, total: string, count: int}>
+     * @param  list<FinancialMovement>  $movements
+     * @return array<string, string>
      */
-    private function totalsByCategory(int $year): array
+    private function creatorNames(array $movements): array
     {
-        $byCategory = [];
+        $ids = [];
 
-        foreach ($this->confirmedQuery($year)
-            ->selectRaw('type, category, SUM(ROUND(amount * 100)) AS cents, COUNT(*) AS movements')
-            ->groupBy('type', 'category')
-            ->orderBy('type')
-            ->orderByDesc('cents')
-            ->get() as $row) {
-            /** @var MovementType $type */
-            $type = $row->type;
-            /** @var MovementCategory $category */
-            $category = $row->category;
-
-            $byCategory[] = [
-                'type' => $type->value,
-                'category' => $category->value,
-                'label' => $category->label($type),
-                'total' => Money::fromCentsAggregate($row->cents)->toDecimalString(),
-                'count' => (int) $row->movements,
-            ];
+        foreach ($movements as $movement) {
+            if ($movement->createdBy !== null) {
+                $ids[$movement->createdBy] = true;
+            }
         }
 
-        return $byCategory;
-    }
+        if ($ids === []) {
+            return [];
+        }
 
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function topExpenses(int $year): array
-    {
-        return $this->confirmedQuery($year)
-            ->where('type', MovementType::Expense->value)
-            ->with('creator')
-            ->orderByDesc('amount')
-            ->orderBy('id')
-            ->limit(self::TOP_EXPENSES_LIMIT)
-            ->get()
-            ->map(fn (FinancialMovementModel $movement): array => MovementDTO::fromModel($movement)->toArray())
-            ->all();
-    }
+        $names = [];
 
-    /**
-     * @return Builder<FinancialMovementModel>
-     */
-    private function confirmedQuery(int $year): Builder
-    {
-        return FinancialMovementModel::query()
-            ->where('status', MovementStatus::Confirmed->value)
-            ->whereDate('occurred_on', '>=', $this->periodStart($year))
-            ->whereDate('occurred_on', '<=', $this->periodEnd($year));
-    }
+        foreach ($this->users->findMany(array_keys($ids)) as $user) {
+            $names[$user->id] = $user->name;
+        }
 
-    private function periodStart(int $year): string
-    {
-        return sprintf('%04d-01-01', $year);
-    }
-
-    private function periodEnd(int $year): string
-    {
-        return sprintf('%04d-12-31', $year);
+        return $names;
     }
 }
